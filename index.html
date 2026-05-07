@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>매출 대시보드</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8}
+body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-serif;min-height:100vh}
+.header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 24px;
+  display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:18px;font-weight:700;color:var(--accent)}
+.header .sub{font-size:13px;color:var(--muted)}
+.view{display:none;padding:20px 24px;max-width:1200px;margin:0 auto}
+.view.active{display:block}
+
+/* ── 달력 ── */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.cal-nav h2{font-size:20px;font-weight:700}
+.cal-btn{background:var(--card);border:1px solid var(--border);color:var(--text);
+  padding:8px 16px;border-radius:8px;cursor:pointer;font-size:15px}
+.cal-btn:hover{background:var(--border)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.cal-dow{text-align:center;font-size:11px;color:var(--muted);padding:6px 0;font-weight:600}
+.cal-dow:first-child{color:#f87171}.cal-dow:last-child{color:#93c5fd}
+.cal-day{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  min-height:80px;padding:8px;cursor:default;transition:.15s}
+.cal-day.has-data{cursor:pointer;border-color:#334155}
+.cal-day.has-data:hover{border-color:var(--accent);background:#1e3a4a;transform:translateY(-2px)}
+.cal-day.today{border-color:var(--accent)}
+.cal-day.empty{background:transparent;border-color:transparent}
+.cal-day.other-month{opacity:.35}
+.cal-day .day-num{font-size:13px;font-weight:600;color:var(--muted)}
+.cal-day.has-data .day-num{color:var(--text)}
+.cal-day.today .day-num{color:var(--accent)}
+.cal-day .day-total{font-size:14px;font-weight:700;color:#e2e8f0;margin-top:4px}
+.cal-day .day-stores{display:flex;gap:3px;margin-top:6px;flex-wrap:wrap}
+.cal-dot{width:8px;height:8px;border-radius:50%}
+.cal-day .day-sun{color:#f87171}.cal-day .day-sat{color:#93c5fd}
+.cal-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+.cal-kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px}
+.cal-kpi .label{font-size:11px;color:var(--muted);margin-bottom:4px}
+.cal-kpi .value{font-size:18px;font-weight:700;color:var(--accent)}
+
+/* ── 공통 카드 ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px}
+.card h2{font-size:14px;font-weight:600;color:var(--muted);margin-bottom:16px;letter-spacing:.5px}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.chart-box{height:260px;position:relative}.chart-box.tall{height:320px;position:relative}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px}
+.kpi-label{font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:.3px}
+.kpi-value{font-size:20px;font-weight:700;color:#f1f5f9}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.up{color:#4ade80}.down{color:#f87171}.flat{color:var(--muted)}
+
+/* ── 탭 ── */
+.nav-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.nav-tab{background:var(--card);border:1px solid var(--border);border-radius:8px;
+  padding:8px 16px;cursor:pointer;font-size:13px;color:var(--muted);transition:.15s;
+  display:flex;align-items:center;gap:6px}
+.nav-tab:hover{border-color:var(--accent);color:var(--text)}
+.nav-tab.active{background:var(--accent);border-color:var(--accent);color:#0f172a;font-weight:700}
+.back-btn{background:transparent;border:1px solid var(--border);color:var(--muted);
+  padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px}
+.back-btn:hover{border-color:var(--accent);color:var(--text)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.dot-lg{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px}
+
+/* ── 지점 카드 ── */
+.store-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.store-card{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:14px;cursor:pointer;transition:.15s}
+.store-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.store-card.missing{opacity:.5}
+.store-card-name{font-size:12px;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.store-card-total{font-size:18px;font-weight:700}
+.store-card-detail{font-size:11px;color:var(--muted);margin-top:4px}
+
+/* ── 비교 테이블 ── */
+.cmp-table{width:100%;border-collapse:collapse;font-size:13px}
+.cmp-table th{text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);
+  color:var(--muted);font-weight:600;font-size:11px}
+.cmp-table td{padding:8px 12px;border-bottom:1px solid rgba(51,65,85,.5)}
+.cmp-table tr:hover td{background:rgba(255,255,255,.03)}
+
+/* ── 순위 바 ── */
+.rank-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(51,65,85,.5)}
+.rank-no{font-size:13px;font-weight:700;color:var(--muted);width:20px;text-align:center}
+.rank-bar-wrap{flex:1}
+.rank-name{font-size:12px;margin-bottom:4px;display:flex;align-items:center}
+.rank-bar-track{height:6px;background:#0f172a;border-radius:3px;overflow:hidden}
+.rank-bar-fill{height:100%;border-radius:3px;transition:.4s}
+.rank-amount{font-size:13px;font-weight:700;width:90px;text-align:right}
+.rank-pct{font-size:11px;color:var(--muted);width:42px;text-align:right}
+
+/* ── 지점 상세 헤더 ── */
+.detail-header{display:flex;align-items:center;gap:16px;margin-bottom:20px}
+.detail-store-name{font-size:20px;font-weight:700;display:flex;align-items:center}
+.alert{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);
+  border-radius:8px;padding:10px 14px;font-size:13px;color:#fbbf24;margin-bottom:16px}
+
+/* ── 회전율 게이지 ── */
+.turnover-gauge-track{height:36px;background:#0f172a;border-radius:10px;overflow:hidden;position:relative;margin:8px 0}
+.turnover-gauge-fill{height:100%;border-radius:10px;transition:.7s;display:flex;align-items:center;padding-left:14px}
+.turnover-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+
+/* ── 정밀분석 ── */
+.analysis-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.hl-card{background:#0f172a;border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.hl-card .hl-icon{font-size:22px;margin-bottom:6px}
+.hl-card .hl-label{font-size:11px;color:var(--muted);margin-bottom:4px}
+.hl-card .hl-value{font-size:16px;font-weight:700;color:var(--accent)}
+.hl-card .hl-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.analysis-section{margin-bottom:20px}
+.analysis-section h3{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.5px;margin-bottom:10px;text-transform:uppercase}
+.rank-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(51,65,85,.4)}
+.rank-row:last-child{border-bottom:none}
+.rank-no{font-size:13px;font-weight:700;color:var(--muted);width:24px;text-align:center}
+.rank-info{flex:1}
+.rank-name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.rank-bar-bg{height:5px;background:#0f172a;border-radius:3px;overflow:hidden}
+.rank-bar-fg{height:100%;border-radius:3px}
+.rank-amt{font-size:13px;font-weight:700;width:110px;text-align:right}
+.rank-pct{font-size:11px;color:var(--muted);width:40px;text-align:right}
+.dow-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dow-cell{background:#0f172a;border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center}
+.dow-cell .dow-name{font-size:11px;color:var(--muted);margin-bottom:6px}
+.dow-cell .dow-val{font-size:13px;font-weight:700}
+.dow-cell .dow-cnt{font-size:10px;color:var(--muted);margin-top:2px}
+.analysis-two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:700px){.analysis-grid{grid-template-columns:repeat(2,1fr)}.analysis-two{grid-template-columns:1fr}}
+
+/* ── 트렌드 탭 버튼 ── */
+.trend-tab{background:var(--card);border:1px solid var(--border);color:var(--muted);
+  padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:.15s}
+.trend-tab:hover{border-color:var(--accent);color:var(--text)}
+.trend-tab.active{background:var(--accent);border-color:var(--accent);color:#0f172a}
+.chart-box.tall{height:300px}
+
+/* ── 지점 월간 탭 ── */
+.store-month-tab{background:var(--card);border:1px solid var(--border);color:var(--muted);
+  padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;
+  transition:.15s;display:flex;align-items:center;gap:5px}
+.store-month-tab:hover{border-color:var(--accent);color:var(--text)}
+.store-month-tab.active{background:var(--accent);border-color:var(--accent);color:#0f172a}
+.store-month-tab.active.colored{background:var(--tab-color,var(--accent));border-color:var(--tab-color,var(--accent))}
+
+/* ═══════════════════════════════════════════════
+   📱 모바일 전용 (767px 이하)
+═══════════════════════════════════════════════ */
+@media (max-width: 767px) {
+
+  /* 헤더 */
+  .header h1 { font-size: 15px; }
+  .header { padding: 10px 14px; }
+  .view { padding: 12px 12px; }
+
+  /* ── 캘린더 뷰 ── */
+
+  /* 월간 현황: 차트·탭 숨김, KPI 2×2 */
+  #card-cal-chart { display: none !important; }
+  #trend-toggle-wrap { display: none !important; }
+  #cal-store-tabs { display: none !important; }
+  .cal-summary {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+  }
+  .cal-kpi { padding: 10px; }
+  .cal-kpi .value { font-size: 15px; }
+
+  /* 달력 셀 */
+  .cal-day { min-height: 58px; padding: 5px 4px; }
+  .cal-day .day-num { font-size: 12px; }
+  .cal-day .day-total { font-size: 11px; margin-top: 2px; }
+  .cal-day .day-stores { gap: 2px; margin-top: 3px; }
+  .cal-dot { width: 6px; height: 6px; }
+  .cal-grid { gap: 4px; }
+  .cal-nav h2 { font-size: 16px; }
+  .cal-btn { padding: 6px 12px; font-size: 13px; }
+  .cal-nav { margin-bottom: 12px; }
+
+  /* 정밀분석 숨김 */
+  #card-cal-analysis { display: none !important; }
+
+  /* ── 일별 뷰 ── */
+
+  /* KPI 2열 */
+  .kpis {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+  .kpi-card { padding: 10px; }
+  .kpi-value { font-size: 16px; }
+
+  /* 지점 카드 1열 */
+  .store-cards {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+  .store-card { padding: 12px; }
+  .store-card-total { font-size: 16px; }
+
+  /* 차트 그리드 1열 */
+  .charts-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* 복잡한 차트 카드 숨김 */
+  #card-all-hourly { display: none !important; }
+  #card-all-ticket { display: none !important; }
+
+  /* 탭 버튼 터치 최적화 */
+  .nav-tabs { gap: 6px; padding: 0 0 2px; flex-wrap: wrap; }
+  .nav-tab { padding: 9px 12px; font-size: 12px; }
+  .back-btn { padding: 8px 12px; font-size: 12px; }
+
+  /* 비교 테이블 스크롤 */
+  .card { overflow-x: auto; }
+  .cmp-table { min-width: 520px; font-size: 12px; }
+
+  /* ── 지점 상세 ── */
+
+  /* 순위/비교, 회전율, 메뉴 숨김 */
+  #card-store-rank-grid { display: none !important; }
+  #card-store-turnover { display: none !important; }
+  #card-store-menu { display: none !important; }
+
+  /* 도넛 차트 영역 세로 배치 */
+  .detail-header { gap: 8px; margin-bottom: 14px; }
+  .detail-store-name { font-size: 16px; }
+  #store-kpis { grid-template-columns: repeat(2,1fr) !important; }
+
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🐟 장어만세 매출 대시보드</h1>
+  <div class="sub" id="header-sub">날짜를 선택하세요</div>
+</div>
+
+<!-- ① 달력 뷰 -->
+<div class="view active" id="view-cal">
+  <div style="max-width:960px;margin:0 auto;padding-top:8px">
+
+    <!-- ★ 상단: 월간 매출 현황 -->
+    <div class="card" style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h2 style="margin:0">📊 월간 매출 현황</h2>
+        <div id="trend-toggle-wrap" style="display:flex;gap:6px">
+          <button class="trend-tab active" id="btn-trend-meal" onclick="switchTrend('meal')">🌅 점심/저녁</button>
+          <button class="trend-tab" id="btn-trend-store" onclick="switchTrend('store')">🏪 지점별</button>
+        </div>
+      </div>
+      <!-- 지점 탭 -->
+      <div id="cal-store-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
+      <div id="cal-month-summary" class="cal-summary"></div>
+      <div class="chart-box tall" id="card-cal-chart" style="margin-top:16px">
+        <canvas id="chart-cal-trend"></canvas>
+        <canvas id="chart-cal-store" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%"></canvas>
+      </div>
+    </div>
+
+    <!-- ★ 중간: 달력 -->
+    <div class="cal-nav">
+      <button class="cal-btn" onclick="moveMonth(-1)">&#8592; 이전</button>
+      <h2 id="cal-title"></h2>
+      <button class="cal-btn" onclick="moveMonth(1)">다음 &#8594;</button>
+    </div>
+    <div class="cal-grid" id="cal-grid" style="margin-bottom:24px"></div>
+
+    <!-- ★ 하단: 월간 매출 정밀 분석 -->
+    <div class="card" id="card-cal-analysis" style="margin-bottom:32px">
+      <h2>🔬 월간 매출 정밀 분석</h2>
+      <div id="cal-analysis"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ② 일별 뷰 -->
+<div class="view" id="view-day">
+  <div class="nav-tabs" id="day-tabs"></div>
+  <div id="all-view">
+    <div class="kpis" id="all-kpis"></div>
+    <div class="store-cards" id="store-cards"></div>
+    <div class="charts-grid">
+      <div class="card">
+        <h2>🌅 점심 / 🌆 저녁 매출</h2>
+        <div class="chart-box"><canvas id="chart-all-meal"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>📈 최근 7일 추이</h2>
+        <div class="chart-box tall"><canvas id="chart-all-trend"></canvas></div>
+      </div>
+    </div>
+    <!-- 시간별 매출 비교 -->
+    <div class="card" id="card-all-hourly">
+      <h2>⏰ 시간별 매출 비교 (지점별)</h2>
+      <div class="chart-box tall"><canvas id="chart-all-hourly"></canvas></div>
+    </div>
+    <!-- 객단가 비교 -->
+    <div class="card" id="card-all-ticket">
+      <h2>💰 지점별 객단가 비교 (점심 / 저녁)</h2>
+      <div class="chart-box"><canvas id="chart-all-ticket"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>📋 지점별 비교</h2>
+      <table class="cmp-table">
+        <thead><tr>
+          <th>지점</th><th>총매출</th><th>점심</th><th>저녁</th>
+          <th>객수</th><th>객단가</th><th>회전율</th><th>전일대비</th>
+        </tr></thead>
+        <tbody id="all-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <!-- 지점 상세 -->
+  <div id="store-view" style="display:none">
+    <div class="detail-header">
+      <button class="back-btn" onclick="showDayAll()">← 전체 보기</button>
+      <div class="detail-store-name"><span class="dot-lg" id="detail-dot"></span><span id="detail-name"></span></div>
+    </div>
+    <div class="kpis" id="store-kpis"></div>
+    <div id="store-alerts"></div>
+    <div class="charts-grid">
+      <div class="card">
+        <h2>🌅 점심 / 🌆 저녁 분석</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;height:240px">
+          <div style="position:relative"><canvas id="chart-store-donut"></canvas></div>
+          <div id="store-meal-detail" style="display:flex;flex-direction:column;justify-content:center;gap:12px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>📈 최근 7일 추이</h2>
+        <div class="chart-box"><canvas id="chart-store-trend"></canvas></div>
+      </div>
+    </div>
+    <div class="charts-grid" id="card-store-rank-grid">
+      <div class="card"><h2>🏪 전 지점 순위</h2><div id="store-rank"></div></div>
+      <div class="card"><h2>📊 지점 비교</h2><div class="chart-box"><canvas id="chart-store-compare"></canvas></div></div>
+    </div>
+    <!-- 회전율 분석 -->
+    <div class="card" id="card-store-turnover">
+      <h2>🔄 테이블 회전율 분석</h2>
+      <div class="turnover-kpis" id="store-turnover-kpis"></div>
+      <div id="store-turnover-gauge"></div>
+      <div style="margin-top:20px">
+        <h3 style="font-size:13px;color:var(--muted);margin-bottom:12px">시간대별 매출 흐름</h3>
+        <div class="chart-box"><canvas id="chart-store-hourly"></canvas></div>
+      </div>
+    </div>
+    <!-- 메뉴 분석 -->
+    <div class="card" id="card-store-menu">
+      <h2>🍽 메뉴별 판매 분석</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+        <div><h3 style="font-size:13px;color:var(--muted);margin:0 0 12px">매출 TOP 10</h3>
+          <div class="chart-box tall"><canvas id="chart-menu-sales"></canvas></div></div>
+        <div><h3 style="font-size:13px;color:var(--muted);margin:0 0 12px">판매량 TOP 10</h3>
+          <div class="chart-box tall"><canvas id="chart-menu-qty"></canvas></div></div>
+      </div>
+      <div style="margin-top:24px">
+        <h3 style="font-size:13px;color:var(--muted);margin:0 0 12px">점심/저녁 메뉴 비교 (TOP 5)</h3>
+        <div class="chart-box" style="height:200px"><canvas id="chart-menu-ld"></canvas></div>
+      </div>
+      <div style="margin-top:20px;overflow-x:auto">
+        <table class="cmp-table" id="menu-table">
+          <thead><tr><th>메뉴</th><th>판매량</th><th>총매출</th><th>점심</th><th>저녁</th><th>구성비</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+Chart.defaults.color='#94a3b8';
+Chart.defaults.borderColor='#334155';
+Chart.defaults.font.family="'Malgun Gothic',sans-serif";
+
+const ALL_DATA = {"2026-05-01": {"date": "2026-05-01", "dateDisp": "2026년 05월 01일", "stores": ["평택점", "오산점", "안성점", "복대점", "율량점"], "storeData": {"평택점": {"color": "#3b82f6", "total": 7665000, "lunch": 3857000, "dinner": 3808000, "guests": 190, "lunch_guests": 80, "dinner_guests": 110, "ticket": 40342, "lunch_ticket": 48212, "dinner_ticket": 34618, "lunch_pct": 50.3, "prev_total": 0, "week_total": 0, "trend": [{"date": "2026-04-25", "label": "04/25", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-26", "label": "04/26", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 7665000, "lunch": 3857000, "dinner": 3808000}], "missing": false, "menu": [{"name": "장어", "qty": 55, "sales": 6132000, "lunch": 3184000, "dinner": 2948000}, {"name": "소주", "qty": 80, "sales": 400000, "lunch": 60000, "dinner": 340000}, {"name": "시래기밥장어탕", "qty": 9, "sales": 108000, "lunch": 108000, "dinner": 0}, {"name": "열무국수", "qty": 18, "sales": 108000, "lunch": 60000, "dinner": 48000}, {"name": "맥주", "qty": 18, "sales": 90000, "lunch": 5000, "dinner": 85000}, {"name": "음료수", "qty": 38, "sales": 76000, "lunch": 32000, "dinner": 44000}, {"name": "잔치국수", "qty": 12, "sales": 72000, "lunch": 60000, "dinner": 12000}, {"name": "장어탕", "qty": 7, "sales": 70000, "lunch": 30000, "dinner": 40000}, {"name": "명작복분자", "qty": 5, "sales": 70000, "lunch": 0, "dinner": 70000}, {"name": "된장찌개", "qty": 13, "sales": 52000, "lunch": 16000, "dinner": 36000}], "hourly": {"11": 704000, "12": 928000, "13": 412000, "14": 537000, "15": 415000, "16": 782000, "17": 856000, "18": 1778000, "19": 987000, "20": 274000, "21": 136000, "10": 79000}, "turnover": {"tables": 16, "visits": 55, "rate": 3.44}}, "오산점": {"color": "#06b6d4", "total": 3596000, "lunch": 946000, "dinner": 2650000, "guests": 57, "lunch_guests": 16, "dinner_guests": 41, "ticket": 63088, "lunch_ticket": 59125, "dinner_ticket": 64634, "lunch_pct": 26.3, "prev_total": 0, "week_total": 0, "trend": [{"date": "2026-04-25", "label": "04/25", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-26", "label": "04/26", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 3596000, "lunch": 946000, "dinner": 2650000}], "missing": false, "menu": [{"name": "장어", "qty": 26, "sales": 2870000, "lunch": 747000, "dinner": 2123000}, {"name": "소주", "qty": 43, "sales": 215000, "lunch": 40000, "dinner": 175000}, {"name": "맥주", "qty": 23, "sales": 115000, "lunch": 10000, "dinner": 105000}, {"name": "명작복분자", "qty": 8, "sales": 112000, "lunch": 0, "dinner": 112000}, {"name": "열무국수", "qty": 10, "sales": 60000, "lunch": 30000, "dinner": 30000}, {"name": "잔치국수", "qty": 5, "sales": 25000, "lunch": 10000, "dinner": 15000}, {"name": "장어탕", "qty": 2, "sales": 20000, "lunch": 10000, "dinner": 10000}, {"name": "청하", "qty": 3, "sales": 18000, "lunch": 18000, "dinner": 0}, {"name": "음료수", "qty": 8, "sales": 16000, "lunch": 10000, "dinner": 6000}, {"name": "특선 잔치국수", "qty": 2, "sales": 12000, "lunch": 0, "dinner": 12000}], "hourly": {"13": 582000, "14": 364000, "18": 839000, "19": 840000, "20": 729000, "21": 361000}, "turnover": {"tables": 12, "visits": 24, "rate": 2.0}}, "안성점": {"color": "#a78bfa", "total": 4604000, "lunch": 2072000, "dinner": 2532000, "guests": 82, "lunch_guests": 36, "dinner_guests": 46, "ticket": 56146, "lunch_ticket": 57556, "dinner_ticket": 55043, "lunch_pct": 45.0, "prev_total": 0, "week_total": 0, "trend": [{"date": "2026-04-25", "label": "04/25", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-26", "label": "04/26", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 4604000, "lunch": 2072000, "dinner": 2532000}], "missing": false, "menu": [{"name": "장어", "qty": 40, "sales": 3720000, "lunch": 1696000, "dinner": 2024000}, {"name": "소주", "qty": 25, "sales": 125000, "lunch": 40000, "dinner": 85000}, {"name": "장어탕", "qty": 10, "sales": 100000, "lunch": 50000, "dinner": 50000}, {"name": "잔치국수", "qty": 15, "sales": 75000, "lunch": 25000, "dinner": 50000}, {"name": "된장찌개", "qty": 11, "sales": 55000, "lunch": 30000, "dinner": 25000}, {"name": "열무국수", "qty": 9, "sales": 54000, "lunch": 18000, "dinner": 36000}, {"name": "명작복분자", "qty": 3, "sales": 42000, "lunch": 14000, "dinner": 28000}, {"name": "맥주", "qty": 8, "sales": 40000, "lunch": 15000, "dinner": 25000}, {"name": "음료수", "qty": 11, "sales": 22000, "lunch": 6000, "dinner": 16000}, {"name": "장어탕(포장)", "qty": 2, "sales": 20000, "lunch": 20000, "dinner": 0}], "hourly": {"12": 823000, "13": 989000, "14": 130000, "16": 130000, "17": 592000, "18": 417000, "19": 1117000, "20": 277000, "21": 129000}, "turnover": {"tables": 11, "visits": 28, "rate": 2.55}}, "복대점": {"color": "#fbbf24", "total": 0, "lunch": 0, "dinner": 0, "guests": 0, "lunch_guests": 0, "dinner_guests": 0, "ticket": 0, "lunch_ticket": 0, "dinner_ticket": 0, "lunch_pct": 0, "prev_total": 0, "week_total": 0, "trend": [{"date": "2026-04-25", "label": "04/25", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-26", "label": "04/26", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 0, "lunch": 0, "dinner": 0}], "missing": true, "menu": [], "hourly": {}, "turnover": {}}, "율량점": {"color": "#34d399", "total": 2507000, "lunch": 572000, "dinner": 1935000, "guests": 36, "lunch_guests": 6, "dinner_guests": 30, "ticket": 69639, "lunch_ticket": 95333, "dinner_ticket": 64500, "lunch_pct": 22.8, "prev_total": 0, "week_total": 0, "trend": [{"date": "2026-04-25", "label": "04/25", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-26", "label": "04/26", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 2507000, "lunch": 572000, "dinner": 1935000}], "missing": false, "menu": [{"name": "장어", "qty": 14, "sales": 2195000, "lunch": 522000, "dinner": 1673000}, {"name": "소주", "qty": 10, "sales": 50000, "lunch": 5000, "dinner": 45000}, {"name": "장어탕", "qty": 3, "sales": 39000, "lunch": 0, "dinner": 39000}, {"name": "잔치국수", "qty": 4, "sales": 32000, "lunch": 16000, "dinner": 16000}, {"name": "된장찌개", "qty": 6, "sales": 30000, "lunch": 5000, "dinner": 25000}, {"name": "맥주", "qty": 4, "sales": 20000, "lunch": 0, "dinner": 20000}, {"name": "음료수", "qty": 6, "sales": 12000, "lunch": 2000, "dinner": 10000}, {"name": "열무국수", "qty": 1, "sales": 8000, "lunch": 0, "dinner": 8000}, {"name": "공기밥", "qty": 6, "sales": 6000, "lunch": 0, "dinner": 6000}, {"name": "막걸리", "qty": 1, "sales": 4000, "lunch": 4000, "dinner": 0}], "hourly": {"11": 232000, "14": 102000, "15": 238000, "18": 433000, "19": 988000, "20": 514000}, "turnover": {"tables": 7, "visits": 11, "rate": 1.57}}}, "summary": {"total": 18372000, "lunch": 7447000, "dinner": 10925000, "guests": 365, "ticket": 50334, "lunchPct": 40.5, "prevTotal": 0, "weekTotal": 0, "hourly": {"11": 936000, "12": 1751000, "13": 1983000, "14": 1133000, "15": 653000, "16": 912000, "17": 1448000, "18": 3467000, "19": 3932000, "20": 1794000, "21": 626000, "10": 79000}}, "trend7": [{"date": "2026-04-25", "label": "04/25", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-26", "label": "04/26", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 18372000, "lunch": 7447000, "dinner": 10925000}]}, "2026-05-02": {"date": "2026-05-02", "dateDisp": "2026년 05월 02일", "stores": ["평택점", "오산점", "안성점", "복대점", "율량점"], "storeData": {"평택점": {"color": "#3b82f6", "total": 9590000, "lunch": 3255000, "dinner": 6335000, "guests": 224, "lunch_guests": 60, "dinner_guests": 164, "ticket": 42812, "lunch_ticket": 54250, "dinner_ticket": 38628, "lunch_pct": 33.9, "prev_total": 7665000, "week_total": 0, "trend": [{"date": "2026-04-26", "label": "04/26", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 7665000, "lunch": 3857000, "dinner": 3808000}, {"date": "2026-05-02", "label": "05/02", "total": 9590000, "lunch": 3255000, "dinner": 6335000}], "missing": false, "menu": [{"name": "장어", "qty": 71, "sales": 7800000, "lunch": 2992000, "dinner": 4808000}, {"name": "소주", "qty": 121, "sales": 605000, "lunch": 80000, "dinner": 525000}, {"name": "맥주", "qty": 32, "sales": 160000, "lunch": 25000, "dinner": 135000}, {"name": "장어탕", "qty": 14, "sales": 140000, "lunch": 20000, "dinner": 120000}, {"name": "시래기밥장어탕", "qty": 9, "sales": 108000, "lunch": 108000, "dinner": 0}, {"name": "열무국수", "qty": 15, "sales": 90000, "lunch": 30000, "dinner": 60000}, {"name": "잔치국수", "qty": 13, "sales": 78000, "lunch": 18000, "dinner": 60000}, {"name": "음료수", "qty": 27, "sales": 54000, "lunch": 12000, "dinner": 42000}, {"name": "된장찌개", "qty": 9, "sales": 36000, "lunch": 12000, "dinner": 24000}, {"name": "장어탕(포장)", "qty": 2, "sales": 20000, "lunch": 20000, "dinner": 0}], "hourly": {"9": 135000, "11": 866000, "12": 608000, "13": 392000, "14": 333000, "15": 499000, "16": 668000, "17": 1178000, "18": 2495000, "19": 2097000, "20": 536000, "21": 56000}, "turnover": {"tables": 17, "visits": 54, "rate": 3.18}}, "오산점": {"color": "#06b6d4", "total": 6781000, "lunch": 1462000, "dinner": 5319000, "guests": 122, "lunch_guests": 28, "dinner_guests": 94, "ticket": 55582, "lunch_ticket": 52214, "dinner_ticket": 56585, "lunch_pct": 21.6, "prev_total": 3596000, "week_total": 0, "trend": [{"date": "2026-04-26", "label": "04/26", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 3596000, "lunch": 946000, "dinner": 2650000}, {"date": "2026-05-02", "label": "05/02", "total": 6781000, "lunch": 1462000, "dinner": 5319000}], "missing": false, "menu": [{"name": "장어", "qty": 48, "sales": 5323000, "lunch": 1180000, "dinner": 4143000}, {"name": "소주", "qty": 83, "sales": 415000, "lunch": 45000, "dinner": 370000}, {"name": "장어탕", "qty": 13, "sales": 130000, "lunch": 20000, "dinner": 110000}, {"name": "맥주", "qty": 21, "sales": 105000, "lunch": 45000, "dinner": 60000}, {"name": "명작복분자", "qty": 6, "sales": 84000, "lunch": 0, "dinner": 84000}, {"name": "잔치국수", "qty": 16, "sales": 80000, "lunch": 10000, "dinner": 70000}, {"name": "열무국수", "qty": 10, "sales": 60000, "lunch": 24000, "dinner": 36000}, {"name": "음료수", "qty": 22, "sales": 44000, "lunch": 10000, "dinner": 34000}, {"name": "된장찌개", "qty": 4, "sales": 16000, "lunch": 4000, "dinner": 12000}, {"name": "청하", "qty": 2, "sales": 12000, "lunch": 0, "dinner": 12000}], "hourly": {"11": 167000, "12": 125000, "13": 110000, "14": 524000, "15": 364000, "16": 172000, "17": 1050000, "18": 1065000, "19": 1316000, "20": 1522000, "21": 366000}, "turnover": {"tables": 17, "visits": 37, "rate": 2.18}}, "안성점": {"color": "#a78bfa", "total": 8158000, "lunch": 4690000, "dinner": 3468000, "guests": 153, "lunch_guests": 90, "dinner_guests": 63, "ticket": 53320, "lunch_ticket": 52111, "dinner_ticket": 55048, "lunch_pct": 57.5, "prev_total": 4604000, "week_total": 0, "trend": [{"date": "2026-04-26", "label": "04/26", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 4604000, "lunch": 2072000, "dinner": 2532000}, {"date": "2026-05-02", "label": "05/02", "total": 8158000, "lunch": 4690000, "dinner": 3468000}], "missing": false, "menu": [{"name": "장어", "qty": 58, "sales": 6576000, "lunch": 3836000, "dinner": 2740000}, {"name": "소주", "qty": 36, "sales": 180000, "lunch": 60000, "dinner": 120000}, {"name": "장어탕", "qty": 17, "sales": 170000, "lunch": 100000, "dinner": 70000}, {"name": "명작복분자", "qty": 9, "sales": 126000, "lunch": 56000, "dinner": 70000}, {"name": "열무국수", "qty": 20, "sales": 120000, "lunch": 84000, "dinner": 36000}, {"name": "잔치국수", "qty": 23, "sales": 115000, "lunch": 95000, "dinner": 20000}, {"name": "맥주", "qty": 21, "sales": 105000, "lunch": 20000, "dinner": 85000}, {"name": "장어탕(포장)", "qty": 7, "sales": 70000, "lunch": 50000, "dinner": 20000}, {"name": "된장찌개", "qty": 9, "sales": 45000, "lunch": 10000, "dinner": 35000}, {"name": "음료수", "qty": 10, "sales": 20000, "lunch": 10000, "dinner": 10000}], "hourly": {"11": 258000, "12": 861000, "13": 1080000, "14": 1579000, "15": 746000, "16": 166000, "17": 285000, "18": 368000, "19": 1560000, "20": 1255000}, "turnover": {"tables": 19, "visits": 37, "rate": 1.95}}, "복대점": {"color": "#fbbf24", "total": 0, "lunch": 0, "dinner": 0, "guests": 0, "lunch_guests": 0, "dinner_guests": 0, "ticket": 0, "lunch_ticket": 0, "dinner_ticket": 0, "lunch_pct": 0, "prev_total": 0, "week_total": 0, "trend": [{"date": "2026-04-26", "label": "04/26", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-02", "label": "05/02", "total": 0, "lunch": 0, "dinner": 0}], "missing": true, "menu": [], "hourly": {}, "turnover": {}}, "율량점": {"color": "#34d399", "total": 4515000, "lunch": 1532000, "dinner": 2983000, "guests": 69, "lunch_guests": 24, "dinner_guests": 45, "ticket": 65435, "lunch_ticket": 63833, "dinner_ticket": 66289, "lunch_pct": 33.9, "prev_total": 2507000, "week_total": 0, "trend": [{"date": "2026-04-26", "label": "04/26", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 2507000, "lunch": 572000, "dinner": 1935000}, {"date": "2026-05-02", "label": "05/02", "total": 4515000, "lunch": 1532000, "dinner": 2983000}], "missing": false, "menu": [{"name": "장어", "qty": 25, "sales": 3950000, "lunch": 1317000, "dinner": 2633000}, {"name": "열무국수", "qty": 13, "sales": 104000, "lunch": 64000, "dinner": 40000}, {"name": "소주", "qty": 18, "sales": 90000, "lunch": 20000, "dinner": 70000}, {"name": "맥주", "qty": 7, "sales": 35000, "lunch": 20000, "dinner": 15000}, {"name": "잔치국수", "qty": 4, "sales": 32000, "lunch": 16000, "dinner": 16000}, {"name": "된장찌개", "qty": 6, "sales": 30000, "lunch": 0, "dinner": 30000}, {"name": "장어탕", "qty": 2, "sales": 26000, "lunch": 13000, "dinner": 13000}, {"name": "음료수", "qty": 10, "sales": 20000, "lunch": 10000, "dinner": 10000}, {"name": "공기밥", "qty": 11, "sales": 11000, "lunch": 0, "dinner": 11000}, {"name": "청하", "qty": 2, "sales": 10000, "lunch": 0, "dinner": 10000}], "hourly": {"12": 195000, "13": 283000, "14": 778000, "16": 276000, "18": 987000, "19": 1490000, "20": 506000}, "turnover": {"tables": 10, "visits": 17, "rate": 1.7}}}, "summary": {"total": 29044000, "lunch": 10939000, "dinner": 18105000, "guests": 568, "ticket": 51134, "lunchPct": 37.7, "prevTotal": 18372000, "weekTotal": 0, "hourly": {"9": 135000, "11": 1291000, "12": 1789000, "13": 1865000, "14": 3214000, "15": 1609000, "16": 1282000, "17": 2513000, "18": 4915000, "19": 6463000, "20": 3819000, "21": 422000}}, "trend7": [{"date": "2026-04-26", "label": "04/26", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 18372000, "lunch": 7447000, "dinner": 10925000}, {"date": "2026-05-02", "label": "05/02", "total": 29044000, "lunch": 10939000, "dinner": 18105000}]}, "2026-05-03": {"date": "2026-05-03", "dateDisp": "2026년 05월 03일", "stores": ["평택점", "오산점", "안성점", "복대점", "율량점"], "storeData": {"평택점": {"color": "#3b82f6", "total": 9222000, "lunch": 5267000, "dinner": 3955000, "guests": 204, "lunch_guests": 98, "dinner_guests": 106, "ticket": 45206, "lunch_ticket": 53745, "dinner_ticket": 37311, "lunch_pct": 57.1, "prev_total": 9590000, "week_total": 0, "trend": [{"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 7665000, "lunch": 3857000, "dinner": 3808000}, {"date": "2026-05-02", "label": "05/02", "total": 9590000, "lunch": 3255000, "dinner": 6335000}, {"date": "2026-05-03", "label": "05/03", "total": 9222000, "lunch": 5267000, "dinner": 3955000}], "missing": false, "menu": [{"name": "장어", "qty": 68, "sales": 7705000, "lunch": 4736000, "dinner": 2969000}, {"name": "소주", "qty": 57, "sales": 285000, "lunch": 80000, "dinner": 205000}, {"name": "맥주", "qty": 29, "sales": 145000, "lunch": 55000, "dinner": 90000}, {"name": "명작복분자", "qty": 9, "sales": 126000, "lunch": 14000, "dinner": 112000}, {"name": "잔치국수", "qty": 20, "sales": 120000, "lunch": 54000, "dinner": 66000}, {"name": "장어탕", "qty": 11, "sales": 110000, "lunch": 80000, "dinner": 30000}, {"name": "시래기밥장어탕", "qty": 9, "sales": 108000, "lunch": 108000, "dinner": 0}, {"name": "열무국수", "qty": 18, "sales": 108000, "lunch": 30000, "dinner": 78000}, {"name": "장어탕(포장)", "qty": 8, "sales": 80000, "lunch": 70000, "dinner": 10000}, {"name": "음료수", "qty": 21, "sales": 42000, "lunch": 22000, "dinner": 20000}], "hourly": {"11": 656000, "12": 1268000, "13": 1176000, "14": 906000, "15": 468000, "16": 967000, "17": 1074000, "18": 1408000, "19": 707000, "20": 617000, "21": 95000, "22": 54000, "10": 166000}, "turnover": {"tables": 15, "visits": 49, "rate": 3.27}}, "오산점": {"color": "#06b6d4", "total": 3955000, "lunch": 1704000, "dinner": 2251000, "guests": 75, "lunch_guests": 34, "dinner_guests": 41, "ticket": 52733, "lunch_ticket": 50118, "dinner_ticket": 54902, "lunch_pct": 43.1, "prev_total": 6781000, "week_total": 0, "trend": [{"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 3596000, "lunch": 946000, "dinner": 2650000}, {"date": "2026-05-02", "label": "05/02", "total": 6781000, "lunch": 1462000, "dinner": 5319000}, {"date": "2026-05-03", "label": "05/03", "total": 3955000, "lunch": 1704000, "dinner": 2251000}], "missing": false, "menu": [{"name": "장어", "qty": 31, "sales": 3095000, "lunch": 1371000, "dinner": 1724000}, {"name": "소주", "qty": 32, "sales": 160000, "lunch": 35000, "dinner": 125000}, {"name": "장어탕", "qty": 9, "sales": 90000, "lunch": 60000, "dinner": 30000}, {"name": "맥주", "qty": 17, "sales": 85000, "lunch": 0, "dinner": 85000}, {"name": "열무국수", "qty": 12, "sales": 72000, "lunch": 48000, "dinner": 24000}, {"name": "명작복분자", "qty": 4, "sales": 56000, "lunch": 14000, "dinner": 42000}, {"name": "잔치국수", "qty": 8, "sales": 40000, "lunch": 15000, "dinner": 25000}, {"name": "된장찌개", "qty": 5, "sales": 20000, "lunch": 4000, "dinner": 16000}, {"name": "음료수", "qty": 7, "sales": 14000, "lunch": 14000, "dinner": 0}, {"name": "누룽지탕", "qty": 2, "sales": 10000, "lunch": 5000, "dinner": 5000}], "hourly": {"12": 528000, "13": 354000, "14": 355000, "15": 467000, "17": 80000, "18": 745000, "19": 947000, "20": 479000}, "turnover": {"tables": 12, "visits": 23, "rate": 1.92}}, "안성점": {"color": "#a78bfa", "total": 5687000, "lunch": 3507000, "dinner": 2180000, "guests": 115, "lunch_guests": 71, "dinner_guests": 44, "ticket": 49452, "lunch_ticket": 49394, "dinner_ticket": 49545, "lunch_pct": 61.7, "prev_total": 8158000, "week_total": 0, "trend": [{"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 4604000, "lunch": 2072000, "dinner": 2532000}, {"date": "2026-05-02", "label": "05/02", "total": 8158000, "lunch": 4690000, "dinner": 3468000}, {"date": "2026-05-03", "label": "05/03", "total": 5687000, "lunch": 3507000, "dinner": 2180000}], "missing": false, "menu": [{"name": "장어", "qty": 41, "sales": 4697000, "lunch": 2951000, "dinner": 1746000}, {"name": "잔치국수", "qty": 23, "sales": 115000, "lunch": 80000, "dinner": 35000}, {"name": "열무국수", "qty": 13, "sales": 78000, "lunch": 48000, "dinner": 30000}, {"name": "맥주", "qty": 15, "sales": 75000, "lunch": 25000, "dinner": 50000}, {"name": "소주", "qty": 13, "sales": 65000, "lunch": 25000, "dinner": 40000}, {"name": "장어탕", "qty": 6, "sales": 60000, "lunch": 30000, "dinner": 30000}, {"name": "명작복분자", "qty": 4, "sales": 56000, "lunch": 28000, "dinner": 28000}, {"name": "된장찌개", "qty": 11, "sales": 55000, "lunch": 25000, "dinner": 30000}, {"name": "음료수", "qty": 9, "sales": 18000, "lunch": 8000, "dinner": 10000}, {"name": "공기밥", "qty": 4, "sales": 4000, "lunch": 3000, "dinner": 1000}], "hourly": {"12": 650000, "13": 1669000, "14": 1073000, "16": 115000, "17": 344000, "18": 579000, "19": 1165000, "20": 92000}, "turnover": {"tables": 15, "visits": 30, "rate": 2.0}}, "복대점": {"color": "#fbbf24", "total": 0, "lunch": 0, "dinner": 0, "guests": 0, "lunch_guests": 0, "dinner_guests": 0, "ticket": 0, "lunch_ticket": 0, "dinner_ticket": 0, "lunch_pct": 0, "prev_total": 0, "week_total": 0, "trend": [{"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-02", "label": "05/02", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-03", "label": "05/03", "total": 0, "lunch": 0, "dinner": 0}], "missing": true, "menu": [], "hourly": {}, "turnover": {}}, "율량점": {"color": "#34d399", "total": 7010000, "lunch": 3179000, "dinner": 3831000, "guests": 107, "lunch_guests": 50, "dinner_guests": 57, "ticket": 65514, "lunch_ticket": 63580, "dinner_ticket": 67211, "lunch_pct": 45.3, "prev_total": 4515000, "week_total": 0, "trend": [{"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 2507000, "lunch": 572000, "dinner": 1935000}, {"date": "2026-05-02", "label": "05/02", "total": 4515000, "lunch": 1532000, "dinner": 2983000}, {"date": "2026-05-03", "label": "05/03", "total": 7010000, "lunch": 3179000, "dinner": 3831000}], "missing": false, "menu": [{"name": "장어", "qty": 36, "sales": 6083000, "lunch": 2779000, "dinner": 3304000}, {"name": "장어탕", "qty": 13, "sales": 169000, "lunch": 91000, "dinner": 78000}, {"name": "소주", "qty": 26, "sales": 130000, "lunch": 30000, "dinner": 100000}, {"name": "잔치국수", "qty": 12, "sales": 96000, "lunch": 16000, "dinner": 80000}, {"name": "열무국수", "qty": 8, "sales": 64000, "lunch": 48000, "dinner": 16000}, {"name": "된장찌개", "qty": 12, "sales": 60000, "lunch": 30000, "dinner": 30000}, {"name": "맥주", "qty": 8, "sales": 40000, "lunch": 5000, "dinner": 35000}, {"name": "음료수", "qty": 18, "sales": 36000, "lunch": 22000, "dinner": 14000}, {"name": "공기밥", "qty": 11, "sales": 11000, "lunch": 8000, "dinner": 3000}], "hourly": {"13": 2926000, "14": 253000, "17": 312000, "18": 1455000, "19": 1264000, "20": 800000}, "turnover": {"tables": 14, "visits": 24, "rate": 1.71}}}, "summary": {"total": 25874000, "lunch": 13657000, "dinner": 12217000, "guests": 501, "ticket": 51645, "lunchPct": 52.8, "prevTotal": 29044000, "weekTotal": 0, "hourly": {"11": 656000, "12": 2446000, "13": 6125000, "14": 2587000, "15": 935000, "16": 1082000, "17": 1810000, "18": 4187000, "19": 4083000, "20": 1988000, "21": 95000, "22": 54000, "10": 166000}}, "trend7": [{"date": "2026-04-27", "label": "04/27", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 18372000, "lunch": 7447000, "dinner": 10925000}, {"date": "2026-05-02", "label": "05/02", "total": 29044000, "lunch": 10939000, "dinner": 18105000}, {"date": "2026-05-03", "label": "05/03", "total": 25874000, "lunch": 13657000, "dinner": 12217000}]}, "2026-05-04": {"date": "2026-05-04", "dateDisp": "2026년 05월 04일", "stores": ["평택점", "오산점", "안성점", "복대점", "율량점"], "storeData": {"평택점": {"color": "#3b82f6", "total": 6209000, "lunch": 2077000, "dinner": 4132000, "guests": 155, "lunch_guests": 47, "dinner_guests": 108, "ticket": 40058, "lunch_ticket": 44191, "dinner_ticket": 38259, "lunch_pct": 33.5, "prev_total": 9222000, "week_total": 0, "trend": [{"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 7665000, "lunch": 3857000, "dinner": 3808000}, {"date": "2026-05-02", "label": "05/02", "total": 9590000, "lunch": 3255000, "dinner": 6335000}, {"date": "2026-05-03", "label": "05/03", "total": 9222000, "lunch": 5267000, "dinner": 3955000}, {"date": "2026-05-04", "label": "05/04", "total": 6209000, "lunch": 2077000, "dinner": 4132000}], "missing": false, "menu": [{"name": "장어", "qty": 45, "sales": 4746000, "lunch": 1579000, "dinner": 3167000}, {"name": "소주", "qty": 55, "sales": 275000, "lunch": 40000, "dinner": 235000}, {"name": "맥주", "qty": 31, "sales": 155000, "lunch": 20000, "dinner": 135000}, {"name": "열무국수", "qty": 23, "sales": 138000, "lunch": 42000, "dinner": 96000}, {"name": "장어탕", "qty": 9, "sales": 90000, "lunch": 30000, "dinner": 60000}, {"name": "시래기밥장어탕", "qty": 7, "sales": 84000, "lunch": 84000, "dinner": 0}, {"name": "잔치국수", "qty": 9, "sales": 54000, "lunch": 18000, "dinner": 36000}, {"name": "시래기밥청국장", "qty": 5, "sales": 45000, "lunch": 45000, "dinner": 0}, {"name": "된장찌개", "qty": 9, "sales": 36000, "lunch": 4000, "dinner": 32000}, {"name": "장어어죽", "qty": 2, "sales": 18000, "lunch": 18000, "dinner": 0}], "hourly": {"11": 284000, "12": 482000, "13": 256000, "14": 271000, "15": 28000, "16": 592000, "17": 964000, "18": 1088000, "19": 908000, "20": 663000, "21": 509000, "10": 164000}, "turnover": {"tables": 16, "visits": 43, "rate": 2.69}}, "오산점": {"color": "#06b6d4", "total": 3427000, "lunch": 412000, "dinner": 3015000, "guests": 63, "lunch_guests": 8, "dinner_guests": 55, "ticket": 54397, "lunch_ticket": 51500, "dinner_ticket": 54818, "lunch_pct": 12.0, "prev_total": 3955000, "week_total": 0, "trend": [{"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 3596000, "lunch": 946000, "dinner": 2650000}, {"date": "2026-05-02", "label": "05/02", "total": 6781000, "lunch": 1462000, "dinner": 5319000}, {"date": "2026-05-03", "label": "05/03", "total": 3955000, "lunch": 1704000, "dinner": 2251000}, {"date": "2026-05-04", "label": "05/04", "total": 3427000, "lunch": 412000, "dinner": 3015000}], "missing": false, "menu": [{"name": "장어", "qty": 25, "sales": 2604000, "lunch": 300000, "dinner": 2304000}, {"name": "소주", "qty": 47, "sales": 235000, "lunch": 30000, "dinner": 205000}, {"name": "장어탕", "qty": 15, "sales": 150000, "lunch": 40000, "dinner": 110000}, {"name": "맥주", "qty": 22, "sales": 110000, "lunch": 0, "dinner": 110000}, {"name": "백세주", "qty": 4, "sales": 32000, "lunch": 0, "dinner": 32000}, {"name": "된장찌개", "qty": 3, "sales": 12000, "lunch": 8000, "dinner": 4000}, {"name": "청하", "qty": 2, "sales": 12000, "lunch": 0, "dinner": 12000}, {"name": "잔치국수", "qty": 2, "sales": 10000, "lunch": 0, "dinner": 10000}, {"name": "음료수", "qty": 3, "sales": 6000, "lunch": 0, "dinner": 6000}, {"name": "공기밥", "qty": 4, "sales": 4000, "lunch": 2000, "dinner": 2000}], "hourly": {"12": 40000, "13": 83000, "14": 96000, "15": 193000, "18": 849000, "19": 555000, "20": 1018000, "21": 593000}, "turnover": {"tables": 11, "visits": 25, "rate": 2.27}}, "안성점": {"color": "#a78bfa", "total": 4359000, "lunch": 1522000, "dinner": 2837000, "guests": 87, "lunch_guests": 32, "dinner_guests": 55, "ticket": 50103, "lunch_ticket": 47562, "dinner_ticket": 51582, "lunch_pct": 34.9, "prev_total": 5687000, "week_total": 0, "trend": [{"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 4604000, "lunch": 2072000, "dinner": 2532000}, {"date": "2026-05-02", "label": "05/02", "total": 8158000, "lunch": 4690000, "dinner": 3468000}, {"date": "2026-05-03", "label": "05/03", "total": 5687000, "lunch": 3507000, "dinner": 2180000}, {"date": "2026-05-04", "label": "05/04", "total": 4359000, "lunch": 1522000, "dinner": 2837000}], "missing": false, "menu": [{"name": "장어", "qty": 39, "sales": 3458000, "lunch": 1218000, "dinner": 2240000}, {"name": "소주", "qty": 34, "sales": 170000, "lunch": 25000, "dinner": 145000}, {"name": "장어탕", "qty": 7, "sales": 70000, "lunch": 0, "dinner": 70000}, {"name": "열무국수", "qty": 11, "sales": 66000, "lunch": 30000, "dinner": 36000}, {"name": "잔치국수", "qty": 10, "sales": 50000, "lunch": 20000, "dinner": 30000}, {"name": "장어탕(포장)", "qty": 5, "sales": 50000, "lunch": 50000, "dinner": 0}, {"name": "맥주", "qty": 8, "sales": 40000, "lunch": 10000, "dinner": 30000}, {"name": "된장찌개", "qty": 7, "sales": 35000, "lunch": 15000, "dinner": 20000}, {"name": "명작복분자", "qty": 2, "sales": 28000, "lunch": 0, "dinner": 28000}, {"name": "백세주", "qty": 2, "sales": 20000, "lunch": 20000, "dinner": 0}], "hourly": {"12": 305000, "13": 334000, "14": 591000, "15": 292000, "17": 1047000, "18": 206000, "19": 88000, "20": 1408000, "21": 88000}, "turnover": {"tables": 13, "visits": 28, "rate": 2.15}}, "복대점": {"color": "#fbbf24", "total": 0, "lunch": 0, "dinner": 0, "guests": 0, "lunch_guests": 0, "dinner_guests": 0, "ticket": 0, "lunch_ticket": 0, "dinner_ticket": 0, "lunch_pct": 0, "prev_total": 0, "week_total": 0, "trend": [{"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-02", "label": "05/02", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-03", "label": "05/03", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-04", "label": "05/04", "total": 0, "lunch": 0, "dinner": 0}], "missing": true, "menu": [], "hourly": {}, "turnover": {}}, "율량점": {"color": "#34d399", "total": 2973000, "lunch": 594000, "dinner": 2379000, "guests": 44, "lunch_guests": 7, "dinner_guests": 37, "ticket": 67568, "lunch_ticket": 84857, "dinner_ticket": 64297, "lunch_pct": 20.0, "prev_total": 7010000, "week_total": 0, "trend": [{"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 2507000, "lunch": 572000, "dinner": 1935000}, {"date": "2026-05-02", "label": "05/02", "total": 4515000, "lunch": 1532000, "dinner": 2983000}, {"date": "2026-05-03", "label": "05/03", "total": 7010000, "lunch": 3179000, "dinner": 3831000}, {"date": "2026-05-04", "label": "05/04", "total": 2973000, "lunch": 594000, "dinner": 2379000}], "missing": false, "menu": [{"name": "장어", "qty": 16, "sales": 2454000, "lunch": 491000, "dinner": 1963000}, {"name": "소주", "qty": 24, "sales": 120000, "lunch": 10000, "dinner": 110000}, {"name": "장어탕", "qty": 9, "sales": 117000, "lunch": 52000, "dinner": 65000}, {"name": "잔치국수", "qty": 6, "sales": 48000, "lunch": 8000, "dinner": 40000}, {"name": "된장찌개", "qty": 8, "sales": 40000, "lunch": 0, "dinner": 40000}, {"name": "맥주", "qty": 7, "sales": 35000, "lunch": 0, "dinner": 35000}, {"name": "음료수", "qty": 5, "sales": 10000, "lunch": 4000, "dinner": 6000}, {"name": "열무국수", "qty": 1, "sales": 8000, "lunch": 8000, "dinner": 0}, {"name": "청하", "qty": 1, "sales": 5000, "lunch": 0, "dinner": 5000}, {"name": "식혜", "qty": 1, "sales": 3000, "lunch": 0, "dinner": 3000}], "hourly": {"12": 444000, "13": 150000, "17": 314000, "18": 155000, "19": 1838000, "20": 72000}, "turnover": {"tables": 9, "visits": 11, "rate": 1.22}}}, "summary": {"total": 16968000, "lunch": 4605000, "dinner": 12363000, "guests": 349, "ticket": 48619, "lunchPct": 27.1, "prevTotal": 25874000, "weekTotal": 0, "hourly": {"11": 284000, "12": 1271000, "13": 823000, "14": 958000, "15": 513000, "16": 592000, "17": 2325000, "18": 2298000, "19": 3389000, "20": 3161000, "21": 1190000, "10": 164000}}, "trend7": [{"date": "2026-04-28", "label": "04/28", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 18372000, "lunch": 7447000, "dinner": 10925000}, {"date": "2026-05-02", "label": "05/02", "total": 29044000, "lunch": 10939000, "dinner": 18105000}, {"date": "2026-05-03", "label": "05/03", "total": 25874000, "lunch": 13657000, "dinner": 12217000}, {"date": "2026-05-04", "label": "05/04", "total": 16968000, "lunch": 4605000, "dinner": 12363000}]}, "2026-05-05": {"date": "2026-05-05", "dateDisp": "2026년 05월 05일", "stores": ["평택점", "오산점", "안성점", "복대점", "율량점"], "storeData": {"평택점": {"color": "#3b82f6", "total": 6659000, "lunch": 4151000, "dinner": 2508000, "guests": 165, "lunch_guests": 105, "dinner_guests": 60, "ticket": 40358, "lunch_ticket": 39533, "dinner_ticket": 41800, "lunch_pct": 62.3, "prev_total": 6209000, "week_total": 0, "trend": [{"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 7665000, "lunch": 3857000, "dinner": 3808000}, {"date": "2026-05-02", "label": "05/02", "total": 9590000, "lunch": 3255000, "dinner": 6335000}, {"date": "2026-05-03", "label": "05/03", "total": 9222000, "lunch": 5267000, "dinner": 3955000}, {"date": "2026-05-04", "label": "05/04", "total": 6209000, "lunch": 2077000, "dinner": 4132000}, {"date": "2026-05-05", "label": "05/05", "total": 6659000, "lunch": 4151000, "dinner": 2508000}], "missing": false, "menu": [{"name": "장어", "qty": 47, "sales": 5312000, "lunch": 3323000, "dinner": 1989000}, {"name": "소주", "qty": 48, "sales": 240000, "lunch": 100000, "dinner": 140000}, {"name": "열무국수", "qty": 22, "sales": 132000, "lunch": 78000, "dinner": 54000}, {"name": "시래기밥장어탕", "qty": 9, "sales": 108000, "lunch": 108000, "dinner": 0}, {"name": "장어탕", "qty": 9, "sales": 90000, "lunch": 60000, "dinner": 30000}, {"name": "잔치국수", "qty": 13, "sales": 78000, "lunch": 72000, "dinner": 6000}, {"name": "맥주", "qty": 12, "sales": 60000, "lunch": 30000, "dinner": 30000}, {"name": "명작복분자", "qty": 4, "sales": 56000, "lunch": 28000, "dinner": 28000}, {"name": "음료수", "qty": 20, "sales": 40000, "lunch": 30000, "dinner": 10000}, {"name": "장어탕(포장)", "qty": 4, "sales": 40000, "lunch": 30000, "dinner": 10000}], "hourly": {"10": 109000, "12": 1231000, "13": 1157000, "14": 667000, "15": 247000, "16": 406000, "17": 380000, "18": 553000, "19": 1242000, "20": 333000, "11": 450000}, "turnover": {"tables": 15, "visits": 47, "rate": 3.13}}, "오산점": {"color": "#06b6d4", "total": 4579000, "lunch": 3304000, "dinner": 1275000, "guests": 88, "lunch_guests": 63, "dinner_guests": 25, "ticket": 52034, "lunch_ticket": 52444, "dinner_ticket": 51000, "lunch_pct": 72.2, "prev_total": 3427000, "week_total": 0, "trend": [{"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 3596000, "lunch": 946000, "dinner": 2650000}, {"date": "2026-05-02", "label": "05/02", "total": 6781000, "lunch": 1462000, "dinner": 5319000}, {"date": "2026-05-03", "label": "05/03", "total": 3955000, "lunch": 1704000, "dinner": 2251000}, {"date": "2026-05-04", "label": "05/04", "total": 3427000, "lunch": 412000, "dinner": 3015000}, {"date": "2026-05-05", "label": "05/05", "total": 4579000, "lunch": 3304000, "dinner": 1275000}], "missing": false, "menu": [{"name": "장어", "qty": 36, "sales": 4193000, "lunch": 3122000, "dinner": 1071000}, {"name": "소주", "qty": 21, "sales": 105000, "lunch": 60000, "dinner": 45000}, {"name": "장어탕", "qty": 10, "sales": 100000, "lunch": 100000, "dinner": 0}, {"name": "잔치국수", "qty": 13, "sales": 65000, "lunch": 45000, "dinner": 20000}, {"name": "열무국수", "qty": 10, "sales": 60000, "lunch": 54000, "dinner": 6000}, {"name": "막걸리", "qty": 9, "sales": 36000, "lunch": 36000, "dinner": 0}, {"name": "음료수", "qty": 17, "sales": 34000, "lunch": 30000, "dinner": 4000}, {"name": "맥주", "qty": 6, "sales": 30000, "lunch": 10000, "dinner": 20000}, {"name": "특선 열무국수", "qty": 2, "sales": 14000, "lunch": 14000, "dinner": 0}, {"name": "특선 잔치국수", "qty": 2, "sales": 12000, "lunch": 12000, "dinner": 0}], "hourly": {"12": 1241000, "13": 1684000, "14": 426000, "15": 299000, "16": 128000, "18": 171000, "19": 825000, "20": 279000}, "turnover": {"tables": 10, "visits": 26, "rate": 2.6}}, "안성점": {"color": "#a78bfa", "total": 8665000, "lunch": 5615000, "dinner": 3050000, "guests": 170, "lunch_guests": 112, "dinner_guests": 58, "ticket": 50971, "lunch_ticket": 50134, "dinner_ticket": 52586, "lunch_pct": 64.8, "prev_total": 4359000, "week_total": 0, "trend": [{"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 4604000, "lunch": 2072000, "dinner": 2532000}, {"date": "2026-05-02", "label": "05/02", "total": 8158000, "lunch": 4690000, "dinner": 3468000}, {"date": "2026-05-03", "label": "05/03", "total": 5687000, "lunch": 3507000, "dinner": 2180000}, {"date": "2026-05-04", "label": "05/04", "total": 4359000, "lunch": 1522000, "dinner": 2837000}, {"date": "2026-05-05", "label": "05/05", "total": 8665000, "lunch": 5615000, "dinner": 3050000}], "missing": false, "menu": [{"name": "장어", "qty": 68, "sales": 7256000, "lunch": 4711000, "dinner": 2545000}, {"name": "잔치국수", "qty": 37, "sales": 185000, "lunch": 155000, "dinner": 30000}, {"name": "장어탕", "qty": 16, "sales": 160000, "lunch": 90000, "dinner": 70000}, {"name": "소주", "qty": 30, "sales": 150000, "lunch": 75000, "dinner": 75000}, {"name": "맥주", "qty": 25, "sales": 125000, "lunch": 90000, "dinner": 35000}, {"name": "열무국수", "qty": 17, "sales": 102000, "lunch": 78000, "dinner": 24000}, {"name": "된장찌개", "qty": 13, "sales": 65000, "lunch": 45000, "dinner": 20000}, {"name": "음료수", "qty": 17, "sales": 34000, "lunch": 24000, "dinner": 10000}, {"name": "명작복분자", "qty": 2, "sales": 28000, "lunch": 28000, "dinner": 0}, {"name": "공기밥", "qty": 25, "sales": 25000, "lunch": 16000, "dinner": 9000}], "hourly": {"11": 136000, "12": 703000, "13": 2965000, "14": 952000, "15": 235000, "16": 829000, "17": 264000, "18": 1196000, "19": 1036000, "20": 554000}, "turnover": {"tables": 17, "visits": 46, "rate": 2.71}}, "복대점": {"color": "#fbbf24", "total": 0, "lunch": 0, "dinner": 0, "guests": 0, "lunch_guests": 0, "dinner_guests": 0, "ticket": 0, "lunch_ticket": 0, "dinner_ticket": 0, "lunch_pct": 0, "prev_total": 0, "week_total": 0, "trend": [{"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-02", "label": "05/02", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-03", "label": "05/03", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-04", "label": "05/04", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-05", "label": "05/05", "total": 0, "lunch": 0, "dinner": 0}], "missing": true, "menu": [], "hourly": {}, "turnover": {}}, "율량점": {"color": "#34d399", "total": 5319000, "lunch": 2464000, "dinner": 2855000, "guests": 79, "lunch_guests": 31, "dinner_guests": 48, "ticket": 67329, "lunch_ticket": 79484, "dinner_ticket": 59479, "lunch_pct": 46.3, "prev_total": 2973000, "week_total": 0, "trend": [{"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 2507000, "lunch": 572000, "dinner": 1935000}, {"date": "2026-05-02", "label": "05/02", "total": 4515000, "lunch": 1532000, "dinner": 2983000}, {"date": "2026-05-03", "label": "05/03", "total": 7010000, "lunch": 3179000, "dinner": 3831000}, {"date": "2026-05-04", "label": "05/04", "total": 2973000, "lunch": 594000, "dinner": 2379000}, {"date": "2026-05-05", "label": "05/05", "total": 5319000, "lunch": 2464000, "dinner": 2855000}], "missing": false, "menu": [{"name": "장어", "qty": 27, "sales": 4554000, "lunch": 2203000, "dinner": 2351000}, {"name": "잔치국수", "qty": 21, "sales": 168000, "lunch": 56000, "dinner": 112000}, {"name": "소주", "qty": 24, "sales": 120000, "lunch": 20000, "dinner": 100000}, {"name": "장어탕", "qty": 6, "sales": 78000, "lunch": 52000, "dinner": 26000}, {"name": "맥주", "qty": 12, "sales": 60000, "lunch": 0, "dinner": 60000}, {"name": "된장찌개", "qty": 8, "sales": 40000, "lunch": 15000, "dinner": 25000}, {"name": "열무국수", "qty": 5, "sales": 40000, "lunch": 16000, "dinner": 24000}, {"name": "공기밥", "qty": 12, "sales": 12000, "lunch": 7000, "dinner": 5000}, {"name": "음료수", "qty": 5, "sales": 10000, "lunch": 2000, "dinner": 8000}], "hourly": {"11": 354000, "12": 613000, "13": 1206000, "14": 165000, "15": 126000, "17": 215000, "18": 598000, "19": 1218000, "20": 824000}, "turnover": {"tables": 9, "visits": 20, "rate": 2.22}}}, "summary": {"total": 25222000, "lunch": 15534000, "dinner": 9688000, "guests": 502, "ticket": 50243, "lunchPct": 61.6, "prevTotal": 16968000, "weekTotal": 0, "hourly": {"10": 109000, "12": 3788000, "13": 7012000, "14": 2210000, "15": 907000, "16": 1363000, "17": 859000, "18": 2518000, "19": 4321000, "20": 1990000, "11": 940000}}, "trend7": [{"date": "2026-04-29", "label": "04/29", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 18372000, "lunch": 7447000, "dinner": 10925000}, {"date": "2026-05-02", "label": "05/02", "total": 29044000, "lunch": 10939000, "dinner": 18105000}, {"date": "2026-05-03", "label": "05/03", "total": 25874000, "lunch": 13657000, "dinner": 12217000}, {"date": "2026-05-04", "label": "05/04", "total": 16968000, "lunch": 4605000, "dinner": 12363000}, {"date": "2026-05-05", "label": "05/05", "total": 25222000, "lunch": 15534000, "dinner": 9688000}]}, "2026-05-06": {"date": "2026-05-06", "dateDisp": "2026년 05월 06일", "stores": ["평택점", "오산점", "안성점", "복대점", "율량점"], "storeData": {"평택점": {"color": "#3b82f6", "total": 4522000, "lunch": 2077000, "dinner": 2445000, "guests": 95, "lunch_guests": 33, "dinner_guests": 62, "ticket": 47600, "lunch_ticket": 62939, "dinner_ticket": 39435, "lunch_pct": 45.9, "prev_total": 6659000, "week_total": 0, "trend": [{"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 7665000, "lunch": 3857000, "dinner": 3808000}, {"date": "2026-05-02", "label": "05/02", "total": 9590000, "lunch": 3255000, "dinner": 6335000}, {"date": "2026-05-03", "label": "05/03", "total": 9222000, "lunch": 5267000, "dinner": 3955000}, {"date": "2026-05-04", "label": "05/04", "total": 6209000, "lunch": 2077000, "dinner": 4132000}, {"date": "2026-05-05", "label": "05/05", "total": 6659000, "lunch": 4151000, "dinner": 2508000}, {"date": "2026-05-06", "label": "05/06", "total": 4522000, "lunch": 2077000, "dinner": 2445000}], "missing": false, "menu": [{"name": "장어", "qty": 29, "sales": 3144000, "lunch": 1414000, "dinner": 1730000}, {"name": "시래기밥장어탕", "qty": 32, "sales": 384000, "lunch": 384000, "dinner": 0}, {"name": "소주", "qty": 44, "sales": 220000, "lunch": 45000, "dinner": 175000}, {"name": "액기스(현금)", "qty": 1, "sales": 120000, "lunch": 0, "dinner": 120000}, {"name": "열무국수", "qty": 15, "sales": 90000, "lunch": 18000, "dinner": 72000}, {"name": "시래기밥청국장", "qty": 8, "sales": 72000, "lunch": 72000, "dinner": 0}, {"name": "잔치국수", "qty": 11, "sales": 66000, "lunch": 12000, "dinner": 54000}, {"name": "맥주", "qty": 7, "sales": 35000, "lunch": 10000, "dinner": 25000}, {"name": "음료수", "qty": 13, "sales": 26000, "lunch": 4000, "dinner": 22000}, {"name": "장어탕", "qty": 2, "sales": 20000, "lunch": 10000, "dinner": 10000}], "hourly": {"11": 376000, "12": 363000, "13": 233000, "14": 399000, "15": 328000, "16": 297000, "17": 203000, "18": 781000, "19": 825000, "20": 546000, "21": 90000, "10": 81000}, "turnover": {"tables": 12, "visits": 33, "rate": 2.75}}, "오산점": {"color": "#06b6d4", "total": 3046000, "lunch": 166000, "dinner": 2880000, "guests": 54, "lunch_guests": 4, "dinner_guests": 50, "ticket": 56407, "lunch_ticket": 41500, "dinner_ticket": 57600, "lunch_pct": 5.4, "prev_total": 4579000, "week_total": 0, "trend": [{"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 3596000, "lunch": 946000, "dinner": 2650000}, {"date": "2026-05-02", "label": "05/02", "total": 6781000, "lunch": 1462000, "dinner": 5319000}, {"date": "2026-05-03", "label": "05/03", "total": 3955000, "lunch": 1704000, "dinner": 2251000}, {"date": "2026-05-04", "label": "05/04", "total": 3427000, "lunch": 412000, "dinner": 3015000}, {"date": "2026-05-05", "label": "05/05", "total": 4579000, "lunch": 3304000, "dinner": 1275000}, {"date": "2026-05-06", "label": "05/06", "total": 3046000, "lunch": 166000, "dinner": 2880000}], "missing": false, "menu": [{"name": "장어", "qty": 23, "sales": 2384000, "lunch": 125000, "dinner": 2259000}, {"name": "소주", "qty": 39, "sales": 195000, "lunch": 0, "dinner": 195000}, {"name": "명작복분자", "qty": 4, "sales": 56000, "lunch": 0, "dinner": 56000}, {"name": "장어탕", "qty": 5, "sales": 50000, "lunch": 10000, "dinner": 40000}, {"name": "맥주", "qty": 10, "sales": 50000, "lunch": 0, "dinner": 50000}, {"name": "잔치국수", "qty": 6, "sales": 30000, "lunch": 15000, "dinner": 15000}, {"name": "누룽지탕", "qty": 3, "sales": 15000, "lunch": 0, "dinner": 15000}, {"name": "음료수", "qty": 6, "sales": 12000, "lunch": 0, "dinner": 12000}, {"name": "열무국수", "qty": 2, "sales": 12000, "lunch": 0, "dinner": 12000}, {"name": "청하", "qty": 2, "sales": 12000, "lunch": 0, "dinner": 12000}], "hourly": {"12": 166000, "18": 98000, "19": 805000, "20": 1078000, "21": 899000}, "turnover": {"tables": 10, "visits": 17, "rate": 1.7}}, "안성점": {"color": "#a78bfa", "total": 1849000, "lunch": 871000, "dinner": 978000, "guests": 36, "lunch_guests": 17, "dinner_guests": 19, "ticket": 51361, "lunch_ticket": 51235, "dinner_ticket": 51474, "lunch_pct": 47.1, "prev_total": 8665000, "week_total": 0, "trend": [{"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 4604000, "lunch": 2072000, "dinner": 2532000}, {"date": "2026-05-02", "label": "05/02", "total": 8158000, "lunch": 4690000, "dinner": 3468000}, {"date": "2026-05-03", "label": "05/03", "total": 5687000, "lunch": 3507000, "dinner": 2180000}, {"date": "2026-05-04", "label": "05/04", "total": 4359000, "lunch": 1522000, "dinner": 2837000}, {"date": "2026-05-05", "label": "05/05", "total": 8665000, "lunch": 5615000, "dinner": 3050000}, {"date": "2026-05-06", "label": "05/06", "total": 1849000, "lunch": 871000, "dinner": 978000}], "missing": false, "menu": [{"name": "장어", "qty": 13, "sales": 1505000, "lunch": 722000, "dinner": 783000}, {"name": "소주", "qty": 11, "sales": 55000, "lunch": 15000, "dinner": 40000}, {"name": "열무국수", "qty": 9, "sales": 54000, "lunch": 36000, "dinner": 18000}, {"name": "잔치국수", "qty": 5, "sales": 25000, "lunch": 5000, "dinner": 20000}, {"name": "백세주", "qty": 2, "sales": 20000, "lunch": 20000, "dinner": 0}, {"name": "장어탕", "qty": 2, "sales": 20000, "lunch": 0, "dinner": 20000}, {"name": "맥주", "qty": 3, "sales": 15000, "lunch": 0, "dinner": 15000}, {"name": "된장찌개", "qty": 2, "sales": 10000, "lunch": 5000, "dinner": 5000}, {"name": "공기밥", "qty": 1, "sales": 1000, "lunch": 0, "dinner": 1000}], "hourly": {"13": 750000, "14": 121000, "18": 108000, "19": 582000, "20": 288000}, "turnover": {"tables": 6, "visits": 11, "rate": 1.83}}, "복대점": {"color": "#fbbf24", "total": 0, "lunch": 0, "dinner": 0, "guests": 0, "lunch_guests": 0, "dinner_guests": 0, "ticket": 0, "lunch_ticket": 0, "dinner_ticket": 0, "lunch_pct": 0, "prev_total": 0, "week_total": 0, "trend": [{"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-02", "label": "05/02", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-03", "label": "05/03", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-04", "label": "05/04", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-05", "label": "05/05", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-06", "label": "05/06", "total": 0, "lunch": 0, "dinner": 0}], "missing": true, "menu": [], "hourly": {}, "turnover": {}}, "율량점": {"color": "#34d399", "total": 1529000, "lunch": 759000, "dinner": 770000, "guests": 18, "lunch_guests": 9, "dinner_guests": 9, "ticket": 84944, "lunch_ticket": 84333, "dinner_ticket": 85556, "lunch_pct": 49.6, "prev_total": 5319000, "week_total": 0, "trend": [{"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 2507000, "lunch": 572000, "dinner": 1935000}, {"date": "2026-05-02", "label": "05/02", "total": 4515000, "lunch": 1532000, "dinner": 2983000}, {"date": "2026-05-03", "label": "05/03", "total": 7010000, "lunch": 3179000, "dinner": 3831000}, {"date": "2026-05-04", "label": "05/04", "total": 2973000, "lunch": 594000, "dinner": 2379000}, {"date": "2026-05-05", "label": "05/05", "total": 5319000, "lunch": 2464000, "dinner": 2855000}, {"date": "2026-05-06", "label": "05/06", "total": 1529000, "lunch": 759000, "dinner": 770000}], "missing": false, "menu": [{"name": "장어", "qty": 9, "sales": 1362000, "lunch": 668000, "dinner": 694000}, {"name": "소주", "qty": 8, "sales": 40000, "lunch": 20000, "dinner": 20000}, {"name": "장어탕", "qty": 2, "sales": 26000, "lunch": 26000, "dinner": 0}, {"name": "열무국수", "qty": 2, "sales": 16000, "lunch": 16000, "dinner": 0}, {"name": "된장찌개", "qty": 3, "sales": 15000, "lunch": 0, "dinner": 15000}, {"name": "잔치국수", "qty": 1, "sales": 8000, "lunch": 0, "dinner": 8000}, {"name": "음료수", "qty": 2, "sales": 4000, "lunch": 2000, "dinner": 2000}, {"name": "공기밥", "qty": 4, "sales": 4000, "lunch": 0, "dinner": 4000}], "hourly": {"22": 240000, "11": 126000, "13": 184000, "14": 449000, "19": 530000}, "turnover": {"tables": 3, "visits": 5, "rate": 1.67}}}, "summary": {"total": 10946000, "lunch": 3873000, "dinner": 7073000, "guests": 203, "ticket": 53921, "lunchPct": 35.4, "prevTotal": 25222000, "weekTotal": 0, "hourly": {"11": 502000, "12": 529000, "13": 1167000, "14": 969000, "15": 328000, "16": 297000, "17": 203000, "18": 987000, "19": 2742000, "20": 1912000, "21": 989000, "10": 81000, "22": 240000}}, "trend7": [{"date": "2026-04-30", "label": "04/30", "total": 0, "lunch": 0, "dinner": 0}, {"date": "2026-05-01", "label": "05/01", "total": 18372000, "lunch": 7447000, "dinner": 10925000}, {"date": "2026-05-02", "label": "05/02", "total": 29044000, "lunch": 10939000, "dinner": 18105000}, {"date": "2026-05-03", "label": "05/03", "total": 25874000, "lunch": 13657000, "dinner": 12217000}, {"date": "2026-05-04", "label": "05/04", "total": 16968000, "lunch": 4605000, "dinner": 12363000}, {"date": "2026-05-05", "label": "05/05", "total": 25222000, "lunch": 15534000, "dinner": 9688000}, {"date": "2026-05-06", "label": "05/06", "total": 10946000, "lunch": 3873000, "dinner": 7073000}]}};
+const DATES = Object.keys(ALL_DATA).sort();
+
+let DATA = null, curDate = null, curStore = null;
+let activeCharts = {};
+let calYear, calMonth;
+
+// ── 유틸 ─────────────────────────────────────────
+const won = v => '₩' + Math.round(v).toLocaleString();
+const pct = v => v.toFixed(1) + '%';
+function delta(prev, curr) {
+  if (!prev) return {txt:'-', cls:'flat'};
+  const d = (curr-prev)/Math.abs(prev);
+  return {txt:(d>=0?'▲':'▼')+Math.abs(d*100).toFixed(1)+'%', cls:d>0?'up':d<0?'down':'flat'};
+}
+function kpiCard(label, value, sub='') {
+  return `<div class="kpi-card"><div class="kpi-label">${label}</div><div class="kpi-value">${value}</div><div class="kpi-sub">${sub}</div></div>`;
+}
+function destroyChart(id) { if(activeCharts[id]){activeCharts[id].destroy();delete activeCharts[id];} }
+
+// ── 달력 ─────────────────────────────────────────
+function initCal() {
+  const today = new Date();
+  if(DATES.length) {
+    const last = new Date(DATES[DATES.length-1]);
+    calYear = last.getFullYear(); calMonth = last.getMonth();
+  } else {
+    calYear = today.getFullYear(); calMonth = today.getMonth();
+  }
+  renderCal();
+}
+
+function moveMonth(d) {
+  calMonth += d;
+  if(calMonth > 11){calMonth=0;calYear++;}
+  if(calMonth < 0){calMonth=11;calYear--;}
+  renderCal();
+}
+
+function renderCal() {
+  const today = new Date();
+  const title = `${calYear}년 ${calMonth+1}월`;
+  document.getElementById('cal-title').textContent = title;
+  document.getElementById('header-sub').textContent = title;
+  const monthDates = DATES.filter(d=>{
+    const dt=new Date(d); return dt.getFullYear()===calYear && dt.getMonth()===calMonth;
+  });
+  const first = new Date(calYear, calMonth, 1);
+  const last  = new Date(calYear, calMonth+1, 0);
+  const startDow = first.getDay();
+  const daysInMonth = last.getDate();
+  let html = '';
+  const dows = ['일','월','화','수','목','금','토'];
+  dows.forEach((d,i)=>html+=`<div class="cal-dow ${i===0?'cal-day-sun':i===6?'cal-day-sat':''}">${d}</div>`);
+  for(let i=0;i<startDow;i++) html+=`<div class="cal-day empty"></div>`;
+  for(let day=1;day<=daysInMonth;day++){
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const hasData=ALL_DATA[dateStr];
+    const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===day;
+    const dow=(startDow+day-1)%7;
+    const isSun=dow===0; const isSat=dow===6;
+    let cls='cal-day'+(hasData?' has-data':'')+(isToday?' today':'');
+    let inner=`<div class="day-num ${isSun?'day-sun':isSat?'day-sat':''}">${day}</div>`;
+    if(hasData){
+      const D=ALL_DATA[dateStr];
+      inner+=`<div class="day-total">${won(D.summary.total)}</div>`;
+      inner+=`<div class="day-stores">${D.stores.filter(s=>!D.storeData[s].missing)
+        .map(s=>`<div class="cal-dot" style="background:${D.storeData[s].color}" title="${s}"></div>`).join('')}</div>`;
+    }
+    const click=hasData?`onclick="selectDate('${dateStr}')"`:''
+    html+=`<div class="${cls}" ${click}>${inner}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML=html;
+  renderMonthSummary(monthDates);
+  renderMonthTrend(monthDates);
+  renderMonthAnalysis(monthDates);
+}
+
+function renderMonthSummary(dates) {
+  const el=document.getElementById('cal-month-summary');
+  if(!dates.length){el.innerHTML='<div style="color:var(--muted);grid-column:span 4">이달 데이터 없음</div>';return;}
+
+  if(curCalStore) {
+    // ── 지점별 KPI ──
+    const st=curCalStore;
+    const color=ALL_DATA[dates[0]].storeData[st].color;
+    const activeDates=dates.filter(d=>!ALL_DATA[d].storeData[st].missing);
+    if(!activeDates.length){
+      el.innerHTML=`<div style="color:var(--muted);grid-column:span 4">${st} 데이터 없음</div>`; return;
+    }
+    const total=activeDates.reduce((s,d)=>s+ALL_DATA[d].storeData[st].total,0);
+    const lunchTotal=activeDates.reduce((s,d)=>s+ALL_DATA[d].storeData[st].lunch,0);
+    const dinnerTotal=activeDates.reduce((s,d)=>s+ALL_DATA[d].storeData[st].dinner,0);
+    const avg=Math.round(total/activeDates.length);
+    const bestDate=activeDates.reduce((a,b)=>ALL_DATA[a].storeData[st].total>ALL_DATA[b].storeData[st].total?a:b);
+    const bestTotal=ALL_DATA[bestDate].storeData[st].total;
+    const lunchPct=(lunchTotal/total*100).toFixed(1);
+    el.innerHTML=`
+      <div class="cal-kpi"><div class="label">월 누계</div><div class="value" style="color:${color}">${won(total)}</div></div>
+      <div class="cal-kpi"><div class="label">영업일</div><div class="value">${activeDates.length}일</div></div>
+      <div class="cal-kpi"><div class="label">일 평균</div><div class="value">${won(avg)}</div></div>
+      <div class="cal-kpi"><div class="label">최고 매출일</div><div class="value">${won(bestTotal)}</div><div style="font-size:11px;color:var(--muted)">${bestDate}</div></div>
+      <div class="cal-kpi"><div class="label">점심 비중</div><div class="value" style="font-size:16px">${lunchPct}%</div><div style="font-size:11px;color:var(--muted)">저녁 ${(100-parseFloat(lunchPct)).toFixed(1)}%</div></div>`;
+  } else {
+    // ── 전체 KPI ──
+    const total=dates.reduce((s,d)=>s+ALL_DATA[d].summary.total,0);
+    const avg=Math.round(total/dates.length);
+    const bestDate=dates.reduce((a,b)=>ALL_DATA[a].summary.total>ALL_DATA[b].summary.total?a:b);
+    const bestTotal=ALL_DATA[bestDate].summary.total;
+    el.innerHTML=`
+      <div class="cal-kpi"><div class="label">이달 누계</div><div class="value">${won(total)}</div></div>
+      <div class="cal-kpi"><div class="label">영업일</div><div class="value">${dates.length}일</div></div>
+      <div class="cal-kpi"><div class="label">일 평균</div><div class="value">${won(avg)}</div></div>
+      <div class="cal-kpi"><div class="label">최고 매출일</div><div class="value">${won(bestTotal)}</div><div style="font-size:11px;color:var(--muted)">${bestDate}</div></div>`;
+  }
+}
+
+let curTrendMode='meal', curTrendDates=[], curCalStore=null;
+
+function renderCalStoreTabs(dates) {
+  const el=document.getElementById('cal-store-tabs');
+  if(!el||!dates.length){if(el)el.innerHTML='';return;}
+  const STORES=ALL_DATA[dates[0]].stores;
+  let h=`<button class="store-month-tab${curCalStore===null?' active':''}" onclick="switchCalStore(null)">전체</button>`;
+  STORES.forEach(s=>{
+    const color=ALL_DATA[dates[0]].storeData[s].color;
+    const act=curCalStore===s?' active colored':'';
+    h+=`<button class="store-month-tab${act}" style="--tab-color:${color}" onclick="switchCalStore('${s}')">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color}"></span>${s}
+    </button>`;
+  });
+  el.innerHTML=h;
+}
+
+function switchCalStore(store) {
+  curCalStore=store;
+  const toggleWrap=document.getElementById('trend-toggle-wrap');
+  if(toggleWrap) toggleWrap.style.display=store?'none':'flex';
+  if(store) curTrendMode='meal';
+  renderCalStoreTabs(curTrendDates);
+  renderMonthSummary(curTrendDates);
+  renderMonthTrend(curTrendDates);
+}
+
+function renderMonthTrend(dates) {
+  curTrendDates=dates;
+  destroyChart('calTrend');
+  destroyChart('calStore');
+  if(!dates.length) return;
+
+  // 탭 렌더
+  renderCalStoreTabs(dates);
+
+  const dowNames=['일','월','화','수','목','금','토'];
+  const dowColors=['#f87171','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#93c5fd'];
+  const labels=dates.map(d=>{
+    const dt=new Date(d); const dow=dt.getDay();
+    return [dt.getDate()+'일', dowNames[dow]];
+  });
+  const tickColors=dates.map(d=>{ const dow=new Date(d).getDay(); return dowColors[dow]; });
+
+  const commonOpts={
+    responsive:true,maintainAspectRatio:false,
+    onClick:(_,els)=>{if(els.length){const d=dates[els[0].index];if(d)selectDate(d);}},
+    plugins:{legend:{position:'bottom'},
+      tooltip:{callbacks:{
+        label:c=>c.dataset.label+': '+won(c.parsed.y),
+        title:items=>{const d=dates[items[0].dataIndex];return ALL_DATA[d].dateDisp;}
+      }}},
+    scales:{
+      x:{stacked:true,ticks:{color:ctx=>tickColors[ctx.index]||'#94a3b8',font:{size:11},maxRotation:0}},
+      y:{stacked:true,ticks:{callback:v=>'₩'+(v/10000).toFixed(0)+'만'}}
+    }
+  };
+
+  if(curCalStore) {
+    // ── 지점 선택: 해당 지점 점심/저녁 ──
+    const color=ALL_DATA[dates[0]].storeData[curCalStore].color;
+    const activeDates=dates.filter(d=>!ALL_DATA[d].storeData[curCalStore].missing);
+    const lunches=dates.map(d=>ALL_DATA[d].storeData[curCalStore]?.lunch||0);
+    const dinners=dates.map(d=>ALL_DATA[d].storeData[curCalStore]?.dinner||0);
+    activeCharts['calTrend']=new Chart(document.getElementById('chart-cal-trend'),{
+      type:'bar',
+      data:{labels,datasets:[
+        {label:'점심',data:lunches,backgroundColor:'rgba(251,191,36,.85)',borderRadius:3,stack:'s'},
+        {label:'저녁',data:dinners,backgroundColor:color+'cc',borderRadius:3,stack:'s'},
+      ]},
+      options:commonOpts
+    });
+    document.getElementById('chart-cal-trend').style.display='';
+    document.getElementById('chart-cal-store').style.display='none';
+  } else {
+    // ── 전체: 점심/저녁 or 지점별 ──
+    const lunches=dates.map(d=>ALL_DATA[d].summary.lunch);
+    const dinners=dates.map(d=>ALL_DATA[d].summary.dinner);
+    activeCharts['calTrend']=new Chart(document.getElementById('chart-cal-trend'),{
+      type:'bar',
+      data:{labels,datasets:[
+        {label:'점심',data:lunches,backgroundColor:'rgba(251,191,36,.8)',borderRadius:3,stack:'s'},
+        {label:'저녁',data:dinners,backgroundColor:'rgba(96,165,250,.8)',borderRadius:3,stack:'s'},
+      ]},
+      options:commonOpts
+    });
+    const STORES=ALL_DATA[dates[0]].stores;
+    const storeDatasets=STORES.map(s=>{
+      const color=ALL_DATA[dates[0]].storeData[s].color;
+      return {label:s,data:dates.map(d=>ALL_DATA[d].storeData[s].total||0),
+        backgroundColor:color+'cc',borderColor:color,borderWidth:1,borderRadius:3,stack:'s'};
+    });
+    activeCharts['calStore']=new Chart(document.getElementById('chart-cal-store'),{
+      type:'bar',data:{labels,datasets:storeDatasets},options:commonOpts
+    });
+    switchTrend(curTrendMode);
+  }
+}
+
+function switchTrend(mode) {
+  curTrendMode=mode;
+  const mealCanvas=document.getElementById('chart-cal-trend');
+  const storeCanvas=document.getElementById('chart-cal-store');
+  const btnMeal=document.getElementById('btn-trend-meal');
+  const btnStore=document.getElementById('btn-trend-store');
+  if(mode==='meal'){
+    mealCanvas.style.display=''; storeCanvas.style.display='none';
+    btnMeal.classList.add('active'); btnStore.classList.remove('active');
+  } else {
+    mealCanvas.style.display='none'; storeCanvas.style.display='';
+    btnStore.classList.add('active'); btnMeal.classList.remove('active');
+  }
+}
+
+// ── 날짜 선택 ─────────────────────────────────────
+
+
+function renderMonthAnalysis(dates) {
+  const el = document.getElementById('cal-analysis');
+  if(!el) return;
+  if(!dates.length){ el.innerHTML='<div style="color:var(--muted);padding:20px;text-align:center">이달 데이터 없음</div>'; return; }
+
+  const STORES = ALL_DATA[dates[0]].stores;
+  const totalAll  = dates.reduce((s,d)=>s+ALL_DATA[d].summary.total,0);
+  const lunchAll  = dates.reduce((s,d)=>s+ALL_DATA[d].summary.lunch,0);
+  const dinnerAll = dates.reduce((s,d)=>s+ALL_DATA[d].summary.dinner,0);
+
+  const bestDate  = dates.reduce((a,b)=>ALL_DATA[a].summary.total>ALL_DATA[b].summary.total?a:b);
+  const worstDate = dates.reduce((a,b)=>ALL_DATA[a].summary.total<ALL_DATA[b].summary.total?a:b);
+  const fmtDate   = d => new Date(d).toLocaleDateString('ko-KR',{month:'short',day:'numeric',weekday:'short'});
+
+  // 지점별 누계
+  const storeMap = {};
+  STORES.forEach(s=>{ storeMap[s]={total:0,lunch:0,dinner:0,guests:0}; });
+  dates.forEach(d=>{
+    STORES.forEach(s=>{
+      const sd=ALL_DATA[d].storeData[s];
+      storeMap[s].total+=sd.total; storeMap[s].lunch+=sd.lunch;
+      storeMap[s].dinner+=sd.dinner; storeMap[s].guests+=sd.guests;
+    });
+  });
+  const storeRank = STORES.filter(s=>storeMap[s].total>0)
+    .sort((a,b)=>storeMap[b].total-storeMap[a].total);
+  const topStore   = storeRank[0];
+  const maxStTotal = storeMap[topStore]?.total||1;
+
+  // 요일별
+  const dowTotals=[0,0,0,0,0,0,0], dowCounts=[0,0,0,0,0,0,0];
+  dates.forEach(d=>{ const dow=new Date(d).getDay(); dowTotals[dow]+=ALL_DATA[d].summary.total; dowCounts[dow]++; });
+  const dowNames=['일','월','화','수','목','금','토'];
+  const dowColors=['#f87171','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#93c5fd'];
+
+  // 일별 TOP5
+  const dayRank=[...dates].sort((a,b)=>ALL_DATA[b].summary.total-ALL_DATA[a].summary.total).slice(0,5);
+  const maxDay=ALL_DATA[dayRank[0]].summary.total||1;
+  const medals=['🥇','🥈','🥉','4위','5위'];
+
+  el.innerHTML=`
+  <div class="analysis-grid">
+    <div class="hl-card">
+      <div class="hl-icon">🏆</div><div class="hl-label">최고 매출일</div>
+      <div class="hl-value">${won(ALL_DATA[bestDate].summary.total)}</div>
+      <div class="hl-sub">${fmtDate(bestDate)}</div>
+    </div>
+    <div class="hl-card">
+      <div class="hl-icon">📉</div><div class="hl-label">최저 매출일</div>
+      <div class="hl-value">${won(ALL_DATA[worstDate].summary.total)}</div>
+      <div class="hl-sub">${fmtDate(worstDate)}</div>
+    </div>
+    <div class="hl-card">
+      <div class="hl-icon">🏪</div><div class="hl-label">1위 지점</div>
+      <div class="hl-value" style="color:${ALL_DATA[dates[0]].storeData[topStore].color}">${topStore}</div>
+      <div class="hl-sub">${won(storeMap[topStore].total)} (${(storeMap[topStore].total/totalAll*100).toFixed(1)}%)</div>
+    </div>
+    <div class="hl-card">
+      <div class="hl-icon">🌅</div><div class="hl-label">점심 비중</div>
+      <div class="hl-value">${(lunchAll/totalAll*100).toFixed(1)}%</div>
+      <div class="hl-sub">저녁 ${(dinnerAll/totalAll*100).toFixed(1)}%</div>
+    </div>
+  </div>
+
+  <div class="analysis-two">
+    <div class="analysis-section">
+      <h3>🏪 지점별 누계 순위</h3>
+      ${storeRank.map((s,i)=>{
+        const sd=storeMap[s]; const color=ALL_DATA[dates[0]].storeData[s].color;
+        return `<div class="rank-row">
+          <div class="rank-no">${medals[i]||i+1+'위'}</div>
+          <div class="rank-info">
+            <div class="rank-name"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color}"></span>${s}</div>
+            <div class="rank-bar-bg"><div class="rank-bar-fg" style="width:${(sd.total/maxStTotal*100).toFixed(1)}%;background:${color}"></div></div>
+          </div>
+          <div class="rank-amt">${won(sd.total)}</div>
+          <div class="rank-pct">${(sd.total/totalAll*100).toFixed(1)}%</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="analysis-section">
+      <h3>📅 일별 매출 TOP 5</h3>
+      ${dayRank.map((d,i)=>{
+        const s=ALL_DATA[d].summary; const dow=new Date(d).getDay();
+        const dowColor=dow===0?'#f87171':dow===6?'#93c5fd':'#94a3b8';
+        return `<div class="rank-row">
+          <div class="rank-no">${medals[i]}</div>
+          <div class="rank-info">
+            <div class="rank-name">
+              <span style="font-size:11px;color:${dowColor};font-weight:700">${dowNames[dow]}</span>
+              ${new Date(d).toLocaleDateString('ko-KR',{month:'short',day:'numeric'})}
+            </div>
+            <div class="rank-bar-bg"><div class="rank-bar-fg" style="width:${(s.total/maxDay*100).toFixed(1)}%;background:#38bdf8"></div></div>
+          </div>
+          <div class="rank-amt">${won(s.total)}</div>
+          <div class="rank-pct">${s.lunchPct.toFixed(0)}%🌅</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+
+  <div class="analysis-section" style="margin-top:4px">
+    <h3>📆 요일별 평균 매출</h3>
+    <div class="dow-grid">
+      ${dowNames.map((n,i)=>{
+        const avg=dowCounts[i]?Math.round(dowTotals[i]/dowCounts[i]):0;
+        const color=dowColors[i];
+        return `<div class="dow-cell" style="border-color:${avg>0?color+'66':'rgba(51,65,85,.4)'}">
+          <div class="dow-name" style="color:${color}">${n}</div>
+          <div class="dow-val" style="color:${avg>0?color:'var(--muted)'}">${avg>0?'&#8361;'+(avg/10000).toFixed(1)+'만':'-'}</div>
+          <div class="dow-cnt">${dowCounts[i]?dowCounts[i]+'회':''}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+
+  <div class="analysis-section" style="margin-top:16px">
+    <h3>🌅 지점별 점심 · 저녁 비중</h3>
+    ${storeRank.map(s=>{
+      const sd=storeMap[s]; if(!sd.total) return '';
+      const lp=(sd.lunch/sd.total*100).toFixed(1);
+      const dp=(sd.dinner/sd.total*100).toFixed(1);
+      const color=ALL_DATA[dates[0]].storeData[s].color;
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+          <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${color};margin-right:5px"></span>${s}</span>
+          <span style="color:var(--muted)">🌅 ${lp}% &nbsp;🌆 ${dp}%</span>
+        </div>
+        <div style="height:8px;background:#0f172a;border-radius:4px;overflow:hidden;display:flex">
+          <div style="width:${lp}%;background:#fbbf24;transition:.5s"></div>
+          <div style="width:${dp}%;background:#3b82f6;transition:.5s"></div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function selectDate(date) {
+  curDate=date; DATA=ALL_DATA[date]; curStore=null;
+  document.getElementById('header-sub').textContent=DATA.dateDisp;
+  document.getElementById('view-cal').classList.remove('active');
+  document.getElementById('view-day').classList.add('active');
+  buildTabs();
+  showDayAll();
+}
+
+function goCalendar() {
+  curDate=null; DATA=null;
+  document.getElementById('view-day').classList.remove('active');
+  document.getElementById('view-cal').classList.add('active');
+  document.getElementById('header-sub').textContent=`${calYear}년 ${calMonth+1}월`;
+}
+
+// ── 일별 뷰 ─────────────────────────────────────
+function buildTabs() {
+  const {stores,storeData,dateDisp}=DATA;
+  let html=`<button class="back-btn" onclick="goCalendar()">← 달력</button>
+    <div class="nav-tab active" id="tab-all" onclick="showDayAll()">📊 ${dateDisp} 전체</div>`;
+  stores.forEach(s=>{
+    const sd=storeData[s];
+    html+=`<div class="nav-tab" id="tab-${s}" onclick="showStore('${s}')">
+      <span class="dot" style="background:${sd.color}"></span>${s}</div>`;
+  });
+  document.getElementById('day-tabs').innerHTML=html;
+}
+
+function showDayAll() {
+  curStore=null;
+  document.getElementById('all-view').style.display='block';
+  document.getElementById('store-view').style.display='none';
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-all').classList.add('active');
+  renderAll();
+}
+
+function renderAll() {
+  const {stores,storeData,summary,trend7}=DATA;
+
+  // KPI
+  const dd=delta(summary.prevTotal,summary.total);
+  const dw=delta(summary.weekTotal,summary.total);
+  document.getElementById('all-kpis').innerHTML=[
+    kpiCard('전체 매출',won(summary.total),`<span class="${dd.cls}">${dd.txt} 전일</span>`),
+    kpiCard('점심 매출',won(summary.lunch),pct(summary.lunchPct)+' 비중'),
+    kpiCard('저녁 매출',won(summary.dinner),pct(100-summary.lunchPct)+' 비중'),
+    kpiCard('총 객수 / 객단가',summary.guests+'명',won(summary.ticket)+'/인'),
+    kpiCard('전주 동요일 대비',won(summary.weekTotal||0),`<span class="${dw.cls}">${dw.txt}</span>`),
+  ].join('');
+
+  // 지점 카드
+  document.getElementById('store-cards').innerHTML=stores.map(s=>{
+    const sd=storeData[s]; const dd=delta(sd.prev_total,sd.total);
+    const tr=sd.turnover||{}; const rateStr=tr.rate?tr.rate+'회':'—';
+    return `<div class="store-card${sd.missing?' missing':''}" onclick="showStore('${s}')">
+      <div class="store-card-name"><span class="dot" style="background:${sd.color}"></span>${s}</div>
+      <div class="store-card-total" style="color:${sd.color}">${sd.missing?'미수신':won(sd.total)}</div>
+      <div class="store-card-detail">${sd.missing?'':sd.guests+'명 · 회전'+rateStr}</div>
+      <div class="store-card-detail kpi-sub"><span class="${dd.cls}">${dd.txt}</span> 전일</div>
+    </div>`;
+  }).join('');
+
+  // 점심/저녁 바
+  destroyChart('allMeal');
+  activeCharts['allMeal']=new Chart(document.getElementById('chart-all-meal'),{
+    type:'bar',
+    data:{labels:stores,datasets:[
+      {label:'점심',data:stores.map(s=>storeData[s].lunch),backgroundColor:'rgba(251,191,36,.85)',borderRadius:4,stack:'s'},
+      {label:'저녁',data:stores.map(s=>storeData[s].dinner),backgroundColor:'rgba(96,165,250,.85)',borderRadius:4,stack:'s'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,onClick:(_,els)=>{if(els.length)showStore(stores[els[0].index]);},
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+won(c.parsed.y)}}},
+      scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'₩'+(v/10000).toFixed(0)+'만'}}}}
+  });
+
+  // 7일 추이
+  destroyChart('allTrend');
+  activeCharts['allTrend']=new Chart(document.getElementById('chart-all-trend'),{
+    type:'line',
+    data:{labels:trend7.map(t=>t.label),datasets:[
+      {label:'점심',data:trend7.map(t=>t.lunch),borderColor:'#fbbf24',backgroundColor:'rgba(251,191,36,.1)',tension:.35,fill:true,borderWidth:2},
+      {label:'저녁',data:trend7.map(t=>t.dinner),borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.1)',tension:.35,fill:true,borderWidth:2},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+won(c.parsed.y)}}},
+      scales:{y:{ticks:{callback:v=>'₩'+(v/10000).toFixed(0)+'만'}}}}
+  });
+
+  // ── 시간별 매출 비교 (지점별 라인)
+  destroyChart('allHourly');
+  const allHours=[...new Set(
+    stores.flatMap(s=>Object.keys(storeData[s].hourly||{}).map(Number))
+  )].sort((a,b)=>a-b);
+  if(allHours.length){
+    const PALETTE=['#38bdf8','#4ade80','#fbbf24','#f87171','#a78bfa','#fb923c'];
+    activeCharts['allHourly']=new Chart(document.getElementById('chart-all-hourly'),{
+      type:'line',
+      data:{labels:allHours.map(h=>h+'시'),datasets:stores.map((s,i)=>{
+        const sd=storeData[s]; const col=PALETTE[i%PALETTE.length];
+        return {label:s,data:allHours.map(h=>(sd.hourly||{})[h]||0),
+          borderColor:col,backgroundColor:col+'18',borderWidth:2,tension:.3,
+          fill:false,pointRadius:3,pointHoverRadius:5};
+      })},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom'},tooltip:{mode:'index',intersect:false,
+          callbacks:{label:c=>c.dataset.label+': '+won(c.parsed.y)}}},
+        scales:{y:{ticks:{callback:v=>'₩'+(v/10000).toFixed(0)+'만'},min:0},
+                x:{grid:{color:'rgba(51,65,85,.4)'}}}}
+    });
+  } else {
+    document.getElementById('chart-all-hourly').parentElement.innerHTML=
+      '<div style="color:var(--muted);text-align:center;padding:40px">시간별 데이터 없음</div>';
+  }
+
+  // ── 객단가 비교 (지점별 점심/저녁 그룹바)
+  destroyChart('allTicket');
+  const sortedByTicket=[...stores].filter(s=>!storeData[s].missing)
+    .sort((a,b)=>storeData[b].ticket-storeData[a].ticket);
+  activeCharts['allTicket']=new Chart(document.getElementById('chart-all-ticket'),{
+    type:'bar',indexAxis:'y',
+    data:{labels:sortedByTicket,datasets:[
+      {label:'점심 객단가',data:sortedByTicket.map(s=>storeData[s].lunch_ticket||0),
+       backgroundColor:'rgba(251,191,36,.85)',borderRadius:3},
+      {label:'저녁 객단가',data:sortedByTicket.map(s=>storeData[s].dinner_ticket||0),
+       backgroundColor:'rgba(96,165,250,.85)',borderRadius:3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+won(c.parsed.x)}}},
+      scales:{x:{ticks:{callback:v=>'₩'+(v/1000).toFixed(0)+'천'}}}}
+  });
+
+  // 비교 테이블 (회전율 컬럼 추가)
+  const sortedT=[...stores].sort((a,b)=>storeData[b].total-storeData[a].total);
+  document.getElementById('all-tbody').innerHTML=sortedT.map(s=>{
+    const sd=storeData[s]; if(sd.missing) return `<tr><td colspan="8" style="color:var(--muted)">${s} — 미수신</td></tr>`;
+    const dd=delta(sd.prev_total,sd.total);
+    const tr=sd.turnover||{};
+    return `<tr><td><span class="dot" style="background:${sd.color}"></span>${s}</td>
+      <td style="font-weight:700">${won(sd.total)}</td>
+      <td>${won(sd.lunch)}</td><td>${won(sd.dinner)}</td>
+      <td>${sd.guests}명</td><td>${won(sd.ticket)}</td>
+      <td style="color:${(tr.rate||0)>=2.5?'#4ade80':(tr.rate||0)>=1.5?'#fbbf24':'#f87171'}">${tr.rate?tr.rate+'회':'—'}</td>
+      <td class="${dd.cls}">${dd.txt}</td></tr>`;
+  }).join('');
+}
+
+// ── 지점 상세 ─────────────────────────────────────
+function showStore(storeName) {
+  curStore=storeName;
+  document.getElementById('all-view').style.display='none';
+  document.getElementById('store-view').style.display='block';
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  const tab=document.getElementById('tab-'+storeName);
+  if(tab) tab.classList.add('active');
+  renderStore(storeName);
+  window.scrollTo(0,0);
+}
+
+function renderStore(storeName) {
+  const {stores,storeData,summary}=DATA;
+  const d=storeData[storeName];
+  document.getElementById('detail-dot').style.background=d.color;
+  document.getElementById('detail-name').textContent=storeName;
+  const dd=delta(d.prev_total,d.total); const dw=delta(d.week_total,d.total);
+  document.getElementById('store-kpis').innerHTML=[
+    kpiCard('총 매출',won(d.total),`<span class="${dd.cls}">${dd.txt} 전일</span>`),
+    kpiCard('점심 매출',won(d.lunch),`${d.lunch_guests}명 · ${won(d.lunch_ticket)}/인`),
+    kpiCard('저녁 매출',won(d.dinner),`${d.dinner_guests}명 · ${won(d.dinner_ticket)}/인`),
+    kpiCard('객수 / 객단가',d.guests+'명',won(d.ticket)+'/인'),
+    kpiCard('전주 동요일',won(d.week_total||0),`<span class="${dw.cls}">${dw.txt}</span>`),
+  ].join('');
+  document.getElementById('store-alerts').innerHTML=d.missing?'<div class="alert">⚠ 오늘 데이터 미수신</div>':'';
+
+  // 도넛
+  destroyChart('storeDonut');
+  activeCharts['storeDonut']=new Chart(document.getElementById('chart-store-donut'),{
+    type:'doughnut',
+    data:{labels:['점심','저녁'],datasets:[{data:[d.lunch,d.dinner],backgroundColor:['#fbbf24','#60a5fa'],borderColor:'#1e293b',borderWidth:3}]},
+    options:{responsive:true,maintainAspectRatio:true,cutout:'68%',
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.label+': '+won(c.parsed)}}}}
+  });
+  document.getElementById('store-meal-detail').innerHTML=`
+    <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">🌅 점심</div>
+      <div style="font-size:18px;font-weight:700;color:#fbbf24">${won(d.lunch)}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">${d.lunch_guests}명 · ${won(d.lunch_ticket)}/인</div></div>
+    <div style="height:1px;background:var(--border)"></div>
+    <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">🌆 저녁</div>
+      <div style="font-size:18px;font-weight:700;color:#60a5fa">${won(d.dinner)}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">${d.dinner_guests}명 · ${won(d.dinner_ticket)}/인</div></div>
+    <div style="height:1px;background:var(--border)"></div>
+    <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">점심 비중</div>
+      <div style="font-size:16px;font-weight:700">${pct(d.lunch_pct)}</div></div>`;
+
+  // 7일 추이
+  destroyChart('storeTrend');
+  activeCharts['storeTrend']=new Chart(document.getElementById('chart-store-trend'),{
+    type:'bar',
+    data:{labels:d.trend.map(t=>t.label),datasets:[
+      {label:'점심',data:d.trend.map(t=>t.lunch),backgroundColor:'rgba(251,191,36,.8)',borderRadius:3,stack:'s'},
+      {label:'저녁',data:d.trend.map(t=>t.dinner),backgroundColor:'rgba(96,165,250,.8)',borderRadius:3,stack:'s'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+won(c.parsed.y)}}},
+      scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'₩'+(v/10000).toFixed(0)+'만'}}}}
+  });
+
+  // 순위
+  const sorted=[...stores].sort((a,b)=>storeData[b].total-storeData[a].total);
+  const maxT=Math.max(...stores.map(s=>storeData[s].total),1);
+  document.getElementById('store-rank').innerHTML=sorted.map((s,i)=>{
+    const sd=storeData[s]; const isMe=s===storeName;
+    return `<div class="rank-item" style="${isMe?'background:rgba(56,189,248,.06);border-radius:8px;padding:10px 8px;margin:-2px':''}">
+      <div class="rank-no" style="${isMe?'color:var(--accent)':''}">${i+1}</div>
+      <div class="rank-bar-wrap">
+        <div class="rank-name" style="${isMe?'color:var(--accent)':''}">
+          <span class="dot" style="background:${sd.color}"></span>${s}${isMe?' ★':''}</div>
+        <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${sd.total/maxT*100}%;background:${sd.color}"></div></div>
+      </div>
+      <div class="rank-amount" style="${isMe?'color:var(--accent)':''}">${sd.missing?'미수신':won(sd.total)}</div>
+      <div class="rank-pct">${sd.missing?'':pct(sd.total/summary.total*100)}</div>
+    </div>`;
+  }).join('');
+
+  // 비교 바
+  destroyChart('storeCompare');
+  activeCharts['storeCompare']=new Chart(document.getElementById('chart-store-compare'),{
+    type:'bar',indexAxis:'y',
+    data:{labels:sorted,datasets:[{label:'총매출',data:sorted.map(s=>storeData[s].total),
+      backgroundColor:sorted.map(s=>s===storeName?storeData[s].color:'rgba(148,163,184,.3)'),borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>won(c.parsed.x)}}},
+      scales:{x:{ticks:{callback:v=>'₩'+(v/10000).toFixed(0)+'만'}}}}
+  });
+
+  // ── 회전율 분석 ──────────────────────────────────
+  const tr=d.turnover||{};
+  const rate=tr.rate||0;
+  const maxRate=3.5;
+  const gaugeW=Math.min(rate/maxRate*100,100).toFixed(1);
+  const gaugeColor=rate>=2.5?'#4ade80':rate>=1.5?'#fbbf24':'#f87171';
+  
+  document.getElementById('store-turnover-kpis').innerHTML=[
+    kpiCard('테이블 수',tr.tables||'—','숫자 테이블 기준'),
+    kpiCard('총 방문팀',(tr.visits||'—')+'팀','당일 누계'),
+    kpiCard('평균 회전율',rate+'회',rate>=2.5?'🟢 우수':rate>=1.5?'🟡 보통':'🔴 미흡'),
+  ].join('');
+  document.getElementById('store-turnover-gauge').innerHTML=`
+    <div style="margin-bottom:6px;font-size:12px;color:var(--muted)">
+      회전율 게이지 <span style="float:right;color:${gaugeColor};font-weight:700">${rate}회 / 목표 2.5회</span>
+    </div>
+    <div class="turnover-gauge-track">
+      <div class="turnover-gauge-fill" style="width:${gaugeW}%;background:${gaugeColor}">
+        <span style="font-weight:700;font-size:14px;color:#0f172a;white-space:nowrap">${rate}회</span>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--muted)">
+      <span>0회</span><span>1.0회</span><span>2.0회</span><span>3.0회 (목표)</span><span>3.5회</span>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:var(--muted)">
+      테이블 ${tr.tables||0}개 기준 — 하루 ${tr.visits||0}팀 방문 (팀당 평균 ${tr.tables&&tr.visits?Math.round(tr.visits/tr.tables*10)/10:0}회 회전)
+    </div>`;
+
+  // 지점 시간별 매출
+  destroyChart('storeHourly');
+  const sHours=Object.keys(d.hourly||{}).map(Number).sort((a,b)=>a-b);
+  if(sHours.length){
+    const lHours=sHours.filter(h=>h<17); const dHours=sHours.filter(h=>h>=17);
+    activeCharts['storeHourly']=new Chart(document.getElementById('chart-store-hourly'),{
+      type:'bar',
+      data:{labels:sHours.map(h=>h+'시'),datasets:[
+        {label:'점심(~16시)',data:sHours.map(h=>h<17?(d.hourly[h]||0):0),
+         backgroundColor:'rgba(251,191,36,.85)',borderRadius:3,stack:'s'},
+        {label:'저녁(17시~)',data:sHours.map(h=>h>=17?(d.hourly[h]||0):0),
+         backgroundColor:'rgba(96,165,250,.85)',borderRadius:3,stack:'s'},
+      ]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+won(c.parsed.y)}}},
+        scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'₩'+(v/10000).toFixed(0)+'만'}}}}
+    });
+  } else {
+    document.getElementById('chart-store-hourly').parentElement.innerHTML=
+      '<div style="color:var(--muted);text-align:center;padding:40px">시간별 데이터 없음</div>';
+  }
+
+  // ── 메뉴 ──────────────────────────────────────────
+  const menu=d.menu||[];
+  const bySales=[...menu].sort((a,b)=>b.sales-a.sales).slice(0,10);
+  const byQty=[...menu].sort((a,b)=>b.qty-a.qty).slice(0,10);
+  destroyChart('menuSales');
+  activeCharts['menuSales']=new Chart(document.getElementById('chart-menu-sales'),{
+    type:'bar',indexAxis:'y',
+    data:{labels:bySales.map(m=>m.name),datasets:[
+      {label:'점심',data:bySales.map(m=>m.lunch),backgroundColor:'rgba(251,191,36,.85)',borderRadius:3,stack:'s'},
+      {label:'저녁',data:bySales.map(m=>m.dinner),backgroundColor:'rgba(96,165,250,.85)',borderRadius:3,stack:'s'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+won(c.parsed.x)}}},
+      scales:{x:{stacked:true,ticks:{callback:v=>'₩'+(v/1000).toFixed(0)+'천'}},y:{stacked:true}}}
+  });
+  destroyChart('menuQty');
+  activeCharts['menuQty']=new Chart(document.getElementById('chart-menu-qty'),{
+    type:'bar',indexAxis:'y',
+    data:{labels:byQty.map(m=>m.name),datasets:[{label:'판매량',data:byQty.map(m=>m.qty),backgroundColor:d.color+'cc',borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.x+'개'}}},
+      scales:{x:{ticks:{stepSize:1}}}}
+  });
+  const top5=bySales.slice(0,5);
+  destroyChart('menuLD');
+  activeCharts['menuLD']=new Chart(document.getElementById('chart-menu-ld'),{
+    type:'bar',
+    data:{labels:top5.map(m=>m.name),datasets:[
+      {label:'점심',data:top5.map(m=>m.lunch),backgroundColor:'rgba(251,191,36,.85)',borderRadius:3,stack:'s'},
+      {label:'저녁',data:top5.map(m=>m.dinner),backgroundColor:'rgba(96,165,250,.85)',borderRadius:3,stack:'s'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+won(c.parsed.y)}}},
+      scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'₩'+(v/1000).toFixed(0)+'천'}}}}
+  });
+  const totS=menu.reduce((s,m)=>s+m.sales,0)||1;
+  document.querySelector('#menu-table tbody').innerHTML=bySales.map((m,i)=>`
+    <tr style="${i%2?'background:rgba(255,255,255,.03)':''}">
+      <td style="font-weight:600">${m.name}</td>
+      <td style="text-align:right">${m.qty}개</td>
+      <td style="text-align:right;color:#e2e8f0">${won(m.sales)}</td>
+      <td style="text-align:right;color:#fbbf24">${won(m.lunch)}</td>
+      <td style="text-align:right;color:#60a5fa">${won(m.dinner)}</td>
+      <td style="text-align:right">
+        <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+          <div style="width:60px;height:6px;background:#1e293b;border-radius:3px;overflow:hidden">
+            <div style="width:${(m.sales/totS*100).toFixed(1)}%;height:100%;background:${d.color};border-radius:3px"></div>
+          </div>${(m.sales/totS*100).toFixed(1)}%
+        </div></td></tr>`).join('');
+}
+
+// ── 초기화 ────────────────────────────────────────
+initCal();
+</script>
+</body>
+</html>
