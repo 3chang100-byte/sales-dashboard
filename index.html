@@ -236,6 +236,77 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   #store-kpis { grid-template-columns: repeat(2,1fr) !important; }
 
 }
+
+/* ─── 모바일 반응형 (≤768px) ─── */
+@media (max-width: 768px) {
+  .header{padding:10px 14px}
+  .header h1{font-size:16px}
+  .header .sub{font-size:11px}
+  .view{padding:12px 12px}
+
+  /* 캘린더 컴팩트 */
+  .cal-nav{margin-bottom:14px}
+  .cal-nav h2{font-size:16px}
+  .cal-btn{padding:6px 10px;font-size:12px}
+  .cal-grid{gap:4px;margin-bottom:16px !important}
+  .cal-day{min-height:54px;padding:4px;border-radius:8px}
+  .cal-day .day-num{font-size:11px}
+  .cal-day .day-total{font-size:10px;margin-top:2px;line-height:1.2}
+  .cal-day .day-stores{gap:2px;margin-top:3px}
+  .cal-dot{width:5px;height:5px}
+  .cal-dow{font-size:10px;padding:4px 0}
+
+  /* 캘린더 KPI 요약 */
+  .cal-summary{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+  .cal-kpi{padding:10px}
+  .cal-kpi .label{font-size:10px}
+  .cal-kpi .value{font-size:14px}
+
+  /* 지점 탭 가로 스크롤 */
+  .nav-tabs{overflow-x:auto;flex-wrap:nowrap;margin-bottom:14px;
+    scrollbar-width:none;padding-bottom:4px}
+  .nav-tabs::-webkit-scrollbar{display:none}
+  .nav-tab{white-space:nowrap;flex-shrink:0;padding:6px 12px;font-size:12px}
+
+  /* 메인 KPI: 2열 */
+  .kpis{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+  .kpi-card{padding:10px}
+  .kpi-label{font-size:10px;margin-bottom:4px}
+  .kpi-value{font-size:16px}
+  .kpi-sub{font-size:10px}
+
+  /* 차트 1열 */
+  .charts-grid{grid-template-columns:1fr;gap:12px;margin-bottom:14px}
+  .chart-box{height:220px}
+  .chart-box.tall{height:240px}
+
+  /* 지점 카드 1열 */
+  .store-cards{grid-template-columns:1fr;gap:8px;margin-bottom:14px}
+  .store-card{padding:12px}
+  .store-card-name{margin-bottom:4px;font-size:12px}
+  .store-card-total{font-size:17px}
+  .store-card-detail{font-size:11px}
+
+  /* 카드 패딩 */
+  .card{padding:14px;border-radius:10px;margin-bottom:14px}
+  .card h2{font-size:13px;margin-bottom:12px}
+
+  /* 뒤로가기 버튼 */
+  .back-btn{padding:6px 10px;font-size:12px}
+}
+
+/* ─── 매우 좁은 화면 (≤420px) ─── */
+@media (max-width: 420px) {
+  .cal-day{min-height:46px;padding:3px}
+  .cal-day .day-num{font-size:10px}
+  .cal-day .day-total{font-size:9px}
+  .cal-dot{width:4px;height:4px}
+  .cal-dow{font-size:9px}
+  .kpi-value{font-size:14px}
+  .cal-nav h2{font-size:14px}
+  .header h1{font-size:14px}
+}
+
 </style>
 </head>
 <body>
