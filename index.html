@@ -502,6 +502,17 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-drill-name select:focus{outline:none;background-color:rgba(34,211,238,0.08)}
   .m-drill-name select option{background:#1e293b;color:var(--text)}
 
+
+  /* 지점 월간 누계 — 지점 선택 select */
+  .m-sm-name select{background:transparent;border:none;color:var(--text);
+    font-size:18px;font-weight:600;font-family:inherit;cursor:pointer;
+    padding:2px 6px;border-radius:6px;-webkit-appearance:none;appearance:none;
+    padding-right:22px;background-image:linear-gradient(45deg,transparent 50%,#94a3b8 50%),linear-gradient(135deg,#94a3b8 50%,transparent 50%);
+    background-position:calc(100% - 12px) 50%, calc(100% - 7px) 50%;
+    background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  .m-sm-name select:focus{outline:none;background-color:rgba(34,211,238,0.08)}
+  .m-sm-name select option{background:#1e293b;color:var(--text)}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -1829,6 +1840,12 @@ function mobileShowStoreMonth(storeName){
   window.scrollTo(0, 0);
 }
 
+function mobileSwitchStoreMonth(newStore){
+  if(!newStore) return;
+  mobileSmStore = newStore;
+  renderMobileStoreMonth();  // mobileSmMonth는 그대로 유지
+}
+
 function mobileBackToSummary(){
   document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
   document.getElementById('m-main').classList.add('active');
@@ -1885,8 +1902,21 @@ function renderMobileStoreMonth(){
   // Hero
   const avg = agg.days ? Math.round(agg.total / agg.days) : 0;
   const ticket = agg.guests ? Math.round(agg.total / agg.guests) : 0;
+  // 모든 지점 옵션 (현재 월 데이터 유무와 상관없이 표시 — 데이터 없으면 0으로)
+  const allStores = (() => {
+    for(const d of Object.keys(ALL_DATA)){
+      if(ALL_DATA[d]?.stores) return ALL_DATA[d].stores;
+    }
+    return [];
+  })();
+  const storeOptions = allStores.map(name =>
+    `<option value="${name}" ${name === s ? 'selected' : ''}>${name}</option>`
+  ).join('');
   document.getElementById('m-sm-hero').innerHTML = `
-    <div class="m-sm-name"><span class="m-dot" style="background:${agg.color}"></span>${s}</div>
+    <div class="m-sm-name">
+      <span class="m-dot" style="background:${agg.color}"></span>
+      <select onchange="mobileSwitchStoreMonth(this.value)">${storeOptions}</select>
+    </div>
     <div class="m-sm-total">${won(agg.total)}</div>
     <div class="m-sm-meta">${monthLabel} · 영업 ${agg.days}일 · 일평균 ${won(avg)}</div>
   `;
