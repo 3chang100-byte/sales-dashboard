@@ -405,8 +405,8 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-cal-day .num.sun{color:#f87171}
   .m-cal-day .num.sat{color:#93c5fd}
   .m-cal-day .num.dim{color:#475569}
-  .m-cal-day .total{font-size:9px;font-weight:700;color:#22d3ee;line-height:1;
-    letter-spacing:-.3px}
+  .m-cal-day .total{font-size:8.5px;font-weight:700;color:#22d3ee;line-height:1;
+    letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:clip}
   .m-cal-day .dots{display:flex;gap:1.5px;flex-wrap:wrap}
   .m-cal-day .ddot{width:3px;height:3px;border-radius:50%}
 
@@ -1994,8 +1994,10 @@ function renderStoreCalendar(storeName, monthStr){
     let classes = 'm-cal-day' + (hasData ? ' has' : ' no-data') + (isToday ? ' today' : '');
     let cellInner = `<span class="num ${hasData ? numCls : 'dim'}">${d}</span>`;
     if(hasData){
-      const totalK = sd.total / 1000000;
-      const totalLabel = totalK >= 10 ? totalK.toFixed(0) + 'M' : totalK >= 1 ? totalK.toFixed(1) + 'M' : Math.round(totalK*1000) + 'k';
+      const total = sd.total;
+      const totalLabel = total >= 1e8 ? (total/1e8).toFixed(1) + '억'
+        : total >= 1e4 ? Math.round(total/1e4).toLocaleString() + '만'
+        : Math.round(total).toLocaleString();
       cellInner += `<span class="total" style="color:${storeColor}">${totalLabel}</span>`;
       cellInner += `<div class="dots"><span class="ddot" style="background:${storeColor}"></span></div>`;
     }
@@ -2041,8 +2043,10 @@ function mobileRenderCalendar(){
 
     let cellInner = `<span class="num ${hasData ? numCls : 'dim'}">${d}</span>`;
     if(hasData){
-      const totalK = (D.summary.total || 0) / 1000000;
-      const totalLabel = totalK >= 10 ? totalK.toFixed(0) + 'M' : totalK >= 1 ? totalK.toFixed(1) + 'M' : Math.round(totalK*1000) + 'k';
+      const total = D.summary.total || 0;
+      const totalLabel = total >= 1e8 ? (total/1e8).toFixed(1) + '억'
+        : total >= 1e4 ? Math.round(total/1e4).toLocaleString() + '만'
+        : Math.round(total).toLocaleString();
       cellInner += `<span class="total">${totalLabel}</span>`;
       // 매장 도트
       const dots = D.stores.filter(s => !D.storeData[s].missing)
