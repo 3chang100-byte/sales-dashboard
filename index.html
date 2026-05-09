@@ -2101,7 +2101,8 @@ function mobileTab(tab){
   } else if(tab === 'analysis'){
     document.getElementById('m-analysis').classList.add('active');
     renderMobileAnalysis();
-    renderMobileAnTrend();
+    // 캔버스 layout 안정화 후 차트 그리기 (모바일 화면 전환 직후 0×0 방지)
+    setTimeout(() => renderMobileAnTrend(), 80);
   } else if(tab === 'cost'){
     document.getElementById('m-cost').classList.add('active');
   } else if(tab === 'settings'){
@@ -2514,7 +2515,7 @@ function mobileSetAnPeriod(days){
   mobileAnPeriod = days;
   document.querySelectorAll('#m-an-period-tabs .m-period-tab').forEach(b =>
     b.classList.toggle('active', parseInt(b.dataset.period) === days));
-  renderMobileAnTrend();
+  setTimeout(() => renderMobileAnTrend(), 30);
 }
 
 function renderMobileAnTrend(){
@@ -2548,6 +2549,11 @@ function renderMobileAnTrend(){
   }));
 
   if(mobileAnTrendChart){ mobileAnTrendChart.destroy(); }
+  // 디버그: 첫째/마지막 데이터 로그 (콘솔에서 누적인지 확인 가능)
+  if(datasets.length > 0){
+    const first = datasets[0];
+    console.log('[누적차트]', first.label, 'first:', first.data[0], 'last:', first.data[first.data.length - 1], 'period:', mobileAnPeriod);
+  }
   const ctx = document.getElementById('m-an-trend-canvas').getContext('2d');
   mobileAnTrendChart = new Chart(ctx, {
     type: 'line',
