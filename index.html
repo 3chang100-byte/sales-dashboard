@@ -2114,116 +2114,6 @@ function mobileTab(tab){
 }
 
 
-// ── 추세 탭 ──
-let mobilePeriod = 30;
-let mobileTrendChart = null;
-
-function mobileSetPeriod(days){
-  mobilePeriod = days;
-  document.querySelectorAll('.m-period-tab').forEach(b => b.classList.toggle('active', parseInt(b.dataset.period) === days));
-  renderMobileTrend();
-}
-
-function renderMobileTrend(){
-  const dates = Object.keys(ALL_DATA).sort();
-  const recent = dates.slice(-mobilePeriod);
-  if(recent.length === 0) return;
-
-  const stores = ALL_DATA[recent[recent.length - 1]].stores;
-  const colors = {};
-  stores.forEach(s => { colors[s] = ALL_DATA[recent[recent.length - 1]].storeData[s].color; });
-
-  const labels = recent.map(d => {
-    const dt = new Date(d + 'T00:00:00');
-    return (dt.getMonth() + 1) + '/' + dt.getDate();
-  });
-
-  const datasets = stores.map(s => {
-    let runningSum = 0;
-    const cumData = recent.map(d => {
-      const sd = ALL_DATA[d]?.storeData?.[s];
-      if(sd && !sd.missing && sd.total) runningSum += sd.total;
-      return runningSum;
-    });
-    return {
-      label: s,
-      data: cumData,
-      borderColor: colors[s],
-      backgroundColor: colors[s] + '20',
-      borderWidth: 1.8,
-      tension: 0.25,
-      pointRadius: 0,
-      pointHoverRadius: 4,
-      spanGaps: false,
-    };
-  });
-
-  // Trend summary (전체 합계)
-  let totalSum = 0, dayCount = 0, peakDate = '', peakVal = 0;
-  recent.forEach(d => {
-    const t = ALL_DATA[d]?.summary?.total || 0;
-    if(t > 0){
-      totalSum += t;
-      dayCount++;
-      if(t > peakVal){ peakVal = t; peakDate = d; }
-    }
-  });
-  const avgDay = dayCount ? Math.round(totalSum / dayCount) : 0;
-  document.getElementById('m-trend-summary').innerHTML = `
-    <div><div>합계</div><div class="v">${won(totalSum)}</div></div>
-    <div><div>일평균</div><div class="v">${won(avgDay)}</div></div>
-    <div><div>최고일</div><div class="v">${peakDate.slice(5)} ${won(peakVal)}</div></div>
-  `;
-
-  // Chart.js
-  if(mobileTrendChart){ mobileTrendChart.destroy(); }
-  const ctx = document.getElementById('m-trend-canvas').getContext('2d');
-  mobileTrendChart = new Chart(ctx, {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', font: { size: 9 }, boxWidth: 8, boxHeight: 8, padding: 6 } },
-        tooltip: { mode: 'index', intersect: false }
-      },
-      scales: {
-        x: { ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 6 }, grid: { display: false } },
-        y: { ticks: { color: '#94a3b8', font: { size: 9 }, callback: v => (v >= 1e6 ? (v/1e6).toFixed(1) + 'M' : v >= 1e3 ? (v/1e3).toFixed(0) + 'k' : v) }, grid: { color: 'rgba(148,163,184,0.1)' } }
-      }
-    }
-  });
-
-  // 요일별 평균 매출
-  const dowSums = [0,0,0,0,0,0,0]; // 일~토
-  const dowCnts = [0,0,0,0,0,0,0];
-  recent.forEach(d => {
-    const t = ALL_DATA[d]?.summary?.total || 0;
-    if(t > 0){
-      const dow = new Date(d + 'T00:00:00').getDay();
-      dowSums[dow] += t;
-      dowCnts[dow] += 1;
-    }
-  });
-  const dowAvgs = dowSums.map((s, i) => dowCnts[i] ? Math.round(s / dowCnts[i]) : 0);
-  const maxDowAvg = Math.max(...dowAvgs, 1);
-  const dowLabels = ['일','월','화','수','목','금','토'];
-  const dowColors = ['#f87171', '#94a3b8', '#94a3b8', '#94a3b8', '#94a3b8', '#fbbf24', '#93c5fd'];
-  let dowHtml = '';
-  for(let i = 1; i <= 7; i++){
-    const idx = i % 7; // 월~일 순서로
-    const cls = idx === 0 ? 'sun' : (idx === 6 ? 'sat' : '');
-    const w = (dowAvgs[idx] / maxDowAvg) * 100;
-    dowHtml += `<div class="m-dow-row">
-      <span class="dow ${cls}">${dowLabels[idx]}</span>
-      <div class="barwrap"><div style="background:${dowColors[idx]};width:${w}%"></div></div>
-      <span class="v">${won(dowAvgs[idx])}</span>
-    </div>`;
-  }
-  document.getElementById('m-dow-table').innerHTML = dowHtml;
-}
-
 // ── 분석 탭 ──
 let mobileAnMonth = null;
 
@@ -2548,11 +2438,12 @@ function renderMobileAnTrend(){
     spanGaps: true,
   }));
 
+  window.__renderCallCount = (window.__renderCallCount || 0) + 1;
   if(mobileAnTrendChart){ mobileAnTrendChart.destroy(); }
-  // 디버그: 첫째/마지막 데이터 로그 (콘솔에서 누적인지 확인 가능)
   if(datasets.length > 0){
     const first = datasets[0];
-    console.log('[누적차트]', first.label, 'first:', first.data[0], 'last:', first.data[first.data.length - 1], 'period:', mobileAnPeriod);
+    const isAccum = first.data[first.data.length - 1] !== null && first.data[first.data.length - 1] >= first.data[0];
+    console.log('[CUMv2 #'+window.__renderCallCount+']', first.label, 'first:', first.data[0], 'last:', first.data[first.data.length-1], '누적여부:', isAccum, 'period:', mobileAnPeriod);
   }
   const ctx = document.getElementById('m-an-trend-canvas').getContext('2d');
   mobileAnTrendChart = new Chart(ctx, {
