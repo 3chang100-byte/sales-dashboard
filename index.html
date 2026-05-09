@@ -3107,8 +3107,9 @@ function renderMobileCost(){
   })();
   if(!mobileCostStore && allStores.length > 0) mobileCostStore = allStores[0];
 
-  // 지점 드롭다운 (공용 + 5개 지점)
-  const storeOptHtml = `<option value="공용" ${mobileCostStore === '공용' ? 'selected' : ''}>📦 공용지출 (전 지점 분배)</option>` +
+  // 지점 드롭다운 (전체 + 공용 + 5개 지점)
+  const storeOptHtml = `<option value="전체" ${mobileCostStore === '전체' ? 'selected' : ''}>🏢 전체 매장 (합계)</option>` +
+    `<option value="공용" ${mobileCostStore === '공용' ? 'selected' : ''}>📦 공용지출 (전 지점 분배)</option>` +
     allStores.map(s => `<option value="${s}" ${s === mobileCostStore ? 'selected' : ''}>${s}</option>`).join('');
   document.getElementById('m-cost-store-select').innerHTML = `
     <select onchange="onCostStoreChange(this.value)">${storeOptHtml}</select>
@@ -3116,23 +3117,61 @@ function renderMobileCost(){
 
   // 폼 헤더
   const formLabel = mobileCostStore === '공용' ? '공용지출 (본사·공통) · 고정비 항목별 입력' : `${mobileCostStore} 직접 고정비 항목별 입력`;
-  document.getElementById('m-cost-form-h').textContent = formLabel;
+  if(mobileCostStore === '전체'){
+    document.getElementById('m-cost-form-h').textContent = '항목별 합계';
+  } else {
+    document.getElementById('m-cost-form-h').textContent = `${mobileCostStore} · 고정비 내역 (설정 탭에서 입력)`;
+  }
 
   const data = loadCostData(mobileCostStore);
 
-  // 항목 표시 (보기 모드 — 입력은 설정 탭에서)
-  const items = getCostItems(mobileCostStore);
+  // 항목 표시 (보기 모드)
   let formHtml = '';
-  items.forEach(item => {
-    const v = data[item.key] || 0;
-    const display = v ? Number(v).toLocaleString() + ' 원' : '미입력';
-    formHtml += `
-      <div class="m-cost-row readonly">
-        <div class="icon">${item.icon}</div>
-        <div class="name">${item.key}</div>
-        <div class="v">${display}</div>
-      </div>`;
-  });
+  if(mobileCostStore === '전체'){
+    // 전체 모드: 모든 항목(지점별 + 공용)의 합계
+    // 지점별 항목 합계
+    const storeItemTotals = {};
+    COST_ITEMS_BY_STORE.forEach(item => { storeItemTotals[item.key] = 0; });
+    allStores.forEach(s => {
+      const sd = loadCostData(s);
+      COST_ITEMS_BY_STORE.forEach(item => {
+        storeItemTotals[item.key] += sd[item.key] || 0;
+      });
+    });
+    COST_ITEMS_BY_STORE.forEach(item => {
+      const v = storeItemTotals[item.key];
+      formHtml += `
+        <div class="m-cost-row readonly">
+          <div class="icon">${item.icon}</div>
+          <div class="name">${item.key} (전 지점 합)</div>
+          <div class="v">${v ? Number(v).toLocaleString() + ' 원' : '미입력'}</div>
+        </div>`;
+    });
+    // 공용 항목
+    const sharedD = loadCostData('공용');
+    COST_ITEMS_SHARED.forEach(item => {
+      const v = sharedD[item.key] || 0;
+      formHtml += `
+        <div class="m-cost-row readonly">
+          <div class="icon">${item.icon}</div>
+          <div class="name">${item.key} (공용)</div>
+          <div class="v">${v ? Number(v).toLocaleString() + ' 원' : '미입력'}</div>
+        </div>`;
+    });
+  } else {
+    // 단일 지점 또는 공용 모드
+    const items = getCostItems(mobileCostStore);
+    items.forEach(item => {
+      const v = data[item.key] || 0;
+      const display = v ? Number(v).toLocaleString() + ' 원' : '미입력';
+      formHtml += `
+        <div class="m-cost-row readonly">
+          <div class="icon">${item.icon}</div>
+          <div class="name">${item.key}</div>
+          <div class="v">${display}</div>
+        </div>`;
+    });
+  }
   document.getElementById('m-cost-form').innerHTML = formHtml;
 
   renderMobileCostSummary();
@@ -3170,8 +3209,43 @@ function renderMobileCostSummary(){
   const dataSelected = loadCostData(selectedStore);
   const directFixed = getCostItems(selectedStore).reduce((sum, item) => sum + (dataSelected[item.key] || 0), 0);
 
-  // 선택이 공용인 경우: 공용 자체만 표시
-  if(selectedStore === '공용'){
+  // 전체 모드 — 전 지점 합계
+  if(selectedStore === '전체'){
+    let allDirect = 0;
+    Object.keys(storeAgg).forEach(s => {
+      const sd = loadCostData(s);
+      allDirect += COST_ITEMS_BY_STORE.reduce((sum, item) => sum + (sd[item.key] || 0), 0);
+    });
+    const totalFixed = allDirect + sharedTotal;
+    const profit = salesAll - totalFixed;
+    const fixedPct = salesAll ? (totalFixed / salesAll * 100).toFixed(1) : '0.0';
+    const profitPct = salesAll ? (profit / salesAll * 100).toFixed(1) : '0.0';
+
+    document.getElementById('m-cost-summary').innerHTML = `
+      <div class="row">
+        <span class="lbl">전 지점 월 매출</span>
+        <span class="v">${won(salesAll)}</span>
+      </div>
+      <div class="row fixed">
+        <span class="lbl">지점 직접 고정비 합</span>
+        <span class="v" style="font-size:15px">${won(allDirect)}</span>
+      </div>
+      <div class="row fixed">
+        <span class="lbl">공용지출 고정비</span>
+        <span class="v" style="font-size:15px">${won(sharedTotal)}</span>
+      </div>
+      <div class="row fixed">
+        <span class="lbl">총 고정비</span>
+        <span class="v">${won(totalFixed)}<span class="pct">${fixedPct}%</span></span>
+      </div>
+      <div class="divider"></div>
+      <div class="row profit ${profit < 0 ? 'loss' : ''}">
+        <span class="lbl">전 지점 손익</span>
+        <span class="v">${profit >= 0 ? '+' : '-'}${won(Math.abs(profit))}<span class="pct">${profitPct}%</span></span>
+      </div>
+    `;
+    // 하단 지점별 합산은 그대로
+  } else if(selectedStore === '공용'){
     document.getElementById('m-cost-summary').innerHTML = `
       <div class="row">
         <span class="lbl">전 지점 월 매출</span>
