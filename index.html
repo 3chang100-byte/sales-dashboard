@@ -237,67 +237,6 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
 
 }
 
-/* ─── 모바일 반응형 (≤768px) ─── */
-@media (max-width: 768px) {
-  .header{padding:10px 14px}
-  .header h1{font-size:16px}
-  .header .sub{font-size:11px}
-  .view{padding:12px 12px}
-
-  /* 캘린더 컴팩트 */
-  .cal-nav{margin-bottom:14px}
-  .cal-nav h2{font-size:16px}
-  .cal-btn{padding:6px 10px;font-size:12px}
-  .cal-grid{gap:4px;margin-bottom:16px !important}
-  .cal-day{min-height:54px;padding:4px;border-radius:8px}
-  .cal-day .day-num{font-size:11px}
-  .cal-day .day-total{font-size:10px;margin-top:2px;line-height:1.2}
-  .cal-day .day-stores{gap:2px;margin-top:3px}
-  .cal-dot{width:5px;height:5px}
-  .cal-dow{font-size:10px;padding:4px 0}
-
-  /* 캘린더 KPI 요약 */
-  .cal-summary{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
-  .cal-kpi{padding:10px}
-  .cal-kpi .label{font-size:10px}
-  .cal-kpi .value{font-size:14px}
-
-  /* 지점 탭 가로 스크롤 */
-  .nav-tabs{overflow-x:auto;flex-wrap:nowrap;margin-bottom:14px;
-    scrollbar-width:none;padding-bottom:4px}
-  .nav-tabs::-webkit-scrollbar{display:none}
-  .nav-tab{white-space:nowrap;flex-shrink:0;padding:6px 12px;font-size:12px}
-
-  /* 메인 KPI: 2열 */
-  .kpis{grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
-  .kpi-card{padding:10px}
-  .kpi-label{font-size:10px;margin-bottom:4px}
-  .kpi-value{font-size:16px}
-  .kpi-sub{font-size:10px}
-
-  /* 차트 1열 */
-  .charts-grid{grid-template-columns:1fr;gap:12px;margin-bottom:14px}
-  .chart-box{height:220px}
-  .chart-box.tall{height:240px}
-
-  /* 지점 카드 1열 */
-  .store-cards{grid-template-columns:1fr;gap:8px;margin-bottom:14px}
-  .store-card{padding:12px}
-  .store-card-name{margin-bottom:4px;font-size:12px}
-  .store-card-total{font-size:17px}
-  .store-card-detail{font-size:11px}
-
-  /* 카드 패딩 */
-  .card{padding:14px;border-radius:10px;margin-bottom:14px}
-  .card h2{font-size:13px;margin-bottom:12px}
-
-  /* 뒤로가기 버튼 */
-  .back-btn{padding:6px 10px;font-size:12px}
-}
-
-/* ─── 매우 좁은 화면 (≤420px) ─── */
-@media (max-width: 420px) {
-  .cal-day{min-height:46px;padding:3px}
   .cal-day .day-num{font-size:10px}
   .cal-day .day-total{font-size:9px}
   .cal-dot{width:4px;height:4px}
@@ -307,9 +246,170 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .header h1{font-size:14px}
 }
 
+
+/* ═════════════════════════════════════════════════════════════ */
+/* 모바일 전용 디자인 (≤768px) — desktop 뷰는 숨기고 mobile-app 표시 */
+/* ═════════════════════════════════════════════════════════════ */
+.mobile-app{display:none}
+
+@media (max-width: 768px){
+  body > .header, body > .view{display:none !important}
+  .mobile-app{display:block;background:var(--bg);min-height:100vh;padding-bottom:80px}
+
+  /* 상단 앱바 */
+  .m-appbar{padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:flex-end;
+    position:sticky;top:0;background:var(--bg);z-index:10}
+  .m-appbar-title{font-size:11px;color:var(--muted);margin-bottom:2px}
+  .m-appbar h1{font-size:20px;font-weight:700;color:var(--accent)}
+  .m-reload{width:34px;height:34px;border-radius:50%;background:var(--card);border:1px solid var(--border);
+    color:var(--text);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+
+  /* 날짜 가로 스크롤 칩 */
+  .m-datestrip{display:flex;gap:8px;padding:0 16px 14px;overflow-x:auto;scrollbar-width:none}
+  .m-datestrip::-webkit-scrollbar{display:none}
+  .m-dpill{flex:0 0 auto;min-width:50px;padding:8px 4px;border-radius:14px;text-align:center;
+    background:var(--card);border:1px solid var(--border);cursor:pointer;transition:.15s}
+  .m-dpill.active{background:var(--text);color:var(--bg);border-color:transparent}
+  .m-dpill .w{font-size:10px;opacity:.7;margin-bottom:2px}
+  .m-dpill .d{font-size:14px;font-weight:600}
+
+  /* Hero KPI */
+  .m-hero{margin:0 16px 12px;padding:16px;border-radius:14px;background:var(--card);
+    border:1px solid var(--border)}
+  .m-hero-label{font-size:12px;color:var(--muted);margin-bottom:6px}
+  .m-hero-val{font-size:28px;font-weight:700;color:var(--text)}
+  .m-hero-delta{font-size:11px;margin-top:4px}
+  .m-hero-delta.up{color:#4ade80}
+  .m-hero-delta.down{color:#f87171}
+
+  /* 보조 KPI */
+  .m-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px 16px}
+  .m-mini{padding:12px;border-radius:10px;background:var(--card);border:1px solid var(--border)}
+  .m-mini .lbl{font-size:11px;color:var(--muted);margin-bottom:4px}
+  .m-mini .val{font-size:18px;font-weight:600;color:var(--text)}
+  .m-mini .suf{font-size:11px;color:var(--muted);font-weight:400}
+
+  /* 섹션 헤더 */
+  .m-section{font-size:11px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--muted);margin:14px 16px 8px}
+
+  /* 지점 카드 리스트 */
+  .m-store-list{padding:0 12px 16px;display:flex;flex-direction:column;gap:6px}
+  .m-scard{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;
+    padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--card);
+    cursor:pointer;transition:.15s}
+  .m-scard:active{background:#27374a}
+  .m-scard.missing{opacity:.4}
+  .m-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .m-scard-body .name{font-size:14px;font-weight:600;color:var(--text)}
+  .m-scard-body .meta{font-size:11px;color:var(--muted);margin-top:2px}
+  .m-bar{height:4px;border-radius:2px;background:#0f172a;margin-top:6px;overflow:hidden;display:flex}
+  .m-bar > div{height:100%}
+  .m-scard-total{text-align:right}
+  .m-scard-total .v{font-size:14px;font-weight:700;color:var(--text)}
+  .m-scard-total .d{font-size:10px;margin-top:2px}
+  .m-scard-total .d.up{color:#4ade80}
+  .m-scard-total .d.down{color:#f87171}
+
+  /* 화면 전환 */
+  .m-screen{display:none}
+  .m-screen.active{display:block}
+
+  /* 드릴다운 */
+  .m-back{padding:12px 16px;font-size:13px;color:var(--muted);cursor:pointer}
+  .m-drill-hero{padding:0 16px 14px}
+  .m-drill-name{font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px;color:var(--text)}
+  .m-drill-name .m-dot{width:12px;height:12px}
+  .m-drill-total{font-size:28px;font-weight:700;margin-top:4px;color:var(--text)}
+  .m-drill-meta{font-size:12px;color:var(--muted);margin-top:4px}
+
+  .m-split-bar{display:flex;height:32px;border-radius:8px;overflow:hidden;margin:12px 16px 6px;
+    font-size:11px;font-weight:600}
+  .m-split-bar > div{display:flex;align-items:center;justify-content:center;color:#fff}
+  .m-split-legend{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);
+    padding:0 16px 16px}
+
+  .m-hourly{padding:0 16px 16px}
+  .m-hourly svg{width:100%;display:block}
+
+  .m-menu-list{padding:0 16px 16px;display:flex;flex-direction:column}
+  .m-menu-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;
+    font-size:13px;padding:8px 0;border-bottom:1px solid var(--border);color:var(--text)}
+  .m-menu-row:last-child{border:none}
+  .m-menu-row .qty{font-size:11px;color:var(--muted)}
+  .m-menu-row .price{font-weight:600;text-align:right;min-width:80px}
+
+  .m-empty{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+
+  /* 하단 탭바 */
+  .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
+    padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
+  .m-tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;
+    color:var(--muted);flex:1;cursor:pointer}
+  .m-tab.active{color:var(--accent)}
+  .m-tab svg{width:18px;height:18px}
+}
+
 </style>
 </head>
 <body>
+<!-- ═══ 모바일 전용 뷰 ═══ -->
+<div class="mobile-app" id="mobile-app">
+
+  <!-- 메인 화면 -->
+  <div class="m-screen active" id="m-main">
+    <div class="m-appbar">
+      <div>
+        <div class="m-appbar-title">삼창수산 & 장어만세</div>
+        <h1>매출 대시보드</h1>
+      </div>
+      <button class="m-reload" onclick="location.reload()" title="새로고침">⟳</button>
+    </div>
+
+    <div class="m-datestrip" id="m-datestrip"></div>
+
+    <div class="m-hero" id="m-hero"></div>
+
+    <div class="m-kpis" id="m-kpis"></div>
+
+    <div class="m-section">지점별 매출 (탭하여 상세)</div>
+    <div class="m-store-list" id="m-store-list"></div>
+  </div>
+
+  <!-- 드릴다운 화면 -->
+  <div class="m-screen" id="m-drill">
+    <div class="m-back" onclick="mobileBack()" id="m-drill-back">‹ 뒤로</div>
+    <div class="m-drill-hero" id="m-drill-hero"></div>
+    <div id="m-split-wrap"></div>
+    <div class="m-section">시간대별 매출</div>
+    <div class="m-hourly" id="m-hourly"></div>
+    <div class="m-section">메뉴 TOP</div>
+    <div class="m-menu-list" id="m-menu"></div>
+  </div>
+
+  <!-- 하단 탭바 -->
+  <div class="m-tabbar">
+    <div class="m-tab active" onclick="mobileTab('summary')" data-tab="summary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span>요약</span>
+    </div>
+    <div class="m-tab" onclick="mobileTab('trend')" data-tab="trend">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,17 9,11 13,15 21,7"/></svg>
+      <span>추세</span>
+    </div>
+    <div class="m-tab" onclick="mobileTab('calendar')" data-tab="calendar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>달력</span>
+    </div>
+    <div class="m-tab" onclick="mobileTab('settings')" data-tab="settings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>설정</span>
+    </div>
+  </div>
+
+</div>
+<!-- ═══ /모바일 ═══ -->
+
 <div class="header">
   <h1>🐟 장어만세 매출 대시보드</h1>
   <div class="sub" id="header-sub">날짜를 선택하세요</div>
@@ -1180,6 +1280,224 @@ function renderStore(storeName) {
 
 // ── 초기화 ────────────────────────────────────────
 initCal();
+
+// ═══════════════════════════════════════════════════════════════
+// 모바일 전용 렌더링 (≤768px에서만 활성)
+// ═══════════════════════════════════════════════════════════════
+let mobileCurrentDate = null;
+const KOR_DOW = ['일','월','화','수','목','금','토'];
+
+function renderMobile(date){
+  const D = ALL_DATA[date];
+  if(!D){ console.warn('mobile: no data for', date); return; }
+  mobileCurrentDate = date;
+
+  // 1) 날짜 가로 스크롤 칩
+  const allDates = Object.keys(ALL_DATA).sort();
+  const recentDates = allDates.slice(-14); // 최근 14일까지
+  document.getElementById('m-datestrip').innerHTML = recentDates.map(d => {
+    const dt = new Date(d + 'T00:00:00');
+    const dow = KOR_DOW[dt.getDay()];
+    const day = dt.getDate();
+    const isActive = d === date;
+    return `<div class="m-dpill ${isActive?'active':''}" onclick="mobileSetDate('${d}')">
+      <div class="w">${dow}</div><div class="d">${day}</div>
+    </div>`;
+  }).join('');
+
+  // 2) Hero KPI
+  const total = D.summary.total || 0;
+  const prevTotal = D.summary.prevTotal || 0;
+  const delta = prevTotal ? ((total - prevTotal) / prevTotal * 100) : 0;
+  const deltaSign = delta >= 0 ? '▲' : '▼';
+  const deltaCls = delta >= 0 ? 'up' : 'down';
+  document.getElementById('m-hero').innerHTML = `
+    <div class="m-hero-label">전체 매출 · ${D.dateDisp || date}</div>
+    <div class="m-hero-val">${won(total)}</div>
+    <div class="m-hero-delta ${deltaCls}">${deltaSign} 전일 대비 ${Math.abs(delta).toFixed(1)}%</div>
+  `;
+
+  // 3) 보조 KPI
+  document.getElementById('m-kpis').innerHTML = `
+    <div class="m-mini">
+      <div class="lbl">총 객수</div>
+      <div class="val">${D.summary.guests || 0}<span class="suf"> 명</span></div>
+    </div>
+    <div class="m-mini">
+      <div class="lbl">점심 비중</div>
+      <div class="val">${(D.summary.lunchPct || 0).toFixed(1)}<span class="suf">%</span></div>
+    </div>
+  `;
+
+  // 4) 지점 카드 리스트
+  const storeListHTML = D.stores.map(s => {
+    const sd = D.storeData[s];
+    if(sd.missing){
+      return `<div class="m-scard missing">
+        <span class="m-dot" style="background:${sd.color||'#666'}"></span>
+        <div class="m-scard-body">
+          <div class="name">${s}</div>
+          <div class="meta">데이터 없음</div>
+        </div>
+        <div class="m-scard-total"><div class="v">—</div></div>
+      </div>`;
+    }
+    const lp = sd.lunch_pct || 0;
+    const dp = 100 - lp;
+    const sPrev = sd.prev_total || 0;
+    const sDelta = sPrev ? ((sd.total - sPrev) / sPrev * 100) : 0;
+    const sDeltaCls = sDelta >= 0 ? 'up' : 'down';
+    const sDeltaSign = sDelta >= 0 ? '▲' : '▼';
+    return `
+      <div class="m-scard" onclick="mobileShowStore('${date}','${s}')">
+        <span class="m-dot" style="background:${sd.color}"></span>
+        <div class="m-scard-body">
+          <div class="name">${s}</div>
+          <div class="meta">${sd.guests}명 · 점심 ${lp.toFixed(0)}% · 저녁 ${dp.toFixed(0)}%</div>
+          <div class="m-bar">
+            <div style="background:#fbbf24;width:${lp}%"></div>
+            <div style="background:${sd.color};width:${dp}%"></div>
+          </div>
+        </div>
+        <div class="m-scard-total">
+          <div class="v">${won(sd.total)}</div>
+          ${sPrev ? `<div class="d ${sDeltaCls}">${sDeltaSign} ${Math.abs(sDelta).toFixed(0)}%</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('m-store-list').innerHTML = storeListHTML;
+}
+
+function mobileSetDate(date){
+  renderMobile(date);
+}
+
+function mobileShowStore(date, storeName){
+  const D = ALL_DATA[date];
+  const sd = D.storeData[storeName];
+  if(!sd || sd.missing) return;
+
+  // back 버튼
+  document.getElementById('m-drill-back').textContent = `‹ ${D.dateDisp || date}`;
+
+  // 헤더
+  document.getElementById('m-drill-hero').innerHTML = `
+    <div class="m-drill-name">
+      <span class="m-dot" style="background:${sd.color}"></span>${storeName}
+    </div>
+    <div class="m-drill-total">${won(sd.total)}</div>
+    <div class="m-drill-meta">
+      영수 ${sd.turnover?.visits || sd.guests || 0}건 · 객수 ${sd.guests}명 · 객단가 ${won(sd.ticket || 0)}
+    </div>
+  `;
+
+  // 점심/저녁 split bar
+  const lp = sd.lunch_pct || 0;
+  const dp = 100 - lp;
+  document.getElementById('m-split-wrap').innerHTML = `
+    <div class="m-split-bar">
+      ${lp >= 8 ? `<div style="background:#fbbf24;width:${lp}%">점심 ${lp.toFixed(0)}%</div>` : `<div style="background:#fbbf24;width:${lp}%"></div>`}
+      <div style="background:${sd.color};width:${dp}%">저녁 ${dp.toFixed(0)}%</div>
+    </div>
+    <div class="m-split-legend">
+      <span><span style="display:inline-block;width:8px;height:8px;background:#fbbf24;border-radius:2px;margin-right:4px;vertical-align:middle"></span>점심 ${won(sd.lunch)} · ${sd.lunch_guests || 0}명</span>
+      <span>저녁 ${won(sd.dinner)} · ${sd.dinner_guests || 0}명</span>
+    </div>
+  `;
+
+  // 시간별 차트
+  renderMobileHourly(sd);
+
+  // 메뉴 TOP
+  const menuArr = sd.menu || [];
+  if(menuArr.length === 0){
+    document.getElementById('m-menu').innerHTML = '<div class="m-empty">메뉴 데이터 없음</div>';
+  } else {
+    document.getElementById('m-menu').innerHTML = menuArr.slice(0, 8).map(m => `
+      <div class="m-menu-row">
+        <span>${m.name}</span>
+        <span class="qty">${m.qty}</span>
+        <span class="price">${won(m.sales)}</span>
+      </div>
+    `).join('');
+  }
+
+  // 화면 전환
+  document.getElementById('m-main').classList.remove('active');
+  document.getElementById('m-drill').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function mobileBack(){
+  document.getElementById('m-drill').classList.remove('active');
+  document.getElementById('m-main').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function renderMobileHourly(sd){
+  const hourly = sd.hourly || {};
+  const hours = Object.keys(hourly).map(Number).sort((a,b) => a - b);
+  if(hours.length === 0){
+    document.getElementById('m-hourly').innerHTML = '<div class="m-empty">시간대별 데이터 없음</div>';
+    return;
+  }
+  const max = Math.max(...hours.map(h => hourly[h]));
+  const W = 320, H = 110;
+  const margin = {top: 20, bottom: 18, left: 8, right: 8};
+  const barWidth = Math.min(28, (W - margin.left - margin.right - (hours.length - 1) * 6) / hours.length);
+  const gap = 6;
+  const totalBarsWidth = hours.length * barWidth + (hours.length - 1) * gap;
+  const startX = (W - totalBarsWidth) / 2;
+  const chartH = H - margin.top - margin.bottom;
+
+  let svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">`;
+  hours.forEach((h, i) => {
+    const v = hourly[h];
+    const bh = (v / max) * chartH;
+    const x = startX + i * (barWidth + gap);
+    const y = margin.top + (chartH - bh);
+    const isLunch = h < 17;
+    const color = isLunch ? '#fbbf24' : sd.color;
+    svg += `<rect x="${x}" y="${y}" width="${barWidth}" height="${bh}" fill="${color}" rx="2"/>`;
+    svg += `<text x="${x + barWidth/2}" y="${H - 6}" font-size="9" text-anchor="middle" fill="#94a3b8">${h}시</text>`;
+    if(v === max){
+      const lbl = v >= 1000000 ? `₩${(v/1000000).toFixed(2)}M` : `₩${Math.round(v/1000)}k`;
+      svg += `<text x="${x + barWidth/2}" y="${y - 5}" font-size="10" font-weight="600" text-anchor="middle" fill="#f1f5f9">${lbl}</text>`;
+    }
+  });
+  svg += '</svg>';
+  document.getElementById('m-hourly').innerHTML = svg;
+}
+
+function mobileTab(tab){
+  document.querySelectorAll('.m-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  if(tab === 'summary'){
+    mobileBack();
+  } else if(tab === 'calendar'){
+    // 달력 탭 → 데스크톱 cal-grid 보기 토글 (간이 구현)
+    alert('달력 보기는 PC에서 더 잘 보입니다. 곧 모바일 달력도 추가됩니다.');
+    document.querySelectorAll('.m-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'summary'));
+  } else {
+    alert(tab + ' 탭 — 추후 추가 예정');
+    document.querySelectorAll('.m-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'summary'));
+  }
+}
+
+function mobileInit(){
+  if(typeof ALL_DATA === 'undefined') return;
+  const dates = Object.keys(ALL_DATA);
+  if(dates.length === 0) return;
+  const latest = dates.sort().pop();
+  renderMobile(latest);
+}
+
+// 페이지 로드 시 + ALL_DATA 준비됐을 때 초기화
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', mobileInit);
+} else {
+  mobileInit();
+}
+
 </script>
 </body>
 </html>
