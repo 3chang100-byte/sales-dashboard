@@ -2440,10 +2440,16 @@ function renderMobileAnTrend(){
 
   window.__renderCallCount = (window.__renderCallCount || 0) + 1;
   if(mobileAnTrendChart){ mobileAnTrendChart.destroy(); }
+  // 강화된 디버그: 데이터 샘플 + cumData 전체 출력
   if(datasets.length > 0){
     const first = datasets[0];
-    const isAccum = first.data[first.data.length - 1] !== null && first.data[first.data.length - 1] >= first.data[0];
-    console.log('[CUMv2 #'+window.__renderCallCount+']', first.label, 'first:', first.data[0], 'last:', first.data[first.data.length-1], '누적여부:', isAccum, 'period:', mobileAnPeriod);
+    const t1 = ALL_DATA['2026-05-01']?.storeData?.[first.label];
+    const t9 = ALL_DATA['2026-05-09']?.storeData?.[first.label];
+    console.log('[CUMv3 #'+window.__renderCallCount+']', first.label, 'period:', mobileAnPeriod);
+    console.log('  5/1 데이터:', t1 ? {total: t1.total, missing: t1.missing} : 'NULL');
+    console.log('  5/9 데이터:', t9 ? {total: t9.total, missing: t9.missing} : 'NULL');
+    console.log('  cumData 전체:', JSON.stringify(first.data));
+    console.log('  recent 길이:', recent.length, '값:', JSON.stringify(recent.slice(0,3)) + ' ... ' + JSON.stringify(recent.slice(-2)));
   }
   const ctx = document.getElementById('m-an-trend-canvas').getContext('2d');
   mobileAnTrendChart = new Chart(ctx, {
