@@ -264,6 +264,23 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-reload{width:34px;height:34px;border-radius:50%;background:var(--card);border:1px solid var(--border);
     color:var(--text);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 
+
+  /* 전체매출 버튼 */
+  .m-totalbtn{margin:4px 16px 12px;padding:13px 16px;border-radius:14px;
+    background:var(--card);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+    cursor:pointer;transition:.2s}
+  .m-totalbtn:active{transform:scale(.985)}
+  .m-totalbtn.active{background:linear-gradient(135deg,#0f3a4a,#1e293b);
+    border-color:#22d3ee}
+  .m-totalbtn .lbl{font-size:11px;color:var(--muted);margin-bottom:4px;
+    letter-spacing:.3px}
+  .m-totalbtn .v{font-size:22px;font-weight:700;letter-spacing:-.3px}
+  .m-totalbtn.active .v{color:#22d3ee}
+  .m-totalbtn .delta{font-size:10px;color:#4ade80;margin-top:2px}
+  .m-totalbtn .arr{font-size:18px;color:var(--muted);font-weight:300;margin-left:10px}
+  .m-totalbtn.active .arr{color:#22d3ee}
+
   /* 날짜 가로 스크롤 칩 */
   .m-datestrip{display:flex;gap:8px;padding:0 16px 14px;overflow-x:auto;scrollbar-width:none}
   .m-datestrip::-webkit-scrollbar{display:none}
@@ -388,17 +405,16 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
       <button class="m-reload" onclick="location.reload()" title="새로고침">⟳</button>
     </div>
 
+    <div class="m-totalbtn" id="m-totalbtn" onclick="mobileSetMonth()"></div>
+
     <div class="m-datestrip" id="m-datestrip"></div>
 
     <div class="m-hero" id="m-hero"></div>
 
     <div class="m-kpis" id="m-kpis"></div>
 
-    <div class="m-section">지점별 매출 (탭하여 상세)</div>
+    <div class="m-section" id="m-store-h">지점별 매출 (탭하여 상세)</div>
     <div class="m-store-list" id="m-store-list"></div>
-
-    <div class="m-section" id="m-monthly-h">지점별 월간 누계</div>
-    <div class="m-monthly" id="m-monthly"></div>
   </div>
 
   <!-- 드릴다운 화면 -->
@@ -1310,96 +1326,24 @@ initCal();
 // 모바일 전용 렌더링 (≤768px에서만 활성)
 // ═══════════════════════════════════════════════════════════════
 let mobileCurrentDate = null;
+let mobileMode = 'day';
 const KOR_DOW = ['일','월','화','수','목','금','토'];
 
 function renderMobile(date){
+  if(date) mobileCurrentDate = date;
+  date = mobileCurrentDate;
   const D = ALL_DATA[date];
   if(!D){ console.warn('mobile: no data for', date); return; }
-  mobileCurrentDate = date;
 
-  // 1) 날짜 가로 스크롤 칩
-  const allDates = Object.keys(ALL_DATA).sort();
-  const recentDates = allDates.slice(-14); // 최근 14일까지
-  document.getElementById('m-datestrip').innerHTML = recentDates.map(d => {
-    const dt = new Date(d + 'T00:00:00');
-    const dow = KOR_DOW[dt.getDay()];
-    const day = dt.getDate();
-    const isActive = d === date;
-    return `<div class="m-dpill ${isActive?'active':''}" onclick="mobileSetDate('${d}')">
-      <div class="w">${dow}</div><div class="d">${day}</div>
-    </div>`;
-  }).join('');
-
-  // 2) Hero KPI
-  const total = D.summary.total || 0;
-  const prevTotal = D.summary.prevTotal || 0;
-  const delta = prevTotal ? ((total - prevTotal) / prevTotal * 100) : 0;
-  const deltaSign = delta >= 0 ? '▲' : '▼';
-  const deltaCls = delta >= 0 ? 'up' : 'down';
-  document.getElementById('m-hero').innerHTML = `
-    <div class="m-hero-label">전체 매출 · ${D.dateDisp || date}</div>
-    <div class="m-hero-val">${won(total)}</div>
-    <div class="m-hero-delta ${deltaCls}">${deltaSign} 전일 대비 ${Math.abs(delta).toFixed(1)}%</div>
-  `;
-
-  // 3) 보조 KPI
-  document.getElementById('m-kpis').innerHTML = `
-    <div class="m-mini">
-      <div class="lbl">총 객수</div>
-      <div class="val">${D.summary.guests || 0}<span class="suf"> 명</span></div>
-    </div>
-    <div class="m-mini">
-      <div class="lbl">점심 비중</div>
-      <div class="val">${(D.summary.lunchPct || 0).toFixed(1)}<span class="suf">%</span></div>
-    </div>
-  `;
-
-  // 4) 지점 카드 리스트
-  const storeListHTML = D.stores.map(s => {
-    const sd = D.storeData[s];
-    if(sd.missing){
-      return `<div class="m-scard missing">
-        <span class="m-dot" style="background:${sd.color||'#666'}"></span>
-        <div class="m-scard-body">
-          <div class="name">${s}</div>
-          <div class="meta">데이터 없음</div>
-        </div>
-        <div class="m-scard-total"><div class="v">—</div></div>
-      </div>`;
-    }
-    const lp = sd.lunch_pct || 0;
-    const dp = 100 - lp;
-    const sPrev = sd.prev_total || 0;
-    const sDelta = sPrev ? ((sd.total - sPrev) / sPrev * 100) : 0;
-    const sDeltaCls = sDelta >= 0 ? 'up' : 'down';
-    const sDeltaSign = sDelta >= 0 ? '▲' : '▼';
-    return `
-      <div class="m-scard" onclick="mobileShowStore('${date}','${s}')">
-        <span class="m-dot" style="background:${sd.color}"></span>
-        <div class="m-scard-body">
-          <div class="name">${s}</div>
-          <div class="meta">${sd.guests}명 · 점심 ${lp.toFixed(0)}% · 저녁 ${dp.toFixed(0)}%</div>
-          <div class="m-bar">
-            <div style="background:#fbbf24;width:${lp}%"></div>
-            <div style="background:${sd.color};width:${dp}%"></div>
-          </div>
-        </div>
-        <div class="m-scard-total">
-          <div class="v">${won(sd.total)}</div>
-          ${sPrev ? `<div class="d ${sDeltaCls}">${sDeltaSign} ${Math.abs(sDelta).toFixed(0)}%</div>` : ''}
-        </div>
-      </div>`;
-  }).join('');
-  document.getElementById('m-store-list').innerHTML = storeListHTML;
-
-  // 5) 지점별 월간 누계
-  const month = date.slice(0, 7);  // YYYY-MM
-  const monthLabel = month.slice(0,4) + '년 ' + parseInt(month.slice(5,7),10) + '월 누계';
+  // 월 합계 계산 (전체매출 버튼용 + 월 모드 본문용)
+  const month = date.slice(0, 7);
+  const monthLabel = month.slice(0,4) + '년 ' + parseInt(month.slice(5,7),10) + '월';
   const monthDates = Object.keys(ALL_DATA).filter(d => d.startsWith(month));
+  const stores = D.stores;
   const storeMonthly = {};
-  let totalMonth = 0;
-  D.stores.forEach(s => {
-    storeMonthly[s] = { total: 0, color: D.storeData[s].color, days: 0 };
+  let totalMonth = 0, lunchMonth = 0, dinnerMonth = 0, guestsMonth = 0;
+  stores.forEach(s => {
+    storeMonthly[s] = { total:0, lunch:0, dinner:0, guests:0, color:D.storeData[s].color, days:0 };
   });
   monthDates.forEach(d => {
     const dd = ALL_DATA[d];
@@ -1407,40 +1351,153 @@ function renderMobile(date){
     dd.stores.forEach(s => {
       const sd = dd.storeData[s];
       if(sd && !sd.missing){
-        storeMonthly[s].total += sd.total || 0;
-        storeMonthly[s].days  += 1;
-        totalMonth += sd.total || 0;
+        storeMonthly[s].total   += sd.total   || 0;
+        storeMonthly[s].lunch   += sd.lunch   || 0;
+        storeMonthly[s].dinner  += sd.dinner  || 0;
+        storeMonthly[s].guests  += sd.guests  || 0;
+        storeMonthly[s].days    += 1;
+        totalMonth   += sd.total   || 0;
+        lunchMonth   += sd.lunch   || 0;
+        dinnerMonth  += sd.dinner  || 0;
+        guestsMonth  += sd.guests  || 0;
       }
     });
   });
-  document.getElementById('m-monthly-h').textContent = '지점별 ' + monthLabel;
-  let monthlyHTML = `<div class="m-monthly-total">
-    <div><div class="lbl">${monthLabel} (${monthDates.length}일)</div></div>
-    <div class="v">${won(totalMonth)}</div>
-  </div>`;
-  Object.entries(storeMonthly)
-    .sort((a, b) => b[1].total - a[1].total)
-    .forEach(([s, sm]) => {
-      const pct = totalMonth > 0 ? (sm.total / totalMonth * 100) : 0;
-      const avg = sm.days > 0 ? Math.round(sm.total / sm.days) : 0;
-      monthlyHTML += `<div class="m-monthly-card">
-        <div class="head">
+  const monthLunchPct = totalMonth ? (lunchMonth / totalMonth * 100) : 0;
+
+  // 1) 전체매출 버튼 (항상 월간 합계 표시)
+  const tb = document.getElementById('m-totalbtn');
+  tb.classList.toggle('active', mobileMode === 'month');
+  tb.innerHTML = `
+    <div>
+      <div class="lbl">▶ 전체 매출 · ${monthLabel} (${monthDates.length}일)</div>
+      <div class="v">${won(totalMonth)}</div>
+      <div class="delta">탭하여 지점별 월간 매출 보기</div>
+    </div>
+    <div class="arr">${mobileMode === 'month' ? '✓' : '›'}</div>
+  `;
+
+  // 2) 날짜 가로 스크롤 칩
+  const recentDates = Object.keys(ALL_DATA).sort().slice(-14);
+  document.getElementById('m-datestrip').innerHTML = recentDates.map(d => {
+    const dt = new Date(d + 'T00:00:00');
+    const dow = KOR_DOW[dt.getDay()];
+    const day = dt.getDate();
+    const isActive = (d === date) && (mobileMode === 'day');
+    return `<div class="m-dpill ${isActive?'active':''}" onclick="mobileSetDate('${d}')">
+      <div class="w">${dow}</div><div class="d">${day}</div>
+    </div>`;
+  }).join('');
+
+  if(mobileMode === 'day'){
+    // ── 일별 모드 ──
+    const total = D.summary.total || 0;
+    const prev = D.summary.prevTotal || 0;
+    const delta = prev ? ((total - prev) / prev * 100) : 0;
+    document.getElementById('m-hero').innerHTML = `
+      <div class="m-hero-label">${D.dateDisp || date} 매출</div>
+      <div class="m-hero-val">${won(total)}</div>
+      ${prev ? `<div class="m-hero-delta ${delta>=0?'up':'down'}">${delta>=0?'▲':'▼'} 전일 대비 ${Math.abs(delta).toFixed(1)}%</div>` : ''}
+    `;
+    document.getElementById('m-kpis').innerHTML = `
+      <div class="m-mini">
+        <div class="lbl">총 객수</div>
+        <div class="val">${D.summary.guests || 0}<span class="suf"> 명</span></div>
+      </div>
+      <div class="m-mini">
+        <div class="lbl">점심 비중</div>
+        <div class="val">${(D.summary.lunchPct || 0).toFixed(1)}<span class="suf">%</span></div>
+      </div>
+    `;
+    document.getElementById('m-store-h').textContent = '지점별 매출 (일별 · 탭하여 상세)';
+    document.getElementById('m-store-list').innerHTML = D.stores.map(s => {
+      const sd = D.storeData[s];
+      if(sd.missing){
+        return `<div class="m-scard missing">
+          <span class="m-dot" style="background:${sd.color||'#666'}"></span>
+          <div class="m-scard-body"><div class="name">${s}</div><div class="meta">데이터 없음</div></div>
+          <div class="m-scard-total"><div class="v">—</div></div>
+        </div>`;
+      }
+      const lp = sd.lunch_pct || 0;
+      const dp = 100 - lp;
+      const sPrev = sd.prev_total || 0;
+      const sDelta = sPrev ? ((sd.total - sPrev) / sPrev * 100) : 0;
+      return `
+        <div class="m-scard" onclick="mobileShowStore('${date}','${s}')">
+          <span class="m-dot" style="background:${sd.color}"></span>
+          <div class="m-scard-body">
+            <div class="name">${s}</div>
+            <div class="meta">${sd.guests}명 · 점심 ${lp.toFixed(0)}% · 저녁 ${dp.toFixed(0)}%</div>
+            <div class="m-bar">
+              <div style="background:#fbbf24;width:${lp}%"></div>
+              <div style="background:${sd.color};width:${dp}%"></div>
+            </div>
+          </div>
+          <div class="m-scard-total">
+            <div class="v">${won(sd.total)}</div>
+            ${sPrev ? `<div class="d ${sDelta>=0?'up':'down'}">${sDelta>=0?'▲':'▼'} ${Math.abs(sDelta).toFixed(0)}%</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  } else {
+    // ── 월간 모드 ──
+    document.getElementById('m-hero').innerHTML = `
+      <div class="m-hero-label">${monthLabel} 누계 매출</div>
+      <div class="m-hero-val" style="color:#22d3ee">${won(totalMonth)}</div>
+      <div class="m-hero-delta" style="color:var(--muted)">영업 ${monthDates.length}일 · 일평균 ${won(monthDates.length ? Math.round(totalMonth/monthDates.length) : 0)}</div>
+    `;
+    document.getElementById('m-kpis').innerHTML = `
+      <div class="m-mini">
+        <div class="lbl">월 누계 객수</div>
+        <div class="val">${guestsMonth.toLocaleString()}<span class="suf"> 명</span></div>
+      </div>
+      <div class="m-mini">
+        <div class="lbl">월 점심 비중</div>
+        <div class="val">${monthLunchPct.toFixed(1)}<span class="suf">%</span></div>
+      </div>
+    `;
+    document.getElementById('m-store-h').textContent = `지점별 ${monthLabel} 누계`;
+    const sortedStores = Object.entries(storeMonthly).sort((a,b) => b[1].total - a[1].total);
+    document.getElementById('m-store-list').innerHTML = sortedStores.map(([s, sm], idx) => {
+      if(sm.total === 0){
+        return `<div class="m-scard missing">
           <span class="m-dot" style="background:${sm.color}"></span>
-          <span class="name">${s}</span>
-          <span class="v">${won(sm.total)}</span>
-        </div>
-        <div class="barwrap"><div style="background:${sm.color};width:${pct}%"></div></div>
-        <div class="meta">
-          <span>영업 ${sm.days}일 · 일평균 ${won(avg)}</span>
-          <span class="pct">${pct.toFixed(1)}%</span>
-        </div>
-      </div>`;
-    });
-  document.getElementById('m-monthly').innerHTML = monthlyHTML;
+          <div class="m-scard-body"><div class="name">${s}</div><div class="meta">데이터 없음</div></div>
+          <div class="m-scard-total"><div class="v">—</div></div>
+        </div>`;
+      }
+      const pct = totalMonth ? (sm.total / totalMonth * 100) : 0;
+      const lp = sm.total ? (sm.lunch / sm.total * 100) : 0;
+      const dp = 100 - lp;
+      const avg = sm.days ? Math.round(sm.total / sm.days) : 0;
+      return `
+        <div class="m-scard" style="cursor:default">
+          <span class="m-dot" style="background:${sm.color}"></span>
+          <div class="m-scard-body">
+            <div class="name">${idx+1}. ${s}</div>
+            <div class="meta">${sm.days}일 · 일평 ${won(avg)} · 비중 ${pct.toFixed(1)}%</div>
+            <div class="m-bar">
+              <div style="background:#fbbf24;width:${lp}%"></div>
+              <div style="background:${sm.color};width:${dp}%"></div>
+            </div>
+          </div>
+          <div class="m-scard-total">
+            <div class="v">${won(sm.total)}</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
 }
 
 function mobileSetDate(date){
+  mobileMode = 'day';
   renderMobile(date);
+}
+
+function mobileSetMonth(){
+  mobileMode = 'month';
+  renderMobile();
 }
 
 function mobileShowStore(date, storeName){
