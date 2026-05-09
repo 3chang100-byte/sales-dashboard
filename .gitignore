@@ -1,0 +1,13 @@
+# 다운로드한 매출 파일은 commit 하지 않음 (재처리 시 Drive에서 다시 받음)
+POS_DOWNLOADS/
+
+# credentials는 절대 commit 하지 않음
+*credentials*.json
+*-credentials.json
+service-account*.json
+samchang-dashboard-*.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
