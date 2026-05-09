@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: '대상 날짜 YYYY-MM-DD (비워두면 어제 KST)'
+        description: '대상 날짜 YYYY-MM-DD (콤마/공백 구분 가능. 비워두면 자동: 평일=어제, 월요일=금토일)'
         required: false
         default: ''
 
@@ -28,27 +28,50 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Resolve target date
-        id: date
+      - name: Resolve target dates
+        id: dates
         env:
           INPUT_DATE: ${{ inputs.date }}
         run: |
           if [ -n "$INPUT_DATE" ]; then
-            DATE="$INPUT_DATE"
+            DATES=$(echo "$INPUT_DATE" | tr ',' ' ')
           else
-            DATE=$(TZ=Asia/Seoul date -d 'yesterday' +%Y-%m-%d)
+            DOW=$(TZ=Asia/Seoul date +%u)
+            if [ "$DOW" = "1" ]; then
+              D1=$(TZ=Asia/Seoul date -d '3 days ago' +%Y-%m-%d)
+              D2=$(TZ=Asia/Seoul date -d '2 days ago' +%Y-%m-%d)
+              D3=$(TZ=Asia/Seoul date -d 'yesterday'  +%Y-%m-%d)
+              DATES="$D1 $D2 $D3"
+            else
+              DATES=$(TZ=Asia/Seoul date -d 'yesterday' +%Y-%m-%d)
+            fi
           fi
-          echo "value=$DATE" >> "$GITHUB_OUTPUT"
-          echo "Target date: $DATE"
+          echo "value=$DATES" >> "$GITHUB_OUTPUT"
+          echo "Target dates: $DATES"
 
-      - name: Fetch from Google Drive
+      - name: Fetch and process each date
         env:
           GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
           GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
-        run: python gdrive_fetch.py --date "${{ steps.date.outputs.value }}"
-
-      - name: Process sales data
-        run: python daily_report_generator.py "${{ steps.date.outputs.value }}"
+        run: |
+          PROCESSED_ANY=0
+          for D in ${{ steps.dates.outputs.value }}; do
+            echo "::group::Processing $D"
+            if python gdrive_fetch.py --date "$D"; then
+              if [ -d "POS_DOWNLOADS/$D" ] && [ -n "$(ls -A POS_DOWNLOADS/$D 2>/dev/null)" ]; then
+                python daily_report_generator.py "$D"
+                PROCESSED_ANY=1
+              else
+                echo "[!] $D 다운로드 폴더 비어있음 — 스킵"
+              fi
+            else
+              echo "[!] $D Drive에 파일 없음 — 스킵 (다른 날짜는 계속 처리)"
+            fi
+            echo "::endgroup::"
+          done
+          if [ "$PROCESSED_ANY" = "0" ]; then
+            echo "[i] 처리된 날짜 0개 — index.html 갱신만 시도"
+          fi
 
       - name: Update index.html
         run: python update_index.py
@@ -61,6 +84,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "변경 없음 — commit 생략"
           else
-            git commit -m "Auto update for ${{ steps.date.outputs.value }}"
+            git commit -m "Auto update for ${{ steps.dates.outputs.value }}"
             git push
           fi
