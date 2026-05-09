@@ -665,19 +665,17 @@ def main():
     print(f"│ 데이터 폴더: {download_dir}")
     print(f"└{'─'*70}\n")
 
-    # 1) 어제 .xls 파일들 수집
-    pattern = f"*_{args.date}.xls"
-    files = list(download_dir.glob(pattern))
-    # 날짜 서브폴더(POS_DOWNLOADS/YYYY-MM-DD/)도 검색
+    # 1) 해당 날짜 .xls + .xlsx 모두 수집 (서브폴더와 루트 둘 다)
+    files = []
+    for ext in ('xls', 'xlsx'):
+        pat = f"*_{args.date}.{ext}"
+        files.extend(download_dir.glob(pat))
+        files.extend((download_dir / args.date).glob(pat))
+    # 중복 제거 (같은 파일이 두 곳에서 검색될 가능성)
+    seen_paths = set()
+    files = [f for f in files if not (f.resolve() in seen_paths or seen_paths.add(f.resolve()))]
     if not files:
-        files = list((download_dir / args.date).glob(pattern))
-    # .xlsx 확장자도 검색
-    if not files:
-        files = list(download_dir.glob(f"*_{args.date}.xlsx"))
-    if not files:
-        files = list((download_dir / args.date).glob(f"*_{args.date}.xlsx"))
-    if not files:
-        print(f"[!] {args.date} 날짜의 .xls 파일이 없습니다 (패턴: {pattern})")
+        print(f"[!] {args.date} 날짜의 .xls/.xlsx 파일이 없습니다.")
         return 2
 
     import hashlib
