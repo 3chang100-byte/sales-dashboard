@@ -380,6 +380,36 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     color:var(--muted)}
   .m-monthly-card .pct{color:#fbbf24;font-weight:600}
 
+
+  /* 요약 탭 하단 캘린더 */
+  .m-cal-head{display:flex;align-items:center;justify-content:space-between;
+    padding:6px 16px 10px;margin-top:6px}
+  .m-cal-arr{width:28px;height:28px;border-radius:50%;background:var(--card);
+    border:1px solid var(--border);color:var(--text);font-size:13px;cursor:pointer}
+  .m-cal-month{font-size:14px;font-weight:600}
+  .m-cal-dows{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 12px 4px}
+  .m-cal-dow{font-size:10px;color:var(--muted);text-align:center;padding:3px 0;font-weight:600}
+  .m-cal-dow.sun{color:#f87171}
+  .m-cal-dow.sat{color:#93c5fd}
+  .m-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:0 12px 16px}
+  .m-cal-day{aspect-ratio:1;background:var(--card);border:1px solid var(--border);
+    border-radius:7px;padding:3px 4px;display:flex;flex-direction:column;
+    justify-content:space-between;font-size:9px;cursor:pointer;transition:.15s}
+  .m-cal-day.empty{background:transparent;border:none;cursor:default}
+  .m-cal-day.no-data{cursor:default;opacity:.4}
+  .m-cal-day.has{border-color:#334155}
+  .m-cal-day.has:active{transform:scale(.95)}
+  .m-cal-day.today{border-color:#22d3ee;border-width:1.5px}
+  .m-cal-day.selected{background:#0f3a4a;border-color:#22d3ee}
+  .m-cal-day .num{font-weight:600;font-size:10px;color:var(--text)}
+  .m-cal-day .num.sun{color:#f87171}
+  .m-cal-day .num.sat{color:#93c5fd}
+  .m-cal-day .num.dim{color:#475569}
+  .m-cal-day .total{font-size:9px;font-weight:700;color:#22d3ee;line-height:1;
+    letter-spacing:-.3px}
+  .m-cal-day .dots{display:flex;gap:1.5px;flex-wrap:wrap}
+  .m-cal-day .ddot{width:3px;height:3px;border-radius:50%}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -415,6 +445,16 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
 
     <div class="m-section" id="m-store-h">지점별 매출 (탭하여 상세)</div>
     <div class="m-store-list" id="m-store-list"></div>
+
+    <div class="m-cal-head">
+      <button class="m-cal-arr" onclick="mobileMonthShift(-1)">‹</button>
+      <span class="m-cal-month" id="m-cal-month">2026년 5월</span>
+      <button class="m-cal-arr" onclick="mobileMonthShift(1)">›</button>
+    </div>
+    <div class="m-cal-dows">
+      <div class="m-cal-dow sun">일</div><div class="m-cal-dow">월</div><div class="m-cal-dow">화</div><div class="m-cal-dow">수</div><div class="m-cal-dow">목</div><div class="m-cal-dow">금</div><div class="m-cal-dow sat">토</div>
+    </div>
+    <div class="m-cal-grid" id="m-cal-grid"></div>
   </div>
 
   <!-- 드릴다운 화면 -->
@@ -437,10 +477,6 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     <div class="m-tab" onclick="mobileTab('trend')" data-tab="trend">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,17 9,11 13,15 21,7"/></svg>
       <span>추세</span>
-    </div>
-    <div class="m-tab" onclick="mobileTab('calendar')" data-tab="calendar">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-      <span>달력</span>
     </div>
     <div class="m-tab" onclick="mobileTab('settings')" data-tab="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -1488,10 +1524,14 @@ function renderMobile(date){
         </div>`;
     }).join('');
   }
+
+  // 캘린더 렌더
+  mobileRenderCalendar();
 }
 
 function mobileSetDate(date){
   mobileMode = 'day';
+  mobileCalMonth = date.slice(0, 7);
   renderMobile(date);
 }
 
@@ -1560,6 +1600,69 @@ function mobileBack(){
   document.getElementById('m-drill').classList.remove('active');
   document.getElementById('m-main').classList.add('active');
   window.scrollTo(0, 0);
+}
+
+
+let mobileCalMonth = null; // 현재 캘린더가 보여주는 월 (YYYY-MM). null이면 mobileCurrentDate의 월
+
+function mobileMonthShift(delta){
+  const baseStr = mobileCalMonth || (mobileCurrentDate || Object.keys(ALL_DATA).sort().pop()).slice(0,7);
+  const [y, m] = baseStr.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  mobileCalMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  mobileRenderCalendar();
+}
+
+function mobileRenderCalendar(){
+  const monthStr = mobileCalMonth || mobileCurrentDate.slice(0, 7);
+  const [y, m] = monthStr.split('-').map(Number);
+  const monthLabel = y + '년 ' + m + '월';
+  document.getElementById('m-cal-month').textContent = monthLabel;
+
+  const firstDay = new Date(y, m - 1, 1);
+  const lastDay = new Date(y, m, 0);
+  const startDow = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+  const today = (new Date()).toISOString().slice(0, 10);
+
+  let html = '';
+  // 빈 셀 (이번달 시작 전)
+  for(let i = 0; i < startDow; i++){
+    html += '<div class="m-cal-day empty"></div>';
+  }
+  // 날짜 셀
+  for(let d = 1; d <= daysInMonth; d++){
+    const dateStr = monthStr + '-' + String(d).padStart(2, '0');
+    const dt = new Date(y, m - 1, d);
+    const dow = dt.getDay();
+    const numCls = dow === 0 ? 'sun' : (dow === 6 ? 'sat' : '');
+    const D = ALL_DATA[dateStr];
+    const hasData = !!D;
+    const isToday = dateStr === today;
+    const isSelected = (mobileMode === 'day' && dateStr === mobileCurrentDate);
+
+    let classes = 'm-cal-day';
+    if(!hasData){ classes += ' no-data'; }
+    else { classes += ' has'; }
+    if(isToday) classes += ' today';
+    if(isSelected) classes += ' selected';
+
+    let cellInner = `<span class="num ${hasData ? numCls : 'dim'}">${d}</span>`;
+    if(hasData){
+      const totalK = (D.summary.total || 0) / 1000000;
+      const totalLabel = totalK >= 10 ? totalK.toFixed(0) + 'M' : totalK >= 1 ? totalK.toFixed(1) + 'M' : Math.round(totalK*1000) + 'k';
+      cellInner += `<span class="total">${totalLabel}</span>`;
+      // 매장 도트
+      const dots = D.stores.filter(s => !D.storeData[s].missing)
+        .map(s => `<span class="ddot" style="background:${D.storeData[s].color}"></span>`).join('');
+      cellInner += `<div class="dots">${dots}</div>`;
+    }
+
+    const onclick = hasData ? `onclick="mobileSetDate('${dateStr}')"` : '';
+    html += `<div class="${classes}" ${onclick}>${cellInner}</div>`;
+  }
+
+  document.getElementById('m-cal-grid').innerHTML = html;
 }
 
 function renderMobileHourly(sd){
