@@ -118,6 +118,135 @@ def parse_html_settlement(filepath: Path):
         return None
 
 
+def parse_asp2_xlsx(filepath: Path):
+    """
+    ASP2 (복대점) 정산보고서 .xlsx 파싱.
+    parse_okpos_xls와 동일한 dict 형식 반환.
+    """
+    try:
+        import openpyxl
+    except ImportError:
+        print(f"  · {filepath.name}: openpyxl 미설치 — 스킵")
+        return None
+    try:
+        wb = openpyxl.load_workbook(str(filepath), data_only=True)
+    except Exception as e:
+        print(f"  ASP2 .xlsx 파싱 실패: {filepath.name}: {e}")
+        return None
+
+    ws = wb[wb.sheetnames[0]]
+    sheet_name = wb.sheetnames[0]
+    m = re.search(r'(\d{4})_(\d{2})_(\d{2})', sheet_name)
+    date = f"{m.group(1)}-{m.group(2)}-{m.group(3)}" if m else None
+
+    labels = {}
+    for r in range(1, min(ws.max_row + 1, 60)):
+        v = ws.cell(row=r, column=1).value
+        if v and isinstance(v, str):
+            labels[v.strip()] = r
+
+    def cell(r, c):
+        try:
+            return ws.cell(row=r, column=c).value
+        except:
+            return None
+
+    def to_int(v):
+        if v is None: return 0
+        try: return int(float(v))
+        except: return 0
+
+    n_receipts = to_int(cell(labels.get('영수건수', 5), 2))
+    객수_total = to_int(cell(labels.get('객수', 6), 2))
+    총매출 = to_int(cell(labels.get('총매출', 15), 3))
+
+    lunch_sales = lunch_cust = 0
+    dinner_sales = dinner_cust = 0
+    hourly = {}
+
+    time_header_r = None
+    for r in range(1, min(ws.max_row + 1, 60)):
+        v = cell(r, 5)
+        if v and isinstance(v, str) and '시간대별' in v:
+            time_header_r = r
+            break
+
+    if time_header_r:
+        r = time_header_r + 1
+        while r <= ws.max_row:
+            time_str = cell(r, 5)
+            if not time_str or not isinstance(time_str, str) or '~' not in time_str:
+                next_v = cell(r + 1, 5)
+                if not (isinstance(next_v, str) and '~' in next_v):
+                    break
+                r += 1
+                continue
+            try:
+                hour = int(time_str.split(':')[0])
+            except:
+                r += 1
+                continue
+            cust = to_int(cell(r, 7))
+            sales = to_int(cell(r, 8))
+            is_lunch = (hour < 17)
+            if is_lunch:
+                lunch_sales += sales; lunch_cust += cust
+            else:
+                dinner_sales += sales; dinner_cust += cust
+            if sales > 0:
+                hourly[hour] = hourly.get(hour, 0) + sales
+            r += 1
+
+    if (lunch_sales + dinner_sales) == 0 and 총매출 > 0:
+        dinner_sales = 총매출
+        dinner_cust = 객수_total
+
+    menu = {}
+    menu_header_r = labels.get('상품명')
+    if menu_header_r:
+        r = menu_header_r + 1
+        while r <= ws.max_row:
+            name = cell(r, 1)
+            qty = cell(r, 2)
+            sales = cell(r, 3)
+            if not name or not isinstance(name, str):
+                if name is None and qty is None and sales is None:
+                    break
+                r += 1
+                continue
+            qty_i = to_int(qty)
+            sales_i = to_int(sales)
+            if sales_i <= 0:
+                r += 1
+                continue
+            if '상차림' in name or '할인' in name or '적용' in name:
+                r += 1
+                continue
+            total = lunch_sales + dinner_sales
+            ratio_l = lunch_sales / total if total else 0
+            l_part = int(sales_i * ratio_l)
+            menu[name] = {
+                'qty': qty_i,
+                'sales': sales_i,
+                'lunch': l_part,
+                'dinner': sales_i - l_part,
+            }
+            r += 1
+
+    avg_l = (lunch_sales // lunch_cust) if lunch_cust else 0
+    avg_d = (dinner_sales // dinner_cust) if dinner_cust else 0
+
+    return {
+        'date': date,
+        'n_receipts': n_receipts,
+        'lunch':  {'매출': lunch_sales, '객수': lunch_cust, '단가': avg_l},
+        'dinner': {'매출': dinner_sales, '객수': dinner_cust, '단가': avg_d},
+        'menu': menu,
+        'hourly': hourly,
+        'turnover': {'tables': 0, 'visits': n_receipts, 'rate': 0},
+    }
+
+
 def parse_okpos_xls(filepath: Path):
     """OKPOS XLS 파일 파싱 — 형식 자동 감지 (영수증별매출상세현황 or 일기간(시간대별))."""
     # HTML 정산보고서 감지
@@ -567,7 +696,11 @@ def main():
             continue
         seen_md5[store] = fmd5
         try:
-            info = parse_okpos_xls(f)
+            # 확장자별 파서 분기: .xlsx → ASP2 (복대점), .xls → OKPOS
+            if f.suffix.lower() == '.xlsx':
+                info = parse_asp2_xlsx(f)
+            else:
+                info = parse_okpos_xls(f)
             if info is None:
                 print(f"  · {f.name}: 지원하지 않는 형식 — 건너뜀")
                 continue

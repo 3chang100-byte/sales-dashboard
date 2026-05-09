@@ -1,3 +1,4 @@
 google-api-python-client>=2.100.0
 google-auth>=2.20.0
 xlrd==2.0.1
+openpyxl>=3.1.0
