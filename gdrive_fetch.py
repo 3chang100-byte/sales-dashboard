@@ -2,18 +2,13 @@
 gdrive_fetch.py — Google Drive 폴더에서 매출 XLS 파일 다운로드
 ================================================================
 
-GitHub Actions에서 실행되는 스크립트.
+지원 폴더 구조 (자동 감지):
+  A) 평면 구조: 부모 폴더 안에 직접 *_{date}.xls 파일들
+  B) 날짜 하위 폴더: 부모 폴더 안에 {date}/ 폴더 → 그 안에 파일들
 
 인증:
-  - 환경변수 GDRIVE_CREDENTIALS (서비스 계정 JSON 문자열) 필요
+  - 환경변수 GDRIVE_CREDENTIALS (서비스 계정 JSON 문자열)
   - 또는 GDRIVE_CREDENTIALS_FILE (파일 경로)
-
-대상 폴더:
-  - 환경변수 GDRIVE_FOLDER_ID 또는 --folder-id 인자
-
-기본 동작:
-  어제 날짜(KST) 매출 파일을 Drive에서 찾아 ./POS_DOWNLOADS/{date}/로 다운로드
-  파일명 패턴: *{YYYY-MM-DD}*.xls 또는 .xlsx
 """
 from __future__ import annotations
 
@@ -30,12 +25,12 @@ try:
     from googleapiclient.http import MediaIoBaseDownload
 except ImportError:
     print("[!] 'google-api-python-client', 'google-auth' 가 필요합니다.", file=sys.stderr)
-    print("    pip install google-api-python-client google-auth", file=sys.stderr)
     sys.exit(1)
 
 KST = timezone(timedelta(hours=9))
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 DEFAULT_FOLDER_ID = "1UZ4IXk-0p_kryyPRmtEp0ZelWgRDVZ8d"
+FOLDER_MIME = "application/vnd.google-apps.folder"
 
 
 def get_drive_service():
@@ -58,27 +53,55 @@ def get_drive_service():
     return build("drive", "v3", credentials=creds, cache_discovery=False)
 
 
-def list_files_for_date(service, folder_id: str, date: str):
+def list_folder_children(service, folder_id: str):
+    """폴더의 직계 자식들 (파일+폴더) 모두 반환."""
     query = f"'{folder_id}' in parents and trashed = false"
-    fields = "nextPageToken, files(id, name, modifiedTime, size, mimeType)"
-    files = []
+    fields = "nextPageToken, files(id, name, mimeType, size, modifiedTime)"
+    items = []
     page_token = None
     while True:
         resp = service.files().list(
             q=query, fields=fields, pageSize=1000, pageToken=page_token,
             supportsAllDrives=True, includeItemsFromAllDrives=True,
         ).execute()
-        files.extend(resp.get("files", []))
+        items.extend(resp.get("files", []))
         page_token = resp.get("nextPageToken")
         if not page_token:
             break
+    return items
 
-    matched = [
-        f for f in files
-        if date in f["name"]
+
+def find_xls_files(service, parent_folder_id: str, date: str):
+    """
+    부모 폴더에서 date 날짜의 .xls/.xlsx 파일들을 찾음.
+    - 우선: 부모 안에 '{date}' 이름의 하위폴더가 있으면 그 안의 모든 .xls/.xlsx 반환
+    - 차선: 부모 안에 직접 *_{date}.xls(x) 파일이 있으면 그것 반환
+    """
+    children = list_folder_children(service, parent_folder_id)
+
+    # A) 날짜 이름의 하위폴더 찾기
+    date_folder = next(
+        (c for c in children if c["mimeType"] == FOLDER_MIME and c["name"] == date),
+        None
+    )
+    if date_folder:
+        print(f"[gdrive_fetch] 날짜 하위폴더 발견: '{date_folder['name']}' (id={date_folder['id'][:12]}...)")
+        sub_items = list_folder_children(service, date_folder["id"])
+        files = [
+            f for f in sub_items
+            if f["mimeType"] != FOLDER_MIME
+            and (f["name"].lower().endswith(".xls") or f["name"].lower().endswith(".xlsx"))
+        ]
+        return files, "subfolder", children
+
+    # B) 평면 구조 fallback
+    flat_files = [
+        f for f in children
+        if f["mimeType"] != FOLDER_MIME
+        and date in f["name"]
         and (f["name"].lower().endswith(".xls") or f["name"].lower().endswith(".xlsx"))
     ]
-    return matched, files
+    return flat_files, "flat", children
 
 
 def download_file(service, file_id: str, dest_path: Path):
@@ -98,13 +121,10 @@ def yesterday_kst() -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Drive 매출 폴더에서 XLS 다운로드")
-    ap.add_argument("--date", default=yesterday_kst(),
-                    help="대상 날짜 YYYY-MM-DD (기본: 어제 KST)")
+    ap.add_argument("--date", default=yesterday_kst())
     ap.add_argument("--folder-id",
-                    default=os.environ.get("GDRIVE_FOLDER_ID", DEFAULT_FOLDER_ID),
-                    help="Drive 폴더 ID")
-    ap.add_argument("--output", default="./POS_DOWNLOADS",
-                    help="저장 루트 (실제: {output}/{date}/)")
+                    default=os.environ.get("GDRIVE_FOLDER_ID", DEFAULT_FOLDER_ID))
+    ap.add_argument("--output", default="./POS_DOWNLOADS")
     args = ap.parse_args()
 
     out_dir = Path(args.output) / args.date
@@ -115,29 +135,31 @@ def main() -> int:
     print(f"[gdrive_fetch] 저장 위치  : {out_dir}")
 
     service = get_drive_service()
-    matched, all_files = list_files_for_date(service, args.folder_id, args.date)
+    files, mode, all_children = find_xls_files(service, args.folder_id, args.date)
 
-    if not matched:
-        print(f"[gdrive_fetch] {args.date} 날짜의 파일이 Drive에 없습니다.")
-        print(f"[gdrive_fetch] (참고) 폴더 안 전체 파일 {len(all_files)}개:")
-        for f in all_files[:20]:
-            print(f"  - {f['name']}")
-        if len(all_files) > 20:
-            print(f"  ... 외 {len(all_files) - 20}개")
+    if not files:
+        print(f"[gdrive_fetch] {args.date} 날짜의 .xls/.xlsx 파일을 찾지 못함 (탐색 모드: {mode}).")
+        print(f"[gdrive_fetch] 부모 폴더 안 항목 {len(all_children)}개:")
+        for c in all_children[:30]:
+            kind = "DIR " if c["mimeType"] == FOLDER_MIME else "FILE"
+            print(f"  [{kind}] {c['name']}")
+        if len(all_children) > 30:
+            print(f"  ... 외 {len(all_children) - 30}개")
         return 1
 
-    print(f"[gdrive_fetch] 다운로드 대상 {len(matched)}개:")
-    for f in matched:
+    print(f"[gdrive_fetch] 탐색 모드: {mode}")
+    print(f"[gdrive_fetch] 다운로드 대상 {len(files)}개:")
+    for f in files:
         print(f"  · {f['name']} ({f.get('size', '?')} bytes)")
 
     total_bytes = 0
-    for f in matched:
+    for f in files:
         dest = out_dir / f["name"]
         size = download_file(service, f["id"], dest)
         total_bytes += size
-        print(f"  ✓ {f['name']} → {dest} ({size:,} bytes)")
+        print(f"  ✓ {f['name']} → {dest.name} ({size:,} bytes)")
 
-    print(f"[gdrive_fetch] 완료: {len(matched)}개, 총 {total_bytes:,} bytes")
+    print(f"[gdrive_fetch] 완료: {len(files)}개, 총 {total_bytes:,} bytes")
     return 0
 
 
