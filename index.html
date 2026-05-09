@@ -453,6 +453,16 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
   .m-an-gap .g-val{color:#fbbf24;font-weight:700}
 
+
+  /* 지점 월간 분석 화면 */
+  .m-sm-hero{padding:0 16px 12px}
+  .m-sm-name{font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .m-sm-name .m-dot{width:12px;height:12px}
+  .m-sm-total{font-size:28px;font-weight:700;margin-top:4px;letter-spacing:-.3px}
+  .m-sm-meta{font-size:12px;color:var(--muted);margin-top:4px}
+  .m-sm-split{margin:0 16px 14px}
+  .m-sm-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px 14px}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -509,6 +519,26 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     <div class="m-hourly" id="m-hourly"></div>
     <div class="m-section">메뉴 TOP</div>
     <div class="m-menu-list" id="m-menu"></div>
+  </div>
+
+  <!-- 지점 월간 분석 화면 -->
+  <div class="m-screen" id="m-store-month">
+    <div class="m-back" id="m-sm-back" onclick="mobileBackToSummary()">‹ 요약</div>
+    <div class="m-sm-hero" id="m-sm-hero"></div>
+    <div class="m-sm-split" id="m-sm-split"></div>
+    <div class="m-section">월간 KPI</div>
+    <div class="m-sm-kpis" id="m-sm-kpis"></div>
+    <div class="m-cal-head">
+      <button class="m-cal-arr" onclick="mobileSmMonthShift(-1)">‹</button>
+      <span class="m-cal-month" id="m-sm-month"></span>
+      <button class="m-cal-arr" onclick="mobileSmMonthShift(1)">›</button>
+    </div>
+    <div class="m-cal-dows">
+      <div class="m-cal-dow sun">일</div><div class="m-cal-dow">월</div><div class="m-cal-dow">화</div><div class="m-cal-dow">수</div><div class="m-cal-dow">목</div><div class="m-cal-dow">금</div><div class="m-cal-dow sat">토</div>
+    </div>
+    <div class="m-cal-grid" id="m-sm-cal-grid"></div>
+    <div class="m-section">메뉴 TOP (월간 합계)</div>
+    <div class="m-menu-list" id="m-sm-menu"></div>
   </div>
 
   <!-- 추세 화면 -->
@@ -1594,7 +1624,7 @@ function renderMobile(date){
       const dp = 100 - lp;
       const avg = sm.days ? Math.round(sm.total / sm.days) : 0;
       return `
-        <div class="m-scard" style="cursor:default">
+        <div class="m-scard" onclick="mobileShowStoreMonth('${s}')">
           <span class="m-dot" style="background:${sm.color}"></span>
           <div class="m-scard-body">
             <div class="name">${idx+1}. ${s}</div>
@@ -1697,6 +1727,164 @@ function mobileMonthShift(delta){
   const d = new Date(y, m - 1 + delta, 1);
   mobileCalMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
   mobileRenderCalendar();
+}
+
+
+// ── 지점 월간 분석 화면 ──
+let mobileSmStore = null;
+let mobileSmMonth = null;
+
+function mobileShowStoreMonth(storeName){
+  mobileSmStore = storeName;
+  mobileSmMonth = (mobileCurrentDate || Object.keys(ALL_DATA).sort().pop()).slice(0, 7);
+  renderMobileStoreMonth();
+  document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('m-store-month').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function mobileBackToSummary(){
+  document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('m-main').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function mobileSmMonthShift(delta){
+  if(!mobileSmMonth) return;
+  const [y, m] = mobileSmMonth.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  mobileSmMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  renderMobileStoreMonth();
+}
+
+function renderMobileStoreMonth(){
+  const s = mobileSmStore;
+  const monthStr = mobileSmMonth;
+  const [y, m] = monthStr.split('-').map(Number);
+  const monthLabel = y + '년 ' + m + '월';
+
+  // 해당 월에 해당 지점 데이터 합산
+  const monthDates = Object.keys(ALL_DATA).filter(d => d.startsWith(monthStr));
+  let agg = { total:0, lunch:0, dinner:0, guests:0, lunch_guests:0, dinner_guests:0,
+              alcohol:0, alcohol_qty:0, days:0, color:'#666', menu:{} };
+
+  // 색상 추출 (다른 날짜에서라도)
+  for(const d of Object.keys(ALL_DATA)){
+    const sd = ALL_DATA[d]?.storeData?.[s];
+    if(sd && sd.color){ agg.color = sd.color; break; }
+  }
+
+  monthDates.forEach(d => {
+    const sd = ALL_DATA[d]?.storeData?.[s];
+    if(!sd || sd.missing) return;
+    agg.total          += sd.total          || 0;
+    agg.lunch          += sd.lunch          || 0;
+    agg.dinner         += sd.dinner         || 0;
+    agg.guests         += sd.guests         || 0;
+    agg.lunch_guests   += sd.lunch_guests   || 0;
+    agg.dinner_guests  += sd.dinner_guests  || 0;
+    agg.alcohol        += sd.alcohol_sales  || 0;
+    agg.alcohol_qty    += sd.alcohol_qty    || 0;
+    agg.days           += 1;
+    // 메뉴 누적
+    (sd.menu || []).forEach(item => {
+      if(!agg.menu[item.name]) agg.menu[item.name] = { qty:0, sales:0 };
+      agg.menu[item.name].qty   += item.qty   || 0;
+      agg.menu[item.name].sales += item.sales || 0;
+    });
+  });
+
+  document.getElementById('m-sm-back').textContent = '‹ ' + monthLabel + ' 누계';
+
+  // Hero
+  const avg = agg.days ? Math.round(agg.total / agg.days) : 0;
+  const ticket = agg.guests ? Math.round(agg.total / agg.guests) : 0;
+  document.getElementById('m-sm-hero').innerHTML = `
+    <div class="m-sm-name"><span class="m-dot" style="background:${agg.color}"></span>${s}</div>
+    <div class="m-sm-total">${won(agg.total)}</div>
+    <div class="m-sm-meta">${monthLabel} · 영업 ${agg.days}일 · 일평균 ${won(avg)}</div>
+  `;
+
+  // 점심/저녁 split bar
+  const lp = agg.total ? (agg.lunch / agg.total * 100) : 0;
+  const dp = 100 - lp;
+  document.getElementById('m-sm-split').innerHTML = `
+    <div class="m-split-bar">
+      ${lp >= 8 ? `<div style="background:#fbbf24;width:${lp}%">점심 ${lp.toFixed(0)}%</div>` : `<div style="background:#fbbf24;width:${lp}%"></div>`}
+      <div style="background:${agg.color};width:${dp}%">저녁 ${dp.toFixed(0)}%</div>
+    </div>
+    <div class="m-split-legend">
+      <span><span style="display:inline-block;width:8px;height:8px;background:#fbbf24;border-radius:2px;margin-right:4px;vertical-align:middle"></span>점심 ${won(agg.lunch)} · ${agg.lunch_guests}명</span>
+      <span>저녁 ${won(agg.dinner)} · ${agg.dinner_guests}명</span>
+    </div>
+  `;
+
+  // 월간 KPI 4개
+  document.getElementById('m-sm-kpis').innerHTML = `
+    <div class="m-mini"><div class="lbl">총 객수</div><div class="val">${agg.guests.toLocaleString()}<span class="suf"> 명</span></div></div>
+    <div class="m-mini"><div class="lbl">객단가</div><div class="val">${won(ticket).replace('₩','')}<span class="suf"> 원</span></div></div>
+    <div class="m-mini"><div class="lbl">주류 매출</div><div class="val" style="font-size:14px">${won(agg.alcohol)}</div></div>
+    <div class="m-mini"><div class="lbl">주류 비중</div><div class="val">${agg.total ? (agg.alcohol/agg.total*100).toFixed(1) : 0}<span class="suf">%</span></div></div>
+  `;
+
+  // 캘린더 (지점별)
+  document.getElementById('m-sm-month').textContent = monthLabel;
+  renderStoreCalendar(s, monthStr);
+
+  // 메뉴 TOP (월간 합산, 매출 내림차순)
+  const menuArr = Object.entries(agg.menu)
+    .map(([name, v]) => ({ name, qty:v.qty, sales:v.sales }))
+    .sort((a, b) => b.sales - a.sales)
+    .slice(0, 10);
+  if(menuArr.length === 0){
+    document.getElementById('m-sm-menu').innerHTML = '<div class="m-empty">메뉴 데이터 없음</div>';
+  } else {
+    document.getElementById('m-sm-menu').innerHTML = menuArr.map(item => `
+      <div class="m-menu-row">
+        <span>${item.name}</span>
+        <span class="qty">${item.qty}</span>
+        <span class="price">${won(item.sales)}</span>
+      </div>
+    `).join('');
+  }
+}
+
+function renderStoreCalendar(storeName, monthStr){
+  const [y, m] = monthStr.split('-').map(Number);
+  const firstDay = new Date(y, m - 1, 1);
+  const lastDay = new Date(y, m, 0);
+  const startDow = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+  const today = (new Date()).toISOString().slice(0, 10);
+  let storeColor = '#666';
+  for(const d of Object.keys(ALL_DATA)){
+    const sd = ALL_DATA[d]?.storeData?.[storeName];
+    if(sd && sd.color){ storeColor = sd.color; break; }
+  }
+
+  let html = '';
+  for(let i = 0; i < startDow; i++) html += '<div class="m-cal-day empty"></div>';
+  for(let d = 1; d <= daysInMonth; d++){
+    const dateStr = monthStr + '-' + String(d).padStart(2, '0');
+    const dt = new Date(y, m - 1, d);
+    const dow = dt.getDay();
+    const numCls = dow === 0 ? 'sun' : (dow === 6 ? 'sat' : '');
+    const sd = ALL_DATA[dateStr]?.storeData?.[storeName];
+    const hasData = sd && !sd.missing && (sd.total || 0) > 0;
+    const isToday = dateStr === today;
+
+    let classes = 'm-cal-day' + (hasData ? ' has' : ' no-data') + (isToday ? ' today' : '');
+    let cellInner = `<span class="num ${hasData ? numCls : 'dim'}">${d}</span>`;
+    if(hasData){
+      const totalK = sd.total / 1000000;
+      const totalLabel = totalK >= 10 ? totalK.toFixed(0) + 'M' : totalK >= 1 ? totalK.toFixed(1) + 'M' : Math.round(totalK*1000) + 'k';
+      cellInner += `<span class="total" style="color:${storeColor}">${totalLabel}</span>`;
+      cellInner += `<div class="dots"><span class="ddot" style="background:${storeColor}"></span></div>`;
+    }
+    const onclick = hasData ? `onclick="mobileSetDate('${dateStr}'); mobileBackToSummary();"` : '';
+    html += `<div class="${classes}" ${onclick}>${cellInner}</div>`;
+  }
+  document.getElementById('m-sm-cal-grid').innerHTML = html;
 }
 
 function mobileRenderCalendar(){
