@@ -594,6 +594,18 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-cost-note{padding:8px 16px 24px;font-size:11px;color:var(--muted);
     text-align:center;line-height:1.5}
 
+
+  /* 비용 탭 지점 select */
+  .m-cost-store-select{padding:0 16px 12px}
+  .m-cost-store-select select{width:100%;background:var(--card);border:1px solid var(--border);
+    color:var(--text);font-size:16px;font-weight:600;font-family:inherit;
+    padding:12px 36px 12px 14px;border-radius:10px;-webkit-appearance:none;appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,#22d3ee 50%),linear-gradient(135deg,#22d3ee 50%,transparent 50%);
+    background-position:calc(100% - 18px) 55%, calc(100% - 13px) 55%;
+    background-size:6px 6px,6px 6px;background-repeat:no-repeat;cursor:pointer}
+  .m-cost-store-select select:focus{outline:none;border-color:var(--accent)}
+  .m-cost-store-select select option{background:#1e293b;color:var(--text);font-size:15px}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -731,12 +743,14 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
       <button class="m-cal-arr" onclick="mobileCostMonthShift(1)">›</button>
     </div>
 
+    <div class="m-cost-store-select" id="m-cost-store-select"></div>
+
     <div class="m-cost-summary" id="m-cost-summary"></div>
 
-    <div class="m-section">고정비 항목별 입력</div>
+    <div class="m-section" id="m-cost-form-h">고정비 항목별 입력</div>
     <div class="m-cost-form" id="m-cost-form"></div>
 
-    <div class="m-section">지점별 고정비 분배 (매출 비중 기준)</div>
+    <div class="m-section">전 지점 고정비 합산</div>
     <div class="m-cost-stores" id="m-cost-stores"></div>
 
     <div class="m-cost-note">
@@ -2915,32 +2929,39 @@ function mobileCostMonthShift(delta){
   renderMobileCost();
 }
 
-function getCostStorageKey(monthStr){
-  return 'cost-' + monthStr;
+let mobileCostStore = null;  // 현재 선택된 지점 (지점명 또는 null=첫 지점)
+
+function getCostStorageKey(monthStr, store){
+  return 'cost-' + (store || 'unknown') + '-' + monthStr;
 }
 
-function loadCostData(monthStr){
+function loadCostData(monthStr, store){
   try {
-    const raw = localStorage.getItem(getCostStorageKey(monthStr));
+    const raw = localStorage.getItem(getCostStorageKey(monthStr, store));
     return raw ? JSON.parse(raw) : {};
   } catch(e) {
     return {};
   }
 }
 
-function saveCostData(monthStr, data){
+function saveCostData(monthStr, store, data){
   try {
-    localStorage.setItem(getCostStorageKey(monthStr), JSON.stringify(data));
+    localStorage.setItem(getCostStorageKey(monthStr, store), JSON.stringify(data));
   } catch(e){}
 }
 
-function onCostInputChange(monthStr, key, valStr){
-  const data = loadCostData(monthStr);
+function onCostInputChange(monthStr, store, key, valStr){
+  const data = loadCostData(monthStr, store);
   const num = parseInt((valStr || '').replace(/[^0-9]/g, ''), 10) || 0;
   if(num > 0) data[key] = num;
   else delete data[key];
-  saveCostData(monthStr, data);
+  saveCostData(monthStr, store, data);
   renderMobileCostSummary(monthStr);
+}
+
+function onCostStoreChange(newStore){
+  mobileCostStore = newStore;
+  renderMobileCost();
 }
 
 function renderMobileCost(){
@@ -2950,7 +2971,27 @@ function renderMobileCost(){
   const monthLabel = y + '년 ' + m + '월';
   document.getElementById('m-cost-month').textContent = monthLabel;
 
-  const data = loadCostData(monthStr);
+  // 지점 목록 추출
+  const allStores = (() => {
+    for(const d of Object.keys(ALL_DATA)){
+      if(ALL_DATA[d]?.stores) return ALL_DATA[d].stores;
+    }
+    return [];
+  })();
+  if(!mobileCostStore && allStores.length > 0) mobileCostStore = allStores[0];
+
+  // 지점 드롭다운
+  const storeOptHtml = allStores.map(s =>
+    `<option value="${s}" ${s === mobileCostStore ? 'selected' : ''}>${s}</option>`
+  ).join('');
+  document.getElementById('m-cost-store-select').innerHTML = `
+    <select onchange="onCostStoreChange(this.value)">${storeOptHtml}</select>
+  `;
+
+  // 폼 헤더
+  document.getElementById('m-cost-form-h').textContent = `${mobileCostStore} · 고정비 항목별 입력`;
+
+  const data = loadCostData(monthStr, mobileCostStore);
 
   // 항목 입력 폼
   let formHtml = '';
@@ -2964,7 +3005,7 @@ function renderMobileCost(){
         <div style="display:flex;align-items:center;gap:4px">
           <input type="text" inputmode="numeric" placeholder="0" value="${display}"
             oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value) this.value = Number(this.value).toLocaleString();"
-            onchange="onCostInputChange('${monthStr}', '${item.key}', this.value)">
+            onchange="onCostInputChange('${monthStr}', '${mobileCostStore}', '${item.key}', this.value)">
           <span class="unit">원</span>
         </div>
       </div>`;
@@ -2975,13 +3016,17 @@ function renderMobileCost(){
 }
 
 function renderMobileCostSummary(monthStr){
-  const data = loadCostData(monthStr);
-  const fixedTotal = COST_ITEMS.reduce((sum, item) => sum + (data[item.key] || 0), 0);
+  const selectedStore = mobileCostStore;
 
-  // 그 달 매출 합계
+  // 선택 지점 입력값
+  const dataSelected = loadCostData(monthStr, selectedStore);
+  const fixedSelected = COST_ITEMS.reduce((sum, item) => sum + (dataSelected[item.key] || 0), 0);
+
+  // 월 매출 (지점별 + 전체)
   const monthDates = Object.keys(ALL_DATA).filter(d => d.startsWith(monthStr));
-  let salesTotal = 0;
   const storeAgg = {};
+  let salesAll = 0;
+  let salesSelected = 0;
   if(monthDates.length > 0){
     const stores = ALL_DATA[monthDates[0]].stores;
     stores.forEach(s => { storeAgg[s] = { total:0, color: ALL_DATA[monthDates[0]].storeData[s].color }; });
@@ -2992,24 +3037,26 @@ function renderMobileCostSummary(monthStr){
         const sd = dd.storeData[s];
         if(sd && !sd.missing){
           storeAgg[s].total += sd.total || 0;
-          salesTotal += sd.total || 0;
+          salesAll += sd.total || 0;
+          if(s === selectedStore) salesSelected += sd.total || 0;
         }
       });
     });
   }
 
-  const profit = salesTotal - fixedTotal;
-  const fixedPct = salesTotal ? (fixedTotal / salesTotal * 100).toFixed(1) : '0.0';
-  const profitPct = salesTotal ? (profit / salesTotal * 100).toFixed(1) : '0.0';
+  // 선택 지점 손익
+  const profit = salesSelected - fixedSelected;
+  const fixedPct = salesSelected ? (fixedSelected / salesSelected * 100).toFixed(1) : '0.0';
+  const profitPct = salesSelected ? (profit / salesSelected * 100).toFixed(1) : '0.0';
 
   document.getElementById('m-cost-summary').innerHTML = `
     <div class="row">
-      <span class="lbl">월 매출</span>
-      <span class="v">${won(salesTotal)}</span>
+      <span class="lbl">${selectedStore} 월 매출</span>
+      <span class="v">${won(salesSelected)}</span>
     </div>
     <div class="row fixed">
-      <span class="lbl">고정비 합계</span>
-      <span class="v">${won(fixedTotal)}<span class="pct">${fixedPct}%</span></span>
+      <span class="lbl">${selectedStore} 고정비</span>
+      <span class="v">${won(fixedSelected)}<span class="pct">${fixedPct}%</span></span>
     </div>
     <div class="divider"></div>
     <div class="row profit ${profit < 0 ? 'loss' : ''}">
@@ -3018,24 +3065,42 @@ function renderMobileCostSummary(monthStr){
     </div>
   `;
 
-  // 지점별 분배
-  const sortedStores = Object.entries(storeAgg)
-    .filter(([, v]) => v.total > 0)
-    .sort((a, b) => b[1].total - a[1].total);
+  // 전 지점 고정비 합산
+  let totalFixedAll = 0;
+  const stores = Object.keys(storeAgg);
   let storesHtml = '';
-  sortedStores.forEach(([s, v]) => {
-    const pct = salesTotal ? (v.total / salesTotal * 100) : 0;
-    const allocated = Math.round(fixedTotal * pct / 100);
+  stores.sort((a, b) => storeAgg[b].total - storeAgg[a].total);
+  stores.forEach(s => {
+    const data = loadCostData(monthStr, s);
+    const fixed = COST_ITEMS.reduce((sum, item) => sum + (data[item.key] || 0), 0);
+    totalFixedAll += fixed;
+    const sales = storeAgg[s].total;
+    const profitS = sales - fixed;
+    const pctS = sales ? (fixed / sales * 100).toFixed(1) : '0.0';
     storesHtml += `
-      <div class="m-cost-store">
-        <span class="dot" style="background:${v.color}"></span>
+      <div class="m-cost-store" onclick="onCostStoreChange('${s}')" style="cursor:pointer">
+        <span class="dot" style="background:${storeAgg[s].color}"></span>
         <div>
-          <div class="name">${s}</div>
-          <div class="pct">매출 비중 ${pct.toFixed(1)}%</div>
+          <div class="name">${s}${s === selectedStore ? ' ✓' : ''}</div>
+          <div class="pct">매출 ${won(sales)} · 고정비 ${pctS}%</div>
         </div>
-        <div class="v">${won(allocated)}</div>
+        <div class="v">${fixed > 0 ? won(fixed) : '미입력'}</div>
       </div>`;
   });
+  // 합계 행
+  if(stores.length > 0){
+    const profitAll = salesAll - totalFixedAll;
+    const totalPct = salesAll ? (totalFixedAll / salesAll * 100).toFixed(1) : '0.0';
+    storesHtml += `
+      <div class="m-cost-store" style="background:rgba(34,211,238,0.06);border-color:#22d3ee">
+        <span class="dot" style="background:#22d3ee"></span>
+        <div>
+          <div class="name" style="color:#22d3ee">전 지점 합계</div>
+          <div class="pct">매출 ${won(salesAll)} · 고정비 ${totalPct}%</div>
+        </div>
+        <div class="v" style="color:${profitAll >= 0 ? '#4ade80' : '#f87171'}">${profitAll >= 0 ? '+' : '-'}${won(Math.abs(profitAll))}</div>
+      </div>`;
+  }
   if(!storesHtml){
     storesHtml = '<div class="m-empty">월 매출 데이터 없음</div>';
   }
