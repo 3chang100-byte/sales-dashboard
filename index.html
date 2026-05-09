@@ -548,6 +548,12 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     word-break:keep-all}
   .m-ai-text strong{color:var(--text);font-weight:600}
 
+
+  /* 분석 상세 순위 행 클릭 가능 */
+  .m-and-row.clickable{cursor:pointer;transition:.15s}
+  .m-and-row.clickable:active{transform:scale(.985);background:rgba(34,211,238,0.05)}
+  .m-and-row .m-and-info{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -2680,12 +2686,16 @@ function mobileShowAnalysisDetail(metricKey){
     let rowCls = 'm-and-row';
     if(idx === 0) rowCls += ' first';
     if(idx === list.length - 1 && list.length > 1) rowCls += ' last';
+    // 지점 메트릭은 클릭 가능 (요일 메트릭 제외)
+    const isClickable = metricKey !== 'dow';
+    if(isClickable) rowCls += ' clickable';
+    const onclickAttr = isClickable ? `onclick="mobileShowStoreMonth('${item.s}')"` : '';
     rankHtml += `
-      <div class="${rowCls}">
+      <div class="${rowCls}" ${onclickAttr}>
         <span class="m-and-rk">${idx + 1}위</span>
         <div>
           <div class="m-and-info">
-            <span class="m-dot" style="background:${item.color}"></span>${item.s}
+            <span class="m-dot" style="background:${item.color}"></span>${item.s}${isClickable ? ' <span style="color:var(--accent);font-size:13px;margin-left:auto">›</span>' : ''}
           </div>
           <div class="m-and-bar-wrap">
             <div style="background:${item.color};width:${w}%"></div>
