@@ -602,28 +602,6 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     <div class="m-and-gap" id="m-and-gap"></div>
   </div>
 
-  <!-- 추세 화면 -->
-  <div class="m-screen" id="m-trend">
-    <div class="m-back" onclick="mobileTab('summary')">‹ 요약</div>
-    <div class="m-appbar">
-      <div>
-        <div class="m-appbar-title">기간별 매출 분석</div>
-        <h1>추세</h1>
-      </div>
-    </div>
-    <div class="m-period-tabs" id="m-period-tabs">
-      <button class="m-period-tab" data-period="7" onclick="mobileSetPeriod(7)">7일</button>
-      <button class="m-period-tab active" data-period="30" onclick="mobileSetPeriod(30)">30일</button>
-      <button class="m-period-tab" data-period="90" onclick="mobileSetPeriod(90)">90일</button>
-    </div>
-    <div class="m-trend-summary" id="m-trend-summary"></div>
-    <div class="m-trend-chart">
-      <canvas id="m-trend-canvas"></canvas>
-    </div>
-    <div class="m-section">요일별 평균 매출</div>
-    <div class="m-dow-table" id="m-dow-table"></div>
-  </div>
-
   <!-- 분석 화면 -->
   <div class="m-screen" id="m-analysis">
     <div class="m-back" onclick="mobileTab('summary')">‹ 요약</div>
@@ -633,12 +611,36 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
         <h1>분석</h1>
       </div>
     </div>
-    <div class="m-cal-head">
+    <div class="m-section">지점별 매출 추이</div>
+    <div class="m-period-tabs" id="m-an-period-tabs">
+      <button class="m-period-tab active" data-period="30" onclick="mobileSetAnPeriod(30)">30일</button>
+      <button class="m-period-tab" data-period="90" onclick="mobileSetAnPeriod(90)">90일</button>
+      <button class="m-period-tab" data-period="180" onclick="mobileSetAnPeriod(180)">180일</button>
+    </div>
+    <div class="m-trend-chart">
+      <canvas id="m-an-trend-canvas"></canvas>
+    </div>
+    <div class="m-cal-head" style="margin-top:12px">
       <button class="m-cal-arr" onclick="mobileAnMonthShift(-1)">‹</button>
       <span class="m-cal-month" id="m-an-month">2026년 5월</span>
       <button class="m-cal-arr" onclick="mobileAnMonthShift(1)">›</button>
     </div>
     <div class="m-an-cards" id="m-an-cards"></div>
+  </div>
+
+  <!-- 비용 화면 (placeholder) -->
+  <div class="m-screen" id="m-cost">
+    <div class="m-back" onclick="mobileTab('summary')">‹ 요약</div>
+    <div class="m-appbar">
+      <div>
+        <div class="m-appbar-title">월간 비용 / 손익 분석</div>
+        <h1>비용</h1>
+      </div>
+    </div>
+    <div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6">
+      비용 분석 기능 준비 중<br>
+      <span style="font-size:11px">월별 손익 자동화(run_pl.py)와 연동 예정</span>
+    </div>
   </div>
 
   <!-- 하단 탭바 -->
@@ -647,13 +649,13 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
       <span>요약</span>
     </div>
-    <div class="m-tab" onclick="mobileTab('trend')" data-tab="trend">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,17 9,11 13,15 21,7"/></svg>
-      <span>추세</span>
-    </div>
     <div class="m-tab" onclick="mobileTab('analysis')" data-tab="analysis">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
       <span>분석</span>
+    </div>
+    <div class="m-tab" onclick="mobileTab('cost')" data-tab="cost">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <span>비용</span>
     </div>
     <div class="m-tab" onclick="mobileTab('settings')" data-tab="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -2092,17 +2094,16 @@ function renderMobileHourly(sd){
 
 function mobileTab(tab){
   document.querySelectorAll('.m-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
-  // 모든 화면 비활성화
   document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
   if(tab === 'summary'){
     document.getElementById('m-main').classList.add('active');
     renderMobile();
-  } else if(tab === 'trend'){
-    document.getElementById('m-trend').classList.add('active');
-    renderMobileTrend();
   } else if(tab === 'analysis'){
     document.getElementById('m-analysis').classList.add('active');
     renderMobileAnalysis();
+    renderMobileAnTrend();
+  } else if(tab === 'cost'){
+    document.getElementById('m-cost').classList.add('active');
   } else if(tab === 'settings'){
     alert('설정 탭 — 추후 추가 예정');
     document.querySelectorAll('.m-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'summary'));
@@ -2497,6 +2498,71 @@ function mobileBackToAnalysis(){
   document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
   document.getElementById('m-analysis').classList.add('active');
   window.scrollTo(0, 0);
+}
+
+
+// ── 분석 탭 추세 차트 ──
+let mobileAnPeriod = 30;
+let mobileAnTrendChart = null;
+
+function mobileSetAnPeriod(days){
+  mobileAnPeriod = days;
+  document.querySelectorAll('#m-an-period-tabs .m-period-tab').forEach(b =>
+    b.classList.toggle('active', parseInt(b.dataset.period) === days));
+  renderMobileAnTrend();
+}
+
+function renderMobileAnTrend(){
+  const dates = Object.keys(ALL_DATA).sort();
+  const recent = dates.slice(-mobileAnPeriod);
+  if(recent.length === 0) return;
+
+  const lastDate = recent[recent.length - 1];
+  const stores = ALL_DATA[lastDate].stores;
+  const colors = {};
+  stores.forEach(s => { colors[s] = ALL_DATA[lastDate].storeData[s].color; });
+
+  const labels = recent.map(d => {
+    const dt = new Date(d + 'T00:00:00');
+    return (dt.getMonth() + 1) + '/' + dt.getDate();
+  });
+
+  const datasets = stores.map(s => ({
+    label: s,
+    data: recent.map(d => {
+      const sd = ALL_DATA[d]?.storeData?.[s];
+      return (sd && !sd.missing) ? (sd.total || 0) : null;
+    }),
+    borderColor: colors[s],
+    backgroundColor: colors[s] + '20',
+    borderWidth: 1.8,
+    tension: 0.3,
+    pointRadius: 0,
+    pointHoverRadius: 4,
+    spanGaps: true,
+  }));
+
+  if(mobileAnTrendChart){ mobileAnTrendChart.destroy(); }
+  const ctx = document.getElementById('m-an-trend-canvas').getContext('2d');
+  mobileAnTrendChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'bottom',
+          labels: { color: '#94a3b8', font: { size: 9 }, boxWidth: 8, boxHeight: 8, padding: 6 } },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        x: { ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 6 }, grid: { display: false } },
+        y: { ticks: { color: '#94a3b8', font: { size: 9 },
+          callback: v => (v >= 1e6 ? (v/1e6).toFixed(1) + 'M' : v >= 1e3 ? (v/1e3).toFixed(0) + 'k' : v) },
+          grid: { color: 'rgba(148,163,184,0.1)' } }
+      }
+    }
+  });
 }
 
 function mobileInit(){
