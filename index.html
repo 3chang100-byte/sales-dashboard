@@ -687,6 +687,16 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     border-radius:7px;font-weight:500;width:100%;color-scheme:dark}
   .m-set-staff-row input.staff-date:focus{outline:none;border-color:var(--accent)}
 
+
+  /* 날짜 칩 — 토(파랑)/일·공휴일(빨강) */
+  .m-dpill.sun .w, .m-dpill.sun .d, .m-dpill.holiday .w, .m-dpill.holiday .d{color:#f87171}
+  .m-dpill.sat .w, .m-dpill.sat .d{color:#93c5fd}
+  .m-dpill.active.sun .w, .m-dpill.active.sun .d,
+  .m-dpill.active.sat .w, .m-dpill.active.sat .d,
+  .m-dpill.active.holiday .w, .m-dpill.active.holiday .d{color:inherit}
+  /* 캘린더 — 공휴일 */
+  .m-cal-day .num.holiday{color:#f87171}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -1772,6 +1782,29 @@ initCal();
 // ═══════════════════════════════════════════════════════════════
 // 모바일 전용 렌더링 (≤768px에서만 활성)
 // ═══════════════════════════════════════════════════════════════
+
+// 2026년 한국 공휴일 (양력 + 대체공휴일)
+const KOREAN_HOLIDAYS = new Set([
+  '2026-01-01',  // 신정
+  '2026-02-16', '2026-02-17', '2026-02-18',  // 설날 연휴
+  '2026-03-01',  // 삼일절
+  '2026-03-02',  // 대체공휴일 (삼일절)
+  '2026-05-05',  // 어린이날
+  '2026-05-25',  // 부처님 오신날
+  '2026-06-06',  // 현충일
+  '2026-08-15',  // 광복절
+  '2026-08-17',  // 광복절 대체공휴일
+  '2026-09-24', '2026-09-25', '2026-09-26',  // 추석 연휴
+  '2026-10-03',  // 개천절
+  '2026-10-05',  // 개천절 대체공휴일
+  '2026-10-09',  // 한글날
+  '2026-12-25',  // 성탄절
+]);
+
+function isHoliday(dateStr){
+  return KOREAN_HOLIDAYS.has(dateStr);
+}
+
 let mobileCurrentDate = null;
 let mobileMode = 'month';
 const KOR_DOW = ['일','월','화','수','목','금','토'];
@@ -1828,10 +1861,16 @@ function renderMobile(date){
   const recentDates = Object.keys(ALL_DATA).sort().slice(-14);
   document.getElementById('m-datestrip').innerHTML = recentDates.map(d => {
     const dt = new Date(d + 'T00:00:00');
-    const dow = KOR_DOW[dt.getDay()];
+    const dowIdx = dt.getDay();
+    const dow = KOR_DOW[dowIdx];
     const day = dt.getDate();
     const isActive = (d === date) && (mobileMode === 'day');
-    return `<div class="m-dpill ${isActive?'active':''}" onclick="mobileSetDate('${d}')">
+    let cls = 'm-dpill';
+    if(isActive) cls += ' active';
+    if(dowIdx === 0 || isHoliday(d)) cls += ' sun';
+    else if(dowIdx === 6) cls += ' sat';
+    if(isHoliday(d)) cls += ' holiday';
+    return `<div class="${cls}" onclick="mobileSetDate('${d}')">
       <div class="w">${dow}</div><div class="d">${day}</div>
     </div>`;
   }).join('');
@@ -2365,7 +2404,8 @@ function renderStoreCalendar(storeName, monthStr){
     const dateStr = monthStr + '-' + String(d).padStart(2, '0');
     const dt = new Date(y, m - 1, d);
     const dow = dt.getDay();
-    const numCls = dow === 0 ? 'sun' : (dow === 6 ? 'sat' : '');
+    let numCls = dow === 0 || isHoliday(dateStr) ? 'sun' : (dow === 6 ? 'sat' : '');
+    if(isHoliday(dateStr)) numCls += ' holiday';
     const sd = ALL_DATA[dateStr]?.storeData?.[storeName];
     const hasData = sd && !sd.missing && (sd.total || 0) > 0;
     const isToday = dateStr === today;
@@ -2408,7 +2448,8 @@ function mobileRenderCalendar(){
     const dateStr = monthStr + '-' + String(d).padStart(2, '0');
     const dt = new Date(y, m - 1, d);
     const dow = dt.getDay();
-    const numCls = dow === 0 ? 'sun' : (dow === 6 ? 'sat' : '');
+    let numCls = dow === 0 || isHoliday(dateStr) ? 'sun' : (dow === 6 ? 'sat' : '');
+    if(isHoliday(dateStr)) numCls += ' holiday';
     const D = ALL_DATA[dateStr];
     const hasData = !!D;
     const isToday = dateStr === today;
