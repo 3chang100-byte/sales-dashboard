@@ -663,6 +663,23 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-cost-row.readonly{opacity:.85}
   .m-cost-row.readonly .v{font-size:14px;font-weight:700;color:var(--text);text-align:right}
 
+
+  /* 설정 탭 잠금 모드 */
+  input.locked, .m-cost-row.locked input{background:transparent !important;
+    border-color:transparent !important;color:var(--text);
+    pointer-events:none}
+  .m-cost-row.locked{opacity:.95}
+  .m-set-actions{display:flex;gap:6px;margin:6px 16px 14px;justify-content:flex-end}
+  .m-set-btn{padding:8px 16px;font-size:13px;font-weight:600;border-radius:8px;
+    border:1px solid var(--border);background:var(--card);color:var(--text);
+    cursor:pointer;font-family:inherit}
+  .m-set-btn:active{transform:scale(.97)}
+  .m-set-btn.save{background:#22d3ee;color:#0f172a;border-color:#22d3ee}
+  .m-set-btn.edit{color:#22d3ee;border-color:#22d3ee}
+  .m-set-btn.delete{color:#f87171;border-color:rgba(248,113,113,0.4);
+    background:rgba(248,113,113,0.05)}
+  .m-section-locked{opacity:.7;font-size:11px;color:var(--muted);margin-left:8px}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -831,14 +848,17 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     <div id="m-set-store-only">
       <div class="m-section" id="m-set-store-h">매장 정보</div>
       <div class="m-set-info" id="m-set-info"></div>
+      <div class="m-set-actions" id="m-set-info-actions"></div>
 
       <div class="m-section" id="m-set-staff-h">정직원 정보</div>
       <div class="m-set-staff" id="m-set-staff"></div>
-      <button class="m-set-add" onclick="mobileSetAddStaff()">+ 직원 추가</button>
+      <div id="m-set-staff-add-wrap"><button class="m-set-add" onclick="mobileSetAddStaff()">+ 직원 추가</button></div>
+      <div class="m-set-actions" id="m-set-staff-actions"></div>
     </div>
 
     <div class="m-section" id="m-set-cost-h">고정비 입력</div>
     <div class="m-cost-form" id="m-set-cost-form"></div>
+    <div class="m-set-actions" id="m-set-cost-actions"></div>
 
     <div class="m-section">전 지점 종합</div>
     <div class="m-set-overview" id="m-set-overview"></div>
@@ -3344,12 +3364,15 @@ function renderMobileSettings(){
   const data = loadSettings(mobileSettingsStore);
 
   // 매장 정보 (테이블/객석)
+  const infoLocked = isSectionLocked('info', mobileSettingsStore);
+  const infoCls = infoLocked ? 'locked' : '';
   document.getElementById('m-set-info').innerHTML = `
     <div class="row">
       <div class="icon">🪑</div>
       <div class="name">테이블 수</div>
       <div style="display:flex;align-items:center;gap:4px">
-        <input type="text" inputmode="numeric" placeholder="0" value="${data.tables ? data.tables.toLocaleString() : ''}"
+        <input type="text" class="${infoCls}" inputmode="numeric" placeholder="0" value="${data.tables ? data.tables.toLocaleString() : ''}"
+          ${infoLocked ? 'readonly' : ''}
           oninput="this.value = this.value.replace(/[^0-9]/g, '');"
           onchange="onSettingsInfoChange('tables', this.value)">
         <span class="unit">개</span>
@@ -3359,15 +3382,19 @@ function renderMobileSettings(){
       <div class="icon">👥</div>
       <div class="name">객석 수</div>
       <div style="display:flex;align-items:center;gap:4px">
-        <input type="text" inputmode="numeric" placeholder="0" value="${data.seats ? data.seats.toLocaleString() : ''}"
+        <input type="text" class="${infoCls}" inputmode="numeric" placeholder="0" value="${data.seats ? data.seats.toLocaleString() : ''}"
+          ${infoLocked ? 'readonly' : ''}
           oninput="this.value = this.value.replace(/[^0-9]/g, '');"
           onchange="onSettingsInfoChange('seats', this.value)">
         <span class="unit">석</span>
       </div>
     </div>
   `;
+  document.getElementById('m-set-info-actions').innerHTML = renderActions('info', mobileSettingsStore);
 
   // 직원 목록
+  const staffLocked = isSectionLocked('staff', mobileSettingsStore);
+  const staffCls = staffLocked ? 'locked' : '';
   const staff = data.staff || [];
   let staffHtml = '';
   staff.forEach((p, idx) => {
@@ -3376,19 +3403,23 @@ function renderMobileSettings(){
       <div class="m-set-staff-row">
         <span class="num">${idx + 1}</span>
         <div class="inputs">
-          <input type="text" class="staff-name" placeholder="이름" value="${p.name || ''}"
+          <input type="text" class="staff-name ${staffCls}" placeholder="이름" value="${p.name || ''}"
+            ${staffLocked ? 'readonly' : ''}
             onchange="onStaffNameChange(${idx}, this.value)">
-          <input type="text" class="staff-salary" inputmode="numeric" placeholder="급여 (원)" value="${sal}"
+          <input type="text" class="staff-salary ${staffCls}" inputmode="numeric" placeholder="급여 (원)" value="${sal}"
+            ${staffLocked ? 'readonly' : ''}
             oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value) this.value = Number(this.value).toLocaleString();"
             onchange="onStaffSalaryChange(${idx}, this.value)">
         </div>
-        <button class="delete-btn" onclick="mobileSetDeleteStaff(${idx})" title="삭제">×</button>
+        ${staffLocked ? '' : `<button class="delete-btn" onclick="mobileSetDeleteStaff(${idx})" title="삭제">×</button>`}
       </div>`;
   });
   if(staffHtml === ''){
     staffHtml = '<div class="m-empty">직원이 없습니다. 아래 버튼으로 추가하세요.</div>';
   }
   document.getElementById('m-set-staff').innerHTML = staffHtml;
+  document.getElementById('m-set-staff-add-wrap').style.display = staffLocked ? 'none' : '';
+  document.getElementById('m-set-staff-actions').innerHTML = renderActions('staff', mobileSettingsStore);
 
   // 고정비 섹션 렌더
   renderMobileSettingsCost();
@@ -3410,16 +3441,19 @@ function renderMobileSettingsCost(){
   // 매장정보·직원 섹션은 공용일 때 숨김
   document.getElementById('m-set-store-only').style.display = isShared ? 'none' : '';
 
+  const costLocked = isSectionLocked('cost', store);
+  const costCls = costLocked ? 'locked' : '';
   let formHtml = '';
   items.forEach(item => {
     const v = data[item.key] || '';
     const display = v ? Number(v).toLocaleString() : '';
     formHtml += `
-      <div class="m-cost-row">
+      <div class="m-cost-row ${costCls}">
         <div class="icon">${item.icon}</div>
         <div class="name">${item.key}</div>
         <div style="display:flex;align-items:center;gap:4px">
           <input type="text" inputmode="numeric" placeholder="0" value="${display}"
+            ${costLocked ? 'readonly' : ''}
             oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value) this.value = Number(this.value).toLocaleString();"
             onchange="onCostInputChange('${store}', '${item.key}', this.value)">
           <span class="unit">원</span>
@@ -3427,6 +3461,7 @@ function renderMobileSettingsCost(){
       </div>`;
   });
   document.getElementById('m-set-cost-form').innerHTML = formHtml;
+  document.getElementById('m-set-cost-actions').innerHTML = renderActions('cost', store);
 }
 
 function renderMobileSettingsOverview(){
@@ -3485,6 +3520,73 @@ function renderMobileSettingsOverview(){
     </div>`;
 
   document.getElementById('m-set-overview').innerHTML = html;
+}
+
+
+// ── 설정 탭 섹션별 잠금 상태 ──
+const sectionLocks = {};  // 메모리: { 'info-{store}': true|false }
+
+function lockKey(section, store){ return section + '-' + store; }
+
+function hasSectionData(section, store){
+  if(section === 'info'){
+    const d = loadSettings(store);
+    return (d.tables || 0) > 0 || (d.seats || 0) > 0;
+  }
+  if(section === 'staff'){
+    const d = loadSettings(store);
+    return (d.staff || []).some(p => (p.name || '').trim() || (p.salary || 0) > 0);
+  }
+  if(section === 'cost'){
+    const d = loadCostData(store);
+    return Object.values(d).some(v => v > 0);
+  }
+  return false;
+}
+
+function isSectionLocked(section, store){
+  const k = lockKey(section, store);
+  if(k in sectionLocks) return sectionLocks[k];
+  return hasSectionData(section, store);  // 데이터 있으면 기본 잠금
+}
+
+function lockSection(section, store, locked){
+  sectionLocks[lockKey(section, store)] = locked;
+  renderMobileSettings();
+}
+
+function deleteSection(section, store){
+  if(!confirm(section + ' 데이터를 모두 삭제하시겠습니까?')) return;
+  if(section === 'info'){
+    const d = loadSettings(store);
+    d.tables = 0; d.seats = 0;
+    saveSettings(store, d);
+  } else if(section === 'staff'){
+    const d = loadSettings(store);
+    d.staff = [];
+    saveSettings(store, d);
+  } else if(section === 'cost'){
+    localStorage.removeItem('cost-' + store);
+  }
+  // 삭제 후 편집 모드
+  sectionLocks[lockKey(section, store)] = false;
+  renderMobileSettings();
+}
+
+function renderActions(section, store){
+  const locked = isSectionLocked(section, store);
+  const hasData = hasSectionData(section, store);
+  if(locked && hasData){
+    return `
+      <button class="m-set-btn edit" onclick="lockSection('${section}', '${store}', false)">수정</button>
+      <button class="m-set-btn delete" onclick="deleteSection('${section}', '${store}')">삭제</button>`;
+  } else {
+    // 편집 모드 — 데이터 있으면 저장 버튼, 없으면 표시 안 함
+    if(hasData){
+      return `<button class="m-set-btn save" onclick="lockSection('${section}', '${store}', true)">저장</button>`;
+    }
+    return '<span style="font-size:11px;color:var(--muted)">입력 후 저장 버튼이 나타납니다</span>';
+  }
 }
 
 function mobileInit(){
