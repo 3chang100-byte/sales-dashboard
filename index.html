@@ -526,6 +526,28 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-drill-date-wrap select:focus{outline:none;background-color:rgba(34,211,238,0.08)}
   .m-drill-date-wrap select option{background:#1e293b;color:var(--text);font-size:14px}
 
+
+  /* AI 인사이트 섹션 */
+  .m-ai-section{padding:8px 16px 20px;margin-top:6px;
+    border-top:1px dashed var(--border)}
+  .m-ai-header{display:flex;align-items:center;gap:6px;margin:14px 0 10px;
+    font-size:11px;color:var(--accent);font-weight:700;letter-spacing:.6px;
+    text-transform:uppercase}
+  .m-ai-header::before{content:'\1F916';font-size:15px;letter-spacing:0}
+  .m-ai-card{padding:11px 13px;margin-bottom:7px;border-radius:10px;
+    background:var(--card);border:0.5px solid var(--border);
+    border-left:3px solid #22d3ee}
+  .m-ai-card.positive{border-left-color:#4ade80}
+  .m-ai-card.warning{border-left-color:#fbbf24}
+  .m-ai-card.info{border-left-color:#94a3b8}
+  .m-ai-card.highlight{border-left-color:#22d3ee;background:rgba(34,211,238,0.06)}
+  .m-ai-card.action{border-left-color:#a78bfa}
+  .m-ai-title{font-size:13px;font-weight:600;margin-bottom:4px;color:var(--text);
+    display:flex;align-items:center;gap:6px}
+  .m-ai-text{font-size:11.5px;color:var(--muted);line-height:1.55;
+    word-break:keep-all}
+  .m-ai-text strong{color:var(--text);font-weight:600}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -640,6 +662,11 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
       <button class="m-cal-arr" onclick="mobileAnMonthShift(1)">›</button>
     </div>
     <div class="m-an-cards" id="m-an-cards"></div>
+
+    <div class="m-ai-section">
+      <div class="m-ai-header">AI 매출 분석 · 인사이트</div>
+      <div id="m-ai-cards"></div>
+    </div>
   </div>
 
   <!-- 비용 화면 (placeholder) -->
@@ -2272,6 +2299,157 @@ function mobileAnMonthShift(delta){
   renderMobileAnalysis();
 }
 
+
+// ── AI 매출 분석 인사이트 (룰 기반 자동 분석) ──
+function generateAIInsights(monthDates, agg, stores, monthLabel){
+  const insights = [];
+  const fmtKR = v => v >= 1e8 ? (v/1e8).toFixed(2) + '억' : v >= 1e4 ? Math.round(v/1e4).toLocaleString() + '만' : Math.round(v).toLocaleString();
+
+  // 활성 지점만 (데이터 있는)
+  const activeStores = stores.filter(s => agg[s].total > 0);
+  if(activeStores.length === 0){
+    return [{type:'info', title:'데이터 부족', text:`${monthLabel}에 매출 데이터가 없어 분석 불가합니다.`}];
+  }
+
+  const totalAll = activeStores.reduce((s, x) => s + agg[x].total, 0);
+  const lunchAll = activeStores.reduce((s, x) => s + agg[x].lunch, 0);
+  const dinnerAll = activeStores.reduce((s, x) => s + agg[x].dinner, 0);
+  const alcoholAll = activeStores.reduce((s, x) => s + agg[x].alcohol, 0);
+  const guestsAll = activeStores.reduce((s, x) => s + agg[x].guests, 0);
+  const ticketAvg = guestsAll ? totalAll / guestsAll : 0;
+
+  // 1. 매출 1위 (highlight)
+  const sortedByTotal = [...activeStores].sort((a, b) => agg[b].total - agg[a].total);
+  const topStore = sortedByTotal[0];
+  const topPct = (agg[topStore].total / totalAll * 100).toFixed(1);
+  insights.push({
+    type:'highlight',
+    title: '매출 1위 · ' + topStore,
+    text: `${monthLabel} 누계 <strong>${fmtKR(agg[topStore].total)}</strong>로 전체의 <strong>${topPct}%</strong> 차지. ${topPct >= 25 ? '브랜드 핵심 지점, 안정적 성장 유지가 관건.' : '비중이 분산되어 있어 균형 잡힌 포트폴리오.'}`
+  });
+
+  // 2. 객단가 분석
+  const ticketList = activeStores.map(s => ({
+    s, t: agg[s].guests ? agg[s].total/agg[s].guests : 0
+  })).filter(x => x.t > 0).sort((a, b) => b.t - a.t);
+  if(ticketList.length >= 2){
+    const top = ticketList[0], bot = ticketList[ticketList.length - 1];
+    const ratio = (top.t / bot.t).toFixed(1);
+    insights.push({
+      type:'positive',
+      title: '객단가 1위 · ' + top.s,
+      text: `1인당 <strong>${fmtKR(top.t)}원</strong> (최저 ${bot.s} 대비 <strong>${ratio}배</strong>). 고가 메뉴 비중·세트 구성·단체 주문 비율을 다른 지점에 적용하면 객단가 ${Math.round((top.t/bot.t-1)*100*0.3)}% 향상 여지.`
+    });
+  }
+
+  // 3. 약세 지점 — 액션 제안
+  if(sortedByTotal.length >= 3){
+    const last = sortedByTotal[sortedByTotal.length - 1];
+    const lastPct = (agg[last].total / totalAll * 100).toFixed(1);
+    const gap = agg[topStore].total - agg[last].total;
+    insights.push({
+      type:'warning',
+      title: '약세 지점 · ' + last,
+      text: `비중 <strong>${lastPct}%</strong> (1위와 ${fmtKR(gap)} 격차). 객수: ${agg[last].guests}명 / 일평균 ${fmtKR(monthDates.length ? agg[last].total/monthDates.length : 0)}. <strong>점심 영업 강화 또는 평일 프로모션</strong> 검토 권장.`
+    });
+  }
+
+  // 4. 점심/저녁 비중
+  if(totalAll > 0){
+    const lunchPct = (lunchAll / totalAll * 100).toFixed(1);
+    const lunchTopStore = activeStores.map(s => ({
+      s, p: agg[s].total ? agg[s].lunch/agg[s].total*100 : 0
+    })).sort((a, b) => b.p - a.p)[0];
+    insights.push({
+      type:'info',
+      title: '점심 비중 ' + lunchPct + '%',
+      text: `${lunchTopStore.s}이 점심 비중 <strong>${lunchTopStore.p.toFixed(1)}%</strong>로 점심 매출 강세. ${parseFloat(lunchPct) < 15 ? '전반적 점심 약세 — 직장인·관광객 대상 점심 세트 메뉴 강화 시 매출 +10% 잠재력.' : '점심·저녁 균형 양호.'}`
+    });
+  }
+
+  // 5. 요일별 격차
+  const dowSums = [0,0,0,0,0,0,0];
+  const dowCnts = [0,0,0,0,0,0,0];
+  monthDates.forEach(d => {
+    const t = ALL_DATA[d]?.summary?.total || 0;
+    if(t > 0){
+      const dow = new Date(d + 'T00:00:00').getDay();
+      dowSums[dow] += t;
+      dowCnts[dow] += 1;
+    }
+  });
+  const dowLabels = ['일','월','화','수','목','금','토'];
+  const dowList = dowLabels.map((l, i) => ({
+    l, v: dowCnts[i] ? dowSums[i]/dowCnts[i] : 0, n: dowCnts[i]
+  })).filter(x => x.n > 0).sort((a, b) => b.v - a.v);
+  if(dowList.length >= 3){
+    const dt = dowList[0], db = dowList[dowList.length - 1];
+    const ratio = db.v ? (dt.v / db.v).toFixed(1) : '∞';
+    insights.push({
+      type:'info',
+      title: '요일별 격차 ' + ratio + '배',
+      text: `<strong>${dt.l}요일</strong> 평균 ${fmtKR(dt.v)} vs <strong>${db.l}요일</strong> ${fmtKR(db.v)}. ${db.l}요일은 <strong>인력 효율화·평일 한정 메뉴</strong>로 비용 최적화 + 매출 견인 검토.`
+    });
+  }
+
+  // 6. 주류 비중
+  if(totalAll > 0){
+    const alcPct = (alcoholAll / totalAll * 100).toFixed(1);
+    const alcF = parseFloat(alcPct);
+    let title, text, type;
+    if(alcF < 5){
+      type = 'warning';
+      title = '주류 비중 낮음 · ' + alcPct + '%';
+      text = `장어 전문점 평균 8~15% 대비 낮음. <strong>주류 페어링 추천·생일 1+1 이벤트·맥주 세트</strong> 등으로 <strong>객단가 +10~15%</strong> 잠재력.`;
+    } else if(alcF > 12){
+      type = 'positive';
+      title = '주류 비중 양호 · ' + alcPct + '%';
+      text = `평균 이상으로 객단가 향상에 기여. <strong>고급 청주·소주·복분자 라인업 확장</strong> 시 추가 상승 여지.`;
+    } else {
+      type = 'info';
+      title = '주류 비중 ' + alcPct + '%';
+      text = `평균 수준. 직장인 회식·단체 손님에 <strong>주류 패키지 추천</strong>으로 비중 +3~5%p 향상 가능.`;
+    }
+    insights.push({type, title, text});
+  }
+
+  // 7. 회전율 (전체 평균)
+  const turnoverList = activeStores
+    .map(s => agg[s].guests / monthDates.length)
+    .filter(x => x > 0);
+  if(turnoverList.length > 0){
+    const avgGuests = turnoverList.reduce((a,b)=>a+b,0) / turnoverList.length;
+    if(avgGuests < 30){
+      insights.push({
+        type:'action',
+        title: '일평균 객수 개선 권장',
+        text: `지점당 일평균 <strong>${avgGuests.toFixed(0)}명</strong>. 장어 전문점 손익분기 일평균 50~60명 권장. <strong>온라인 마케팅·예약 인센티브·시간대 분산 프로모션</strong> 검토.`
+      });
+    }
+  }
+
+  // 8. 종합 액션 제안
+  insights.push({
+    type:'action',
+    title: '핵심 액션 제안',
+    text: `① <strong>${topStore} 모범 사례</strong>를 약세 지점에 적용 ② <strong>점심 영업 활성화</strong>로 시간대 균형 ③ <strong>주류 페어링 메뉴</strong>로 객단가 향상. 다음달 매출 +5~10% 목표 가능.`
+  });
+
+  return insights;
+}
+
+function renderMobileAIInsights(monthDates, agg, stores, monthLabel){
+  const insights = generateAIInsights(monthDates, agg, stores, monthLabel);
+  const html = insights.map(ins => `
+    <div class="m-ai-card ${ins.type}">
+      <div class="m-ai-title">${ins.title}</div>
+      <div class="m-ai-text">${ins.text}</div>
+    </div>
+  `).join('');
+  const el = document.getElementById('m-ai-cards');
+  if(el) el.innerHTML = html;
+}
+
 function renderMobileAnalysis(){
   const monthStr = mobileAnMonth || (mobileCurrentDate || Object.keys(ALL_DATA).sort().pop()).slice(0,7);
   const [y, m] = monthStr.split('-').map(Number);
@@ -2401,6 +2579,10 @@ function renderMobileAnalysis(){
       </div>`;
   });
   document.getElementById('m-an-cards').innerHTML = html;
+
+  // AI 인사이트 렌더
+  const monthLabel = y + '년 ' + m + '월';
+  renderMobileAIInsights(monthDates, agg, stores, monthLabel);
 }
 
 
