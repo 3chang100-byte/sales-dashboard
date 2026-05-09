@@ -697,6 +697,43 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   /* 캘린더 — 공휴일 */
   .m-cal-day .num.holiday{color:#f87171}
 
+
+  /* 손익계산 탭 */
+  .m-pl-summary{margin:0 16px 16px;padding:14px;border-radius:12px;
+    background:var(--card);border:1px solid var(--border)}
+  .m-pl-summary .row{display:flex;justify-content:space-between;align-items:baseline;
+    padding:5px 0}
+  .m-pl-summary .row .lbl{font-size:13px;color:var(--muted)}
+  .m-pl-summary .row .v{font-size:17px;font-weight:700}
+  .m-pl-summary .row.sales .v{color:var(--text)}
+  .m-pl-summary .row.cost .v{color:#fbbf24}
+  .m-pl-summary .row.profit .v{font-size:22px}
+  .m-pl-summary .row.profit.up .v{color:#4ade80}
+  .m-pl-summary .row.profit.down .v{color:#f87171}
+  .m-pl-summary .divider{height:1px;background:var(--border);margin:6px 0}
+  .m-pl-summary .pct{font-size:11px;color:var(--muted);margin-left:6px}
+  .m-pl-summary .delta{font-size:11px;margin-left:4px}
+  .m-pl-summary .delta.up{color:#4ade80}
+  .m-pl-summary .delta.down{color:#f87171}
+
+  .m-pl-stores{padding:0 12px 16px;display:flex;flex-direction:column;gap:5px}
+  .m-pl-store-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;
+    align-items:center;padding:11px 12px;border-radius:10px;
+    background:var(--card);border:1px solid var(--border)}
+  .m-pl-store-row .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+  .m-pl-store-row .name{font-size:14px;font-weight:600}
+  .m-pl-store-row .meta{font-size:11px;color:var(--muted);margin-top:1px}
+  .m-pl-store-row .pl-bar{height:5px;background:#0f172a;border-radius:3px;margin-top:5px;overflow:hidden;display:flex}
+  .m-pl-store-row .pl-bar > .pos{background:#4ade80;height:100%}
+  .m-pl-store-row .pl-bar > .neg{background:#f87171;height:100%}
+  .m-pl-store-row .v{text-align:right}
+  .m-pl-store-row .v .profit{font-size:14px;font-weight:700}
+  .m-pl-store-row .v .profit.up{color:#4ade80}
+  .m-pl-store-row .v .profit.down{color:#f87171}
+  .m-pl-store-row .v .pct{font-size:10px;color:var(--muted);margin-top:2px}
+
+  /* 손익 인사이트는 분석 탭의 m-ai-card 스타일 재사용 */
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -850,6 +887,34 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     </div>
   </div>
 
+  <!-- 손익계산 화면 -->
+  <div class="m-screen" id="m-pl">
+    <div class="m-back" onclick="mobileTab('summary')">‹ 요약</div>
+    <div class="m-appbar">
+      <div>
+        <div class="m-appbar-title">월간 손익 분석</div>
+        <h1>손익</h1>
+      </div>
+    </div>
+
+    <div class="m-cal-head" style="margin-top:0">
+      <button class="m-cal-arr" onclick="mobilePLMonthShift(-1)">‹</button>
+      <span class="m-cal-month" id="m-pl-month"></span>
+      <button class="m-cal-arr" onclick="mobilePLMonthShift(1)">›</button>
+    </div>
+
+    <div class="m-pl-summary" id="m-pl-summary"></div>
+
+    <div class="m-section">지점별 손익 비교</div>
+    <div class="m-pl-stores" id="m-pl-stores"></div>
+
+    <div class="m-section">월별 손익 추이</div>
+    <div class="m-trend-chart" style="height:180px"><canvas id="m-pl-trend-canvas"></canvas></div>
+
+    <div class="m-section">손익 분석 인사이트</div>
+    <div id="m-pl-insights"></div>
+  </div>
+
   <!-- 설정 화면 -->
   <div class="m-screen" id="m-settings">
     <div class="m-back" onclick="mobileTab('summary')">‹ 요약</div>
@@ -898,6 +963,10 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     <div class="m-tab" onclick="mobileTab('cost')" data-tab="cost">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
       <span>비용</span>
+    </div>
+    <div class="m-tab" onclick="mobileTab('pl')" data-tab="pl">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/><polyline points="14,9 19,9 19,14"/></svg>
+      <span>손익</span>
     </div>
     <div class="m-tab" onclick="mobileTab('settings')" data-tab="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -2530,6 +2599,10 @@ function mobileTab(tab){
   } else if(tab === 'cost'){
     document.getElementById('m-cost').classList.add('active');
     renderMobileCost();
+  } else if(tab === 'pl'){
+    document.getElementById('m-pl').classList.add('active');
+    renderMobilePL();
+    setTimeout(() => renderMobilePLTrend(), 80);
   } else if(tab === 'settings'){
     document.getElementById('m-settings').classList.add('active');
     renderMobileSettings();
@@ -3724,6 +3797,294 @@ function renderActions(section, store){
     }
     return '<span style="font-size:11px;color:var(--muted)">입력 후 저장 버튼이 나타납니다</span>';
   }
+}
+
+
+// ── 손익계산 탭 ──
+let mobilePLMonth = null;
+let mobilePLTrendChart = null;
+
+function mobilePLMonthShift(delta){
+  const baseStr = mobilePLMonth || (mobileCurrentDate || Object.keys(ALL_DATA).sort().pop()).slice(0,7);
+  const [y, m] = baseStr.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  mobilePLMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  renderMobilePL();
+  setTimeout(() => renderMobilePLTrend(), 60);
+}
+
+function calcPLForMonth(monthStr){
+  // 그 달의 매출, 직접 고정비, 공용 고정비 → 손익 계산
+  const monthDates = Object.keys(ALL_DATA).filter(d => d.startsWith(monthStr));
+  if(monthDates.length === 0) return null;
+
+  const stores = ALL_DATA[monthDates[0]].stores;
+  const storeAgg = {};
+  let salesAll = 0;
+  stores.forEach(s => {
+    storeAgg[s] = { total:0, color: ALL_DATA[monthDates[0]].storeData[s].color };
+  });
+  monthDates.forEach(d => {
+    const dd = ALL_DATA[d];
+    if(!dd) return;
+    dd.stores.forEach(s => {
+      const sd = dd.storeData[s];
+      if(sd && !sd.missing){
+        storeAgg[s].total += sd.total || 0;
+        salesAll += sd.total || 0;
+      }
+    });
+  });
+
+  // 고정비
+  let directAll = 0;
+  const storeFixed = {};
+  stores.forEach(s => {
+    const data = loadCostData(s);
+    const direct = COST_ITEMS_BY_STORE.reduce((sum, item) => sum + (data[item.key] || 0), 0);
+    storeFixed[s] = direct;
+    directAll += direct;
+  });
+  const sharedData = loadCostData('공용');
+  const sharedTotal = COST_ITEMS_SHARED.reduce((sum, item) => sum + (sharedData[item.key] || 0), 0);
+  const totalFixed = directAll + sharedTotal;
+  const profit = salesAll - totalFixed;
+
+  // 지점별 분배 손익
+  const storePL = {};
+  stores.forEach(s => {
+    const sales = storeAgg[s].total;
+    const sharedAlloc = salesAll && sharedTotal ? Math.round(sharedTotal * sales / salesAll) : 0;
+    const fixedTotal = (storeFixed[s] || 0) + sharedAlloc;
+    storePL[s] = {
+      sales,
+      direct: storeFixed[s] || 0,
+      shared: sharedAlloc,
+      fixed: fixedTotal,
+      profit: sales - fixedTotal,
+      color: storeAgg[s].color,
+    };
+  });
+
+  return {
+    monthStr,
+    salesAll,
+    directAll,
+    sharedTotal,
+    totalFixed,
+    profit,
+    profitPct: salesAll ? (profit / salesAll * 100) : 0,
+    storePL,
+    monthDates,
+    stores,
+  };
+}
+
+function renderMobilePL(){
+  const monthStr = mobilePLMonth || (mobileCurrentDate || Object.keys(ALL_DATA).sort().pop()).slice(0,7);
+  if(!mobilePLMonth) mobilePLMonth = monthStr;
+  const [y, m] = monthStr.split('-').map(Number);
+  const monthLabel = y + '년 ' + m + '월';
+  document.getElementById('m-pl-month').textContent = monthLabel;
+
+  const data = calcPLForMonth(monthStr);
+  if(!data){
+    document.getElementById('m-pl-summary').innerHTML = '<div class="m-empty">해당 월 매출 데이터가 없습니다</div>';
+    document.getElementById('m-pl-stores').innerHTML = '';
+    document.getElementById('m-pl-insights').innerHTML = '';
+    return;
+  }
+
+  // 전월 비교
+  const prevD = new Date(y, m - 2, 1);
+  const prevStr = prevD.getFullYear() + '-' + String(prevD.getMonth() + 1).padStart(2,'0');
+  const prevData = calcPLForMonth(prevStr);
+
+  const profitDir = data.profit >= 0 ? 'up' : 'down';
+  const profitSign = data.profit >= 0 ? '+' : '-';
+  let deltaHtml = '';
+  if(prevData && prevData.profit){
+    const deltaProfit = data.profit - prevData.profit;
+    const deltaPct = prevData.profit ? Math.abs(deltaProfit / prevData.profit * 100).toFixed(1) : '0.0';
+    const deltaDir = deltaProfit >= 0 ? 'up' : 'down';
+    const deltaArr = deltaProfit >= 0 ? '▲' : '▼';
+    deltaHtml = `<span class="delta ${deltaDir}">${deltaArr} ${deltaPct}%</span>`;
+  }
+
+  document.getElementById('m-pl-summary').innerHTML = `
+    <div class="row sales">
+      <span class="lbl">월 매출</span>
+      <span class="v">${won(data.salesAll)}</span>
+    </div>
+    <div class="row cost">
+      <span class="lbl">총 고정비 <span class="pct">(직접 ${won(data.directAll)} + 공용 ${won(data.sharedTotal)})</span></span>
+      <span class="v">${won(data.totalFixed)}</span>
+    </div>
+    <div class="divider"></div>
+    <div class="row profit ${profitDir}">
+      <span class="lbl">영업 손익</span>
+      <span class="v">${profitSign}${won(Math.abs(data.profit))}<span class="pct">${data.profitPct.toFixed(1)}%</span>${deltaHtml}</span>
+    </div>
+  `;
+
+  // 지점별 손익 비교 (손익 내림차순)
+  const sortedStores = data.stores.slice().filter(s => data.storePL[s].sales > 0)
+    .sort((a, b) => data.storePL[b].profit - data.storePL[a].profit);
+  const maxAbs = Math.max(...sortedStores.map(s => Math.abs(data.storePL[s].profit)), 1);
+  let storesHtml = '';
+  sortedStores.forEach(s => {
+    const pl = data.storePL[s];
+    const profitW = Math.min(100, Math.abs(pl.profit) / maxAbs * 100);
+    const dir = pl.profit >= 0 ? 'up' : 'down';
+    const sign = pl.profit >= 0 ? '+' : '-';
+    const profitPct = pl.sales ? (pl.profit / pl.sales * 100).toFixed(1) : '0.0';
+    storesHtml += `
+      <div class="m-pl-store-row" onclick="mobileShowStoreMonth('${s}')" style="cursor:pointer">
+        <span class="dot" style="background:${pl.color}"></span>
+        <div>
+          <div class="name">${s}</div>
+          <div class="meta">매출 ${won(pl.sales)} · 고정비 ${won(pl.fixed)}</div>
+          <div class="pl-bar"><div class="${dir === 'up' ? 'pos' : 'neg'}" style="width:${profitW}%"></div></div>
+        </div>
+        <div class="v">
+          <div class="profit ${dir}">${sign}${won(Math.abs(pl.profit))}</div>
+          <div class="pct">${profitPct}%</div>
+        </div>
+      </div>`;
+  });
+  document.getElementById('m-pl-stores').innerHTML = storesHtml || '<div class="m-empty">지점 데이터 없음</div>';
+
+  // 인사이트
+  renderMobilePLInsights(data, prevData);
+}
+
+function renderMobilePLInsights(data, prevData){
+  const insights = [];
+  const fmt = v => won(v);
+
+  // 전체 손익 평가
+  if(data.profit > 0){
+    insights.push({type:'positive', title:'영업 흑자', text:`매출 대비 손익률 <strong>${data.profitPct.toFixed(1)}%</strong>로 흑자 운영. 외식업 평균(5~10%) ${data.profitPct >= 10 ? '상회' : data.profitPct >= 5 ? '수준' : '하회'}.`});
+  } else if(data.profit < 0){
+    insights.push({type:'warning', title:'영업 적자', text:`매출 대비 손익률 <strong>${data.profitPct.toFixed(1)}%</strong>. 고정비 비중 점검 필요. ${fmt(Math.abs(data.profit))} 손실 발생.`});
+  }
+
+  // 손익 1위/꼴찌 지점
+  const stores = Object.keys(data.storePL).filter(s => data.storePL[s].sales > 0);
+  if(stores.length >= 2){
+    const sorted = stores.sort((a, b) => data.storePL[b].profit - data.storePL[a].profit);
+    const top = sorted[0], bot = sorted[sorted.length - 1];
+    insights.push({type:'highlight', title:'손익 1위 · ' + top, text:`<strong>${fmt(data.storePL[top].profit)}</strong> 흑자 (손익률 ${(data.storePL[top].profit/data.storePL[top].sales*100).toFixed(1)}%). 다른 지점에 모범 사례 적용.`});
+    if(data.storePL[bot].profit < data.storePL[top].profit * 0.5){
+      const sign = data.storePL[bot].profit >= 0 ? '+' : '-';
+      insights.push({type:'warning', title:'손익 약세 · ' + bot, text:`${sign}${fmt(Math.abs(data.storePL[bot].profit))} (손익률 ${(data.storePL[bot].profit/data.storePL[bot].sales*100).toFixed(1)}%). 1위와 ${fmt(data.storePL[top].profit - data.storePL[bot].profit)} 격차.`});
+    }
+  }
+
+  // 전월 대비
+  if(prevData && prevData.profit !== 0){
+    const delta = data.profit - prevData.profit;
+    const deltaPct = (delta / Math.abs(prevData.profit) * 100).toFixed(1);
+    if(Math.abs(parseFloat(deltaPct)) > 10){
+      insights.push({
+        type: delta > 0 ? 'positive' : 'warning',
+        title: '전월 대비 ' + (delta > 0 ? '개선' : '악화'),
+        text: `손익 ${delta >= 0 ? '+' : '-'}${fmt(Math.abs(delta))} (${delta >= 0 ? '+' : ''}${deltaPct}%). ${delta > 0 ? '추세 유지' : '원인 분석 필요'}.`
+      });
+    }
+  }
+
+  // 고정비 비중
+  if(data.salesAll > 0){
+    const fixedPct = (data.totalFixed / data.salesAll * 100);
+    if(fixedPct > 60){
+      insights.push({type:'warning', title:`고정비 비중 ${fixedPct.toFixed(1)}% (높음)`, text:`매출 대비 고정비 비중 과다. 임차료 재협상, 인력 효율화 검토 필요.`});
+    } else if(fixedPct < 30){
+      insights.push({type:'positive', title:`고정비 비중 ${fixedPct.toFixed(1)}% (양호)`, text:`수익성 좋은 구조. 변동비 관리만 잘하면 안정적 흑자 가능.`});
+    }
+  }
+
+  // 데이터 부족
+  if(data.totalFixed === 0){
+    insights.push({type:'info', title:'고정비 미입력', text:'설정 탭에서 임차료, 인건비, 공용지출을 입력하면 정확한 손익을 계산할 수 있습니다.'});
+  }
+
+  document.getElementById('m-pl-insights').innerHTML = insights.map(ins => `
+    <div class="m-ai-card ${ins.type}">
+      <div class="m-ai-title">${ins.title}</div>
+      <div class="m-ai-text">${ins.text}</div>
+    </div>
+  `).join('');
+}
+
+function renderMobilePLTrend(){
+  // 최근 6개월 매출/고정비/손익
+  const monthStr = mobilePLMonth || (mobileCurrentDate || Object.keys(ALL_DATA).sort().pop()).slice(0,7);
+  const [y, m] = monthStr.split('-').map(Number);
+
+  const months = [];
+  for(let i = 5; i >= 0; i--){
+    const d = new Date(y, m - 1 - i, 1);
+    months.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2,'0'));
+  }
+
+  const labels = months.map(ms => parseInt(ms.slice(5,7), 10) + '월');
+  const sales = months.map(ms => calcPLForMonth(ms)?.salesAll || 0);
+  const profit = months.map(ms => calcPLForMonth(ms)?.profit || 0);
+
+  if(mobilePLTrendChart) mobilePLTrendChart.destroy();
+  const canvas = document.getElementById('m-pl-trend-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  mobilePLTrendChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: '매출',
+          data: sales,
+          backgroundColor: 'rgba(34,211,238,0.4)',
+          borderColor: '#22d3ee',
+          borderWidth: 1,
+          borderRadius: 4,
+          yAxisID: 'y',
+        },
+        {
+          type: 'line',
+          label: '손익',
+          data: profit,
+          borderColor: '#4ade80',
+          backgroundColor: 'rgba(74,222,128,0.15)',
+          borderWidth: 2,
+          tension: 0.3,
+          pointRadius: 3,
+          fill: true,
+          yAxisID: 'y',
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'bottom',
+          labels: { color: '#94a3b8', font: { size: 12 }, boxWidth: 10, boxHeight: 10, padding: 6 }
+        },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        x: { ticks: { color: '#94a3b8', font: { size: 12 } }, grid: { display: false } },
+        y: {
+          ticks: { color: '#94a3b8', font: { size: 12 },
+            callback: v => v >= 1e8 ? (v/1e8).toFixed(1) + '억' : v >= 1e4 ? Math.round(v/1e4).toLocaleString() + '만' : v.toLocaleString()
+          },
+          grid: { color: 'rgba(148,163,184,0.08)' }
+        }
+      }
+    }
+  });
 }
 
 function mobileInit(){
