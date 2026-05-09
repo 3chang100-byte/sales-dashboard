@@ -2245,6 +2245,38 @@ function renderMobileAnalysis(){
     };
   }
 
+  // 요일별 평균 매출 1위/최저 (전체 매출 기준)
+  function topBotDow(){
+    const dowLabels = ['일','월','화','수','목','금','토'];
+    const dowColors = ['#f87171','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#fbbf24','#93c5fd'];
+    const dowSums = [0,0,0,0,0,0,0];
+    const dowCnts = [0,0,0,0,0,0,0];
+    monthDates.forEach(d => {
+      const t = ALL_DATA[d]?.summary?.total || 0;
+      if(t > 0){
+        const dow = new Date(d + 'T00:00:00').getDay();
+        dowSums[dow] += t;
+        dowCnts[dow] += 1;
+      }
+    });
+    const list = dowLabels.map((l, i) => ({
+      s: l + '요일',
+      v: dowCnts[i] ? dowSums[i] / dowCnts[i] : 0,
+      days: dowCnts[i],
+      color: dowColors[i]
+    })).filter(x => x.days > 0).sort((a,b) => b.v - a.v);
+    if(list.length < 2) return null;
+    const top = list[0], bot = list[list.length - 1];
+    const gap = top.v - bot.v;
+    const pctChange = bot.v ? ((top.v - bot.v) / bot.v * 100) : 0;
+    return {
+      top: { store: top.s + ` (${top.days}일)`, val: won(Math.round(top.v)), color: top.color },
+      bot: { store: bot.s + ` (${bot.days}일)`, val: won(Math.round(bot.v)), color: bot.color },
+      gap: won(Math.round(gap)),
+      pct: pctChange.toFixed(0),
+    };
+  }
+
   const fmtWon = v => won(v);
   const fmtTicket = v => won(Math.round(v));
 
@@ -2259,6 +2291,8 @@ function renderMobileAnalysis(){
       data: topBot(a => a.dinner, fmtWon) },
     { key:'alcohol', cat: '주류 매출', name: '소주·맥주·복분자 등 합계', icon: '🍶', iconBg: '#a78bfa', iconColor: '#fff',
       data: topBot(a => a.alcohol, fmtWon) },
+    { key:'dow', cat: '요일별 매출', name: '월간 요일별 평균 (전 지점 합계)', icon: '日', iconBg: '#f87171', iconColor: '#fff',
+      data: topBotDow() },
   ];
 
   let html = '';
@@ -2336,14 +2370,37 @@ function mobileShowAnalysisDetail(metricKey){
                getter: a => a.dinner,                        fmt: v => won(v) },
     alcohol: { cat:'주류 매출', name:'소주·맥주·복분자 등', icon:'🍶', iconBg:'#a78bfa', iconColor:'#fff',
                getter: a => a.alcohol,                       fmt: v => won(v) },
+    dow:     { cat:'요일별 매출', name:'월간 요일별 평균',   icon:'日', iconBg:'#f87171', iconColor:'#fff',
+               getter: null,                                 fmt: v => won(Math.round(v)) },
   };
   const meta = metaMap[metricKey];
   if(!meta) return;
 
-  // 정렬
-  const list = stores.filter(s => agg[s].total > 0)
-    .map(s => ({ s, v: meta.getter(agg[s]), color: agg[s].color }))
-    .sort((a, b) => b.v - a.v);
+  // 정렬 — 요일 메트릭은 stores 대신 요일별 평균으로 처리
+  let list;
+  if(metricKey === 'dow'){
+    const dowLabels = ['일','월','화','수','목','금','토'];
+    const dowColors = ['#f87171','#94a3b8','#94a3b8','#94a3b8','#94a3b8','#fbbf24','#93c5fd'];
+    const dowSums = [0,0,0,0,0,0,0];
+    const dowCnts = [0,0,0,0,0,0,0];
+    monthDates.forEach(d => {
+      const t = ALL_DATA[d]?.summary?.total || 0;
+      if(t > 0){
+        const dow = new Date(d + 'T00:00:00').getDay();
+        dowSums[dow] += t;
+        dowCnts[dow] += 1;
+      }
+    });
+    list = dowLabels.map((l, i) => ({
+      s: l + '요일' + (dowCnts[i] ? ` (${dowCnts[i]}일)` : ''),
+      v: dowCnts[i] ? dowSums[i] / dowCnts[i] : 0,
+      color: dowColors[i],
+    })).filter(x => x.v > 0).sort((a, b) => b.v - a.v);
+  } else {
+    list = stores.filter(s => agg[s].total > 0)
+      .map(s => ({ s, v: meta.getter(agg[s]), color: agg[s].color }))
+      .sort((a, b) => b.v - a.v);
+  }
   const maxV = list.length ? list[0].v : 1;
   const totalAll = list.reduce((sum, x) => sum + x.v, 0);
 
