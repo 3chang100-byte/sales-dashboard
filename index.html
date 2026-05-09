@@ -606,6 +606,54 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-cost-store-select select:focus{outline:none;border-color:var(--accent)}
   .m-cost-store-select select option{background:#1e293b;color:var(--text);font-size:15px}
 
+
+  /* 설정 탭 */
+  .m-set-info{padding:0 16px 14px;display:flex;flex-direction:column;gap:6px}
+  .m-set-info .row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;
+    align-items:center;padding:10px 12px;border-radius:10px;
+    background:var(--card);border:1px solid var(--border)}
+  .m-set-info .row .icon{width:28px;height:28px;border-radius:8px;
+    background:rgba(34,211,238,0.12);display:flex;align-items:center;
+    justify-content:center;font-size:14px;flex-shrink:0}
+  .m-set-info .row .name{font-size:14px;font-weight:600;color:var(--text)}
+  .m-set-info .row input{background:#0f172a;border:1px solid var(--border);
+    color:var(--text);font-size:14px;font-family:inherit;
+    padding:8px 10px;border-radius:8px;text-align:right;width:100px;font-weight:600}
+  .m-set-info .row input:focus{outline:none;border-color:var(--accent)}
+  .m-set-info .row .unit{font-size:12px;color:var(--muted);margin-left:-4px}
+
+  .m-set-staff{padding:0 16px 4px;display:flex;flex-direction:column;gap:6px}
+  .m-set-staff-row{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;
+    align-items:center;padding:10px 12px;border-radius:10px;
+    background:var(--card);border:1px solid var(--border)}
+  .m-set-staff-row .num{font-size:11px;color:var(--muted);width:18px;text-align:center}
+  .m-set-staff-row .inputs{display:flex;flex-direction:column;gap:5px}
+  .m-set-staff-row input.staff-name{background:#0f172a;border:1px solid var(--border);
+    color:var(--text);font-size:14px;font-family:inherit;padding:6px 9px;
+    border-radius:7px;font-weight:500;width:100%}
+  .m-set-staff-row input.staff-salary{background:#0f172a;border:1px solid var(--border);
+    color:var(--text);font-size:13px;font-family:inherit;padding:6px 9px;
+    border-radius:7px;font-weight:500;width:100%;text-align:right}
+  .m-set-staff-row .delete-btn{width:28px;height:28px;border-radius:50%;
+    background:rgba(248,113,113,0.12);border:none;color:#f87171;font-size:14px;
+    cursor:pointer;flex-shrink:0}
+  .m-set-staff-row .delete-btn:active{background:rgba(248,113,113,0.25)}
+
+  .m-set-add{margin:6px 16px 14px;padding:11px;width:calc(100% - 32px);
+    background:transparent;border:1.5px dashed var(--border);
+    color:var(--accent);font-size:14px;font-weight:600;
+    font-family:inherit;border-radius:10px;cursor:pointer}
+  .m-set-add:active{background:rgba(34,211,238,0.06)}
+
+  .m-set-overview{padding:0 12px 16px;display:flex;flex-direction:column;gap:5px}
+  .m-set-row-store{display:grid;grid-template-columns:auto 1fr auto;gap:10px;
+    align-items:center;padding:10px 12px;border-radius:9px;
+    background:var(--card);border:0.5px solid var(--border);font-size:13px}
+  .m-set-row-store .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .m-set-row-store .name{font-weight:600}
+  .m-set-row-store .meta{font-size:11px;color:var(--muted)}
+  .m-set-row-store .v{text-align:right;font-weight:600}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -752,6 +800,33 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
 
     <div class="m-section">전 지점 고정비 합산</div>
     <div class="m-cost-stores" id="m-cost-stores"></div>
+
+    <div class="m-cost-note">
+      입력값은 이 기기 브라우저에 저장됩니다. 자동으로 모든 기기에 공유되지는 않습니다.
+    </div>
+  </div>
+
+  <!-- 설정 화면 -->
+  <div class="m-screen" id="m-settings">
+    <div class="m-back" onclick="mobileTab('summary')">‹ 요약</div>
+    <div class="m-appbar">
+      <div>
+        <div class="m-appbar-title">매장 정보 · 직원 관리</div>
+        <h1>설정</h1>
+      </div>
+    </div>
+
+    <div class="m-cost-store-select" id="m-set-store-select"></div>
+
+    <div class="m-section" id="m-set-store-h">매장 정보</div>
+    <div class="m-set-info" id="m-set-info"></div>
+
+    <div class="m-section" id="m-set-staff-h">정직원 정보</div>
+    <div class="m-set-staff" id="m-set-staff"></div>
+    <button class="m-set-add" onclick="mobileSetAddStaff()">+ 직원 추가</button>
+
+    <div class="m-section">전 지점 종합</div>
+    <div class="m-set-overview" id="m-set-overview"></div>
 
     <div class="m-cost-note">
       입력값은 이 기기 브라우저에 저장됩니다. 자동으로 모든 기기에 공유되지는 않습니다.
@@ -2373,9 +2448,8 @@ function mobileTab(tab){
     document.getElementById('m-cost').classList.add('active');
     renderMobileCost();
   } else if(tab === 'settings'){
-    alert('설정 탭 — 추후 추가 예정');
-    document.querySelectorAll('.m-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'summary'));
-    document.getElementById('m-main').classList.add('active');
+    document.getElementById('m-settings').classList.add('active');
+    renderMobileSettings();
   }
   window.scrollTo(0, 0);
 }
@@ -3156,6 +3230,207 @@ function renderMobileCostSummary(monthStr){
     storesHtml = '<div class="m-empty">월 매출 데이터 없음</div>';
   }
   document.getElementById('m-cost-stores').innerHTML = storesHtml;
+}
+
+
+// ── 설정 탭 (매장 정보 · 직원) ──
+let mobileSettingsStore = null;
+
+function getSettingsKey(store){
+  return 'settings-' + store;
+}
+
+function loadSettings(store){
+  try {
+    const raw = localStorage.getItem(getSettingsKey(store));
+    return raw ? JSON.parse(raw) : { tables:0, seats:0, staff:[] };
+  } catch(e){
+    return { tables:0, seats:0, staff:[] };
+  }
+}
+
+function saveSettings(store, data){
+  try {
+    localStorage.setItem(getSettingsKey(store), JSON.stringify(data));
+  } catch(e){}
+}
+
+function onSettingsStoreChange(newStore){
+  mobileSettingsStore = newStore;
+  renderMobileSettings();
+}
+
+function onSettingsInfoChange(field, val){
+  const data = loadSettings(mobileSettingsStore);
+  data[field] = parseInt((val || '').replace(/[^0-9]/g, ''), 10) || 0;
+  saveSettings(mobileSettingsStore, data);
+  renderMobileSettingsOverview();
+}
+
+function onStaffNameChange(idx, val){
+  const data = loadSettings(mobileSettingsStore);
+  if(!data.staff) data.staff = [];
+  while(data.staff.length <= idx) data.staff.push({name:'', salary:0});
+  data.staff[idx].name = val.trim();
+  saveSettings(mobileSettingsStore, data);
+  renderMobileSettingsOverview();
+}
+
+function onStaffSalaryChange(idx, val){
+  const data = loadSettings(mobileSettingsStore);
+  if(!data.staff) data.staff = [];
+  while(data.staff.length <= idx) data.staff.push({name:'', salary:0});
+  data.staff[idx].salary = parseInt((val || '').replace(/[^0-9]/g, ''), 10) || 0;
+  saveSettings(mobileSettingsStore, data);
+  renderMobileSettingsOverview();
+}
+
+function mobileSetAddStaff(){
+  const data = loadSettings(mobileSettingsStore);
+  if(!data.staff) data.staff = [];
+  data.staff.push({name:'', salary:0});
+  saveSettings(mobileSettingsStore, data);
+  renderMobileSettings();
+}
+
+function mobileSetDeleteStaff(idx){
+  const data = loadSettings(mobileSettingsStore);
+  if(!data.staff) return;
+  data.staff.splice(idx, 1);
+  saveSettings(mobileSettingsStore, data);
+  renderMobileSettings();
+}
+
+function renderMobileSettings(){
+  // 지점 목록
+  const allStores = (() => {
+    for(const d of Object.keys(ALL_DATA)){
+      if(ALL_DATA[d]?.stores) return ALL_DATA[d].stores;
+    }
+    return [];
+  })();
+  if(!mobileSettingsStore && allStores.length > 0) mobileSettingsStore = allStores[0];
+
+  // 지점 드롭다운
+  const optHtml = allStores.map(s =>
+    `<option value="${s}" ${s === mobileSettingsStore ? 'selected' : ''}>${s}</option>`
+  ).join('');
+  document.getElementById('m-set-store-select').innerHTML = `
+    <select onchange="onSettingsStoreChange(this.value)">${optHtml}</select>
+  `;
+
+  // 헤더
+  document.getElementById('m-set-store-h').textContent = `${mobileSettingsStore} · 매장 정보`;
+  document.getElementById('m-set-staff-h').textContent = `${mobileSettingsStore} · 정직원 정보`;
+
+  const data = loadSettings(mobileSettingsStore);
+
+  // 매장 정보 (테이블/객석)
+  document.getElementById('m-set-info').innerHTML = `
+    <div class="row">
+      <div class="icon">🪑</div>
+      <div class="name">테이블 수</div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <input type="text" inputmode="numeric" placeholder="0" value="${data.tables ? data.tables.toLocaleString() : ''}"
+          oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+          onchange="onSettingsInfoChange('tables', this.value)">
+        <span class="unit">개</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="icon">👥</div>
+      <div class="name">객석 수</div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <input type="text" inputmode="numeric" placeholder="0" value="${data.seats ? data.seats.toLocaleString() : ''}"
+          oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+          onchange="onSettingsInfoChange('seats', this.value)">
+        <span class="unit">석</span>
+      </div>
+    </div>
+  `;
+
+  // 직원 목록
+  const staff = data.staff || [];
+  let staffHtml = '';
+  staff.forEach((p, idx) => {
+    const sal = p.salary ? Number(p.salary).toLocaleString() : '';
+    staffHtml += `
+      <div class="m-set-staff-row">
+        <span class="num">${idx + 1}</span>
+        <div class="inputs">
+          <input type="text" class="staff-name" placeholder="이름" value="${p.name || ''}"
+            onchange="onStaffNameChange(${idx}, this.value)">
+          <input type="text" class="staff-salary" inputmode="numeric" placeholder="급여 (원)" value="${sal}"
+            oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value) this.value = Number(this.value).toLocaleString();"
+            onchange="onStaffSalaryChange(${idx}, this.value)">
+        </div>
+        <button class="delete-btn" onclick="mobileSetDeleteStaff(${idx})" title="삭제">×</button>
+      </div>`;
+  });
+  if(staffHtml === ''){
+    staffHtml = '<div class="m-empty">직원이 없습니다. 아래 버튼으로 추가하세요.</div>';
+  }
+  document.getElementById('m-set-staff').innerHTML = staffHtml;
+
+  renderMobileSettingsOverview();
+}
+
+function renderMobileSettingsOverview(){
+  // 모든 지점 데이터 모아서 종합 표시
+  const allStores = (() => {
+    for(const d of Object.keys(ALL_DATA)){
+      if(ALL_DATA[d]?.stores) return ALL_DATA[d].stores;
+    }
+    return [];
+  })();
+
+  // 색상 매핑
+  const colorMap = {};
+  for(const d of Object.keys(ALL_DATA)){
+    const sd = ALL_DATA[d]?.storeData;
+    if(sd){
+      allStores.forEach(s => {
+        if(!colorMap[s] && sd[s]?.color) colorMap[s] = sd[s].color;
+      });
+    }
+    if(allStores.every(s => colorMap[s])) break;
+  }
+
+  let totalTables = 0, totalSeats = 0, totalStaff = 0, totalSalary = 0;
+  let html = '';
+  allStores.forEach(s => {
+    const data = loadSettings(s);
+    const staff = (data.staff || []).filter(p => p.name || p.salary > 0);
+    const staffN = staff.length;
+    const salary = staff.reduce((sum, p) => sum + (p.salary || 0), 0);
+    totalTables += data.tables || 0;
+    totalSeats += data.seats || 0;
+    totalStaff += staffN;
+    totalSalary += salary;
+
+    html += `
+      <div class="m-set-row-store" onclick="onSettingsStoreChange('${s}')" style="cursor:pointer">
+        <span class="dot" style="background:${colorMap[s] || '#666'}"></span>
+        <div>
+          <div class="name">${s}${s === mobileSettingsStore ? ' ✓' : ''}</div>
+          <div class="meta">테이블 ${data.tables || 0}개 · 객석 ${data.seats || 0}석 · 직원 ${staffN}명</div>
+        </div>
+        <div class="v">${salary > 0 ? won(salary) : '-'}</div>
+      </div>`;
+  });
+
+  // 합계 행
+  html += `
+    <div class="m-set-row-store" style="background:rgba(34,211,238,0.06);border-color:#22d3ee">
+      <span class="dot" style="background:#22d3ee"></span>
+      <div>
+        <div class="name" style="color:#22d3ee">전 지점 합계</div>
+        <div class="meta">테이블 ${totalTables}개 · 객석 ${totalSeats}석 · 직원 ${totalStaff}명</div>
+      </div>
+      <div class="v" style="color:#22d3ee">${totalSalary > 0 ? won(totalSalary) : '-'}</div>
+    </div>`;
+
+  document.getElementById('m-set-overview').innerHTML = html;
 }
 
 function mobileInit(){
