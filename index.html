@@ -543,6 +543,8 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     <div class="m-back" onclick="mobileBack()" id="m-drill-back">‹ 뒤로</div>
     <div class="m-drill-hero" id="m-drill-hero"></div>
     <div id="m-split-wrap"></div>
+    <div class="m-section">일간 KPI</div>
+    <div class="m-sm-kpis" id="m-drill-kpis"></div>
     <div class="m-section">시간대별 매출</div>
     <div class="m-hourly" id="m-hourly"></div>
     <div class="m-section">메뉴 TOP</div>
@@ -1725,6 +1727,29 @@ function mobileShowStore(date, storeName, fromScreen){
     <div class="m-split-legend">
       <span><span style="display:inline-block;width:8px;height:8px;background:#fbbf24;border-radius:2px;margin-right:4px;vertical-align:middle"></span>점심 ${won(sd.lunch)} · ${sd.lunch_guests || 0}명</span>
       <span>저녁 ${won(sd.dinner)} · ${sd.dinner_guests || 0}명</span>
+    </div>
+  `;
+
+  // 일간 KPI 4개
+  const ticket = sd.ticket || (sd.guests ? Math.round(sd.total / sd.guests) : 0);
+  const alcoholPct = sd.total ? ((sd.alcohol_sales || 0) / sd.total * 100) : 0;
+  const turnRate = sd.turnover?.rate || 0;
+  document.getElementById('m-drill-kpis').innerHTML = `
+    <div class="m-mini">
+      <div class="lbl">객단가</div>
+      <div class="val">${won(ticket).replace('₩','')}<span class="suf"> 원</span></div>
+    </div>
+    <div class="m-mini">
+      <div class="lbl">회전율</div>
+      <div class="val">${turnRate ? turnRate.toFixed(2) : '-'}<span class="suf">${turnRate ? ' 회' : ''}</span></div>
+    </div>
+    <div class="m-mini">
+      <div class="lbl">주류 매출</div>
+      <div class="val" style="font-size:14px">${won(sd.alcohol_sales || 0)}</div>
+    </div>
+    <div class="m-mini">
+      <div class="lbl">주류 비중</div>
+      <div class="val">${alcoholPct.toFixed(1)}<span class="suf">%</span></div>
     </div>
   `;
 
