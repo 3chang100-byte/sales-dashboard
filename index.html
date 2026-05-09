@@ -2980,16 +2980,16 @@ function renderMobileCost(){
   })();
   if(!mobileCostStore && allStores.length > 0) mobileCostStore = allStores[0];
 
-  // 지점 드롭다운
-  const storeOptHtml = allStores.map(s =>
-    `<option value="${s}" ${s === mobileCostStore ? 'selected' : ''}>${s}</option>`
-  ).join('');
+  // 지점 드롭다운 (공용 + 5개 지점)
+  const storeOptHtml = `<option value="공용" ${mobileCostStore === '공용' ? 'selected' : ''}>📦 공용지출 (전 지점 분배)</option>` +
+    allStores.map(s => `<option value="${s}" ${s === mobileCostStore ? 'selected' : ''}>${s}</option>`).join('');
   document.getElementById('m-cost-store-select').innerHTML = `
     <select onchange="onCostStoreChange(this.value)">${storeOptHtml}</select>
   `;
 
   // 폼 헤더
-  document.getElementById('m-cost-form-h').textContent = `${mobileCostStore} · 고정비 항목별 입력`;
+  const formLabel = mobileCostStore === '공용' ? '공용지출 (본사·공통) · 고정비 항목별 입력' : `${mobileCostStore} 직접 고정비 항목별 입력`;
+  document.getElementById('m-cost-form-h').textContent = formLabel;
 
   const data = loadCostData(monthStr, mobileCostStore);
 
@@ -3018,15 +3018,10 @@ function renderMobileCost(){
 function renderMobileCostSummary(monthStr){
   const selectedStore = mobileCostStore;
 
-  // 선택 지점 입력값
-  const dataSelected = loadCostData(monthStr, selectedStore);
-  const fixedSelected = COST_ITEMS.reduce((sum, item) => sum + (dataSelected[item.key] || 0), 0);
-
   // 월 매출 (지점별 + 전체)
   const monthDates = Object.keys(ALL_DATA).filter(d => d.startsWith(monthStr));
   const storeAgg = {};
   let salesAll = 0;
-  let salesSelected = 0;
   if(monthDates.length > 0){
     const stores = ALL_DATA[monthDates[0]].stores;
     stores.forEach(s => { storeAgg[s] = { total:0, color: ALL_DATA[monthDates[0]].storeData[s].color }; });
@@ -3038,65 +3033,117 @@ function renderMobileCostSummary(monthStr){
         if(sd && !sd.missing){
           storeAgg[s].total += sd.total || 0;
           salesAll += sd.total || 0;
-          if(s === selectedStore) salesSelected += sd.total || 0;
         }
       });
     });
   }
 
-  // 선택 지점 손익
-  const profit = salesSelected - fixedSelected;
-  const fixedPct = salesSelected ? (fixedSelected / salesSelected * 100).toFixed(1) : '0.0';
-  const profitPct = salesSelected ? (profit / salesSelected * 100).toFixed(1) : '0.0';
+  // 공용 합계
+  const sharedData = loadCostData(monthStr, '공용');
+  const sharedTotal = COST_ITEMS.reduce((sum, item) => sum + (sharedData[item.key] || 0), 0);
 
-  document.getElementById('m-cost-summary').innerHTML = `
-    <div class="row">
-      <span class="lbl">${selectedStore} 월 매출</span>
-      <span class="v">${won(salesSelected)}</span>
-    </div>
-    <div class="row fixed">
-      <span class="lbl">${selectedStore} 고정비</span>
-      <span class="v">${won(fixedSelected)}<span class="pct">${fixedPct}%</span></span>
-    </div>
-    <div class="divider"></div>
-    <div class="row profit ${profit < 0 ? 'loss' : ''}">
-      <span class="lbl">손익 (매출 − 고정비)</span>
-      <span class="v">${profit >= 0 ? '+' : '-'}${won(Math.abs(profit))}<span class="pct">${profitPct}%</span></span>
-    </div>
-  `;
+  // 선택 지점/공용 입력값
+  const dataSelected = loadCostData(monthStr, selectedStore);
+  const directFixed = COST_ITEMS.reduce((sum, item) => sum + (dataSelected[item.key] || 0), 0);
 
-  // 전 지점 고정비 합산
-  let totalFixedAll = 0;
-  const stores = Object.keys(storeAgg);
+  // 선택이 공용인 경우: 공용 자체만 표시
+  if(selectedStore === '공용'){
+    document.getElementById('m-cost-summary').innerHTML = `
+      <div class="row">
+        <span class="lbl">전 지점 월 매출</span>
+        <span class="v">${won(salesAll)}</span>
+      </div>
+      <div class="row fixed">
+        <span class="lbl">공용 고정비 입력</span>
+        <span class="v">${won(directFixed)}</span>
+      </div>
+      <div class="divider"></div>
+      <div class="row" style="font-size:11px;color:var(--muted)">
+        <span>이 금액은 각 지점 매출 비중에 따라 자동 분배됩니다</span>
+      </div>
+    `;
+  } else {
+    // 선택 지점 — 직접 + 공용 분배분
+    const salesSelected = storeAgg[selectedStore]?.total || 0;
+    const sharedAlloc = salesAll && sharedTotal ? Math.round(sharedTotal * salesSelected / salesAll) : 0;
+    const totalFixed = directFixed + sharedAlloc;
+    const profit = salesSelected - totalFixed;
+    const fixedPct = salesSelected ? (totalFixed / salesSelected * 100).toFixed(1) : '0.0';
+    const profitPct = salesSelected ? (profit / salesSelected * 100).toFixed(1) : '0.0';
+
+    document.getElementById('m-cost-summary').innerHTML = `
+      <div class="row">
+        <span class="lbl">${selectedStore} 월 매출</span>
+        <span class="v">${won(salesSelected)}</span>
+      </div>
+      <div class="row fixed">
+        <span class="lbl">직접 고정비</span>
+        <span class="v" style="font-size:15px">${won(directFixed)}</span>
+      </div>
+      <div class="row fixed">
+        <span class="lbl">공용 분배 (${salesAll ? (salesSelected/salesAll*100).toFixed(1) : 0}%)</span>
+        <span class="v" style="font-size:15px">${won(sharedAlloc)}</span>
+      </div>
+      <div class="row fixed">
+        <span class="lbl">총 고정비</span>
+        <span class="v">${won(totalFixed)}<span class="pct">${fixedPct}%</span></span>
+      </div>
+      <div class="divider"></div>
+      <div class="row profit ${profit < 0 ? 'loss' : ''}">
+        <span class="lbl">손익 (매출 − 총 고정비)</span>
+        <span class="v">${profit >= 0 ? '+' : '-'}${won(Math.abs(profit))}<span class="pct">${profitPct}%</span></span>
+      </div>
+    `;
+  }
+
+  // 하단: 지점별 합산 (직접 + 공용 분배)
   let storesHtml = '';
+  const stores = Object.keys(storeAgg);
   stores.sort((a, b) => storeAgg[b].total - storeAgg[a].total);
+  let totalDirectAll = 0;
+
   stores.forEach(s => {
     const data = loadCostData(monthStr, s);
-    const fixed = COST_ITEMS.reduce((sum, item) => sum + (data[item.key] || 0), 0);
-    totalFixedAll += fixed;
+    const direct = COST_ITEMS.reduce((sum, item) => sum + (data[item.key] || 0), 0);
     const sales = storeAgg[s].total;
-    const profitS = sales - fixed;
-    const pctS = sales ? (fixed / sales * 100).toFixed(1) : '0.0';
+    const sharedAlloc = salesAll && sharedTotal ? Math.round(sharedTotal * sales / salesAll) : 0;
+    const totalFixed = direct + sharedAlloc;
+    const profit = sales - totalFixed;
+    totalDirectAll += direct;
+    const pct = sales ? (totalFixed / sales * 100).toFixed(1) : '0.0';
     storesHtml += `
       <div class="m-cost-store" onclick="onCostStoreChange('${s}')" style="cursor:pointer">
         <span class="dot" style="background:${storeAgg[s].color}"></span>
         <div>
           <div class="name">${s}${s === selectedStore ? ' ✓' : ''}</div>
-          <div class="pct">매출 ${won(sales)} · 고정비 ${pctS}%</div>
+          <div class="pct">직접 ${won(direct)} + 공용 ${won(sharedAlloc)} = ${pct}%</div>
         </div>
-        <div class="v">${fixed > 0 ? won(fixed) : '미입력'}</div>
+        <div class="v" style="color:${profit >= 0 ? '#4ade80' : '#f87171'}">${profit >= 0 ? '+' : '-'}${won(Math.abs(profit))}</div>
       </div>`;
   });
-  // 합계 행
+
+  // 공용 행
+  storesHtml += `
+    <div class="m-cost-store" onclick="onCostStoreChange('공용')" style="cursor:pointer;border-style:dashed">
+      <span class="dot" style="background:#94a3b8"></span>
+      <div>
+        <div class="name">📦 공용지출${selectedStore === '공용' ? ' ✓' : ''}</div>
+        <div class="pct">전 지점 매출 비중으로 분배</div>
+      </div>
+      <div class="v">${sharedTotal > 0 ? won(sharedTotal) : '미입력'}</div>
+    </div>`;
+
+  // 전체 합계
   if(stores.length > 0){
+    const totalFixedAll = totalDirectAll + sharedTotal;
     const profitAll = salesAll - totalFixedAll;
     const totalPct = salesAll ? (totalFixedAll / salesAll * 100).toFixed(1) : '0.0';
     storesHtml += `
-      <div class="m-cost-store" style="background:rgba(34,211,238,0.06);border-color:#22d3ee">
+      <div class="m-cost-store" style="background:rgba(34,211,238,0.08);border-color:#22d3ee;border-style:solid">
         <span class="dot" style="background:#22d3ee"></span>
         <div>
-          <div class="name" style="color:#22d3ee">전 지점 합계</div>
-          <div class="pct">매출 ${won(salesAll)} · 고정비 ${totalPct}%</div>
+          <div class="name" style="color:#22d3ee">전 지점 종합</div>
+          <div class="pct">매출 ${won(salesAll)} · 총 고정비 ${totalPct}%</div>
         </div>
         <div class="v" style="color:${profitAll >= 0 ? '#4ade80' : '#f87171'}">${profitAll >= 0 ? '+' : '-'}${won(Math.abs(profitAll))}</div>
       </div>`;
