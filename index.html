@@ -463,6 +463,34 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-sm-split{margin:0 16px 14px}
   .m-sm-kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px 14px}
 
+
+  /* 분석 상세 화면 */
+  .m-and-hero{padding:0 16px 16px}
+  .m-and-cat{font-size:11px;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+  .m-and-name{font-size:18px;font-weight:600;margin-top:2px}
+  .m-and-sub{font-size:12px;color:var(--muted);margin-top:6px}
+  .m-and-rank{padding:0 12px 16px;display:flex;flex-direction:column;gap:6px}
+  .m-and-row{padding:11px 14px;border:1px solid var(--border);border-radius:11px;
+    background:var(--card);display:grid;grid-template-columns:auto 1fr auto;
+    gap:10px;align-items:center}
+  .m-and-row.first{border-color:#22d3ee}
+  .m-and-row.last{border-color:rgba(248,113,113,.4)}
+  .m-and-rk{font-size:11px;font-weight:700;width:24px;text-align:center;
+    color:var(--muted)}
+  .m-and-row.first .m-and-rk{color:#4ade80}
+  .m-and-row.last .m-and-rk{color:#f87171}
+  .m-and-info{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600}
+  .m-and-bar-wrap{height:5px;background:#0f172a;border-radius:3px;overflow:hidden;margin-top:4px}
+  .m-and-bar-wrap > div{height:100%;border-radius:3px}
+  .m-and-side{text-align:right}
+  .m-and-side .v{font-size:13px;font-weight:700}
+  .m-and-side .pct{font-size:10px;color:var(--muted);margin-top:2px}
+  .m-and-gap{margin:0 16px 16px;padding:12px 14px;border-radius:11px;
+    background:rgba(251,191,36,.08);border:0.5px solid rgba(251,191,36,.3);
+    display:flex;justify-content:space-between;align-items:center;font-size:12px}
+  .m-and-gap .gap-lbl{color:var(--muted)}
+  .m-and-gap .gap-val{color:#fbbf24;font-weight:700}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -539,6 +567,15 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     <div class="m-cal-grid" id="m-sm-cal-grid"></div>
     <div class="m-section">메뉴 TOP (월간 합계)</div>
     <div class="m-menu-list" id="m-sm-menu"></div>
+  </div>
+
+  <!-- 분석 상세 (5위 순위) 화면 -->
+  <div class="m-screen" id="m-an-detail">
+    <div class="m-back" onclick="mobileBackToAnalysis()">‹ 분석</div>
+    <div class="m-and-hero" id="m-and-hero"></div>
+    <div class="m-section">전체 순위 (1위 → 5위)</div>
+    <div class="m-and-rank" id="m-and-rank"></div>
+    <div class="m-and-gap" id="m-and-gap"></div>
   </div>
 
   <!-- 추세 화면 -->
@@ -1656,7 +1693,9 @@ function mobileSetMonth(){
   renderMobile();
 }
 
-function mobileShowStore(date, storeName){
+let mobileDrillFrom = 'm-main';
+function mobileShowStore(date, storeName, fromScreen){
+  mobileDrillFrom = fromScreen || 'm-main';
   const D = ALL_DATA[date];
   const sd = D.storeData[storeName];
   if(!sd || sd.missing) return;
@@ -1713,8 +1752,8 @@ function mobileShowStore(date, storeName){
 }
 
 function mobileBack(){
-  document.getElementById('m-drill').classList.remove('active');
-  document.getElementById('m-main').classList.add('active');
+  document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(mobileDrillFrom || 'm-main').classList.add('active');
   window.scrollTo(0, 0);
 }
 
@@ -1881,7 +1920,7 @@ function renderStoreCalendar(storeName, monthStr){
       cellInner += `<span class="total" style="color:${storeColor}">${totalLabel}</span>`;
       cellInner += `<div class="dots"><span class="ddot" style="background:${storeColor}"></span></div>`;
     }
-    const onclick = hasData ? `onclick="mobileSetDate('${dateStr}'); mobileBackToSummary();"` : '';
+    const onclick = hasData ? `onclick="mobileShowStore('${dateStr}','${storeName}','m-store-month')"` : '';
     html += `<div class="${classes}" ${onclick}>${cellInner}</div>`;
   }
   document.getElementById('m-sm-cal-grid').innerHTML = html;
@@ -2163,15 +2202,15 @@ function renderMobileAnalysis(){
   const fmtTicket = v => won(Math.round(v));
 
   const cards = [
-    { cat: '매출', name: '월간 총매출', icon: '₩', iconBg: '#22d3ee', iconColor: '#0f172a',
+    { key:'total', cat: '매출', name: '월간 총매출', icon: '₩', iconBg: '#22d3ee', iconColor: '#0f172a',
       data: topBot(a => a.total, fmtWon) },
-    { cat: '객단가', name: '1인당 매출', icon: '★', iconBg: '#fbbf24', iconColor: '#0f172a',
+    { key:'ticket', cat: '객단가', name: '1인당 매출', icon: '★', iconBg: '#fbbf24', iconColor: '#0f172a',
       data: topBot(a => a.guests ? a.total / a.guests : 0, fmtTicket) },
-    { cat: '점심 매출', name: '월간 점심 합계', icon: '🌅', iconBg: '#fbbf24', iconColor: '#0f172a',
+    { key:'lunch', cat: '점심 매출', name: '월간 점심 합계', icon: '🌅', iconBg: '#fbbf24', iconColor: '#0f172a',
       data: topBot(a => a.lunch, fmtWon) },
-    { cat: '저녁 매출', name: '월간 저녁 합계', icon: '🌆', iconBg: '#3b82f6', iconColor: '#fff',
+    { key:'dinner', cat: '저녁 매출', name: '월간 저녁 합계', icon: '🌆', iconBg: '#3b82f6', iconColor: '#fff',
       data: topBot(a => a.dinner, fmtWon) },
-    { cat: '주류 매출', name: '소주·맥주·복분자 등 합계', icon: '🍶', iconBg: '#a78bfa', iconColor: '#fff',
+    { key:'alcohol', cat: '주류 매출', name: '소주·맥주·복분자 등 합계', icon: '🍶', iconBg: '#a78bfa', iconColor: '#fff',
       data: topBot(a => a.alcohol, fmtWon) },
   ];
 
@@ -2182,7 +2221,7 @@ function renderMobileAnalysis(){
       return;
     }
     html += `
-      <div class="m-an-card">
+      <div class="m-an-card" onclick="mobileShowAnalysisDetail('${c.key}')">
         <div class="m-an-head">
           <div class="m-an-icon" style="background:${c.iconBg};color:${c.iconColor}">${c.icon}</div>
           <div>
@@ -2207,6 +2246,123 @@ function renderMobileAnalysis(){
       </div>`;
   });
   document.getElementById('m-an-cards').innerHTML = html;
+}
+
+
+function mobileShowAnalysisDetail(metricKey){
+  if(!ALL_DATA || Object.keys(ALL_DATA).length === 0) return;
+
+  const monthStr = mobileAnMonth || (mobileCurrentDate || Object.keys(ALL_DATA).sort().pop()).slice(0,7);
+  const [y, m] = monthStr.split('-').map(Number);
+  const monthLabel = y + '년 ' + m + '월';
+  const monthDates = Object.keys(ALL_DATA).filter(d => d.startsWith(monthStr));
+  if(monthDates.length === 0) return;
+
+  const stores = ALL_DATA[monthDates[0]].stores;
+  const agg = {};
+  stores.forEach(s => { agg[s] = { total:0, lunch:0, dinner:0, guests:0, alcohol:0,
+    color: ALL_DATA[monthDates[0]].storeData[s].color }; });
+  monthDates.forEach(d => {
+    const dd = ALL_DATA[d];
+    if(!dd) return;
+    dd.stores.forEach(s => {
+      const sd = dd.storeData[s];
+      if(sd && !sd.missing){
+        agg[s].total   += sd.total   || 0;
+        agg[s].lunch   += sd.lunch   || 0;
+        agg[s].dinner  += sd.dinner  || 0;
+        agg[s].guests  += sd.guests  || 0;
+        agg[s].alcohol += sd.alcohol_sales || 0;
+      }
+    });
+  });
+
+  // 메트릭별 getter & 포맷
+  const metaMap = {
+    total:   { cat:'매출',     name:'월간 총매출',         icon:'₩',  iconBg:'#22d3ee', iconColor:'#0f172a',
+               getter: a => a.total,                         fmt: v => won(v) },
+    ticket:  { cat:'객단가',   name:'1인당 매출',          icon:'★',  iconBg:'#fbbf24', iconColor:'#0f172a',
+               getter: a => a.guests ? a.total / a.guests : 0, fmt: v => won(Math.round(v)) },
+    lunch:   { cat:'점심 매출', name:'월간 점심 합계',       icon:'🌅', iconBg:'#fbbf24', iconColor:'#0f172a',
+               getter: a => a.lunch,                         fmt: v => won(v) },
+    dinner:  { cat:'저녁 매출', name:'월간 저녁 합계',       icon:'🌆', iconBg:'#3b82f6', iconColor:'#fff',
+               getter: a => a.dinner,                        fmt: v => won(v) },
+    alcohol: { cat:'주류 매출', name:'소주·맥주·복분자 등', icon:'🍶', iconBg:'#a78bfa', iconColor:'#fff',
+               getter: a => a.alcohol,                       fmt: v => won(v) },
+  };
+  const meta = metaMap[metricKey];
+  if(!meta) return;
+
+  // 정렬
+  const list = stores.filter(s => agg[s].total > 0)
+    .map(s => ({ s, v: meta.getter(agg[s]), color: agg[s].color }))
+    .sort((a, b) => b.v - a.v);
+  const maxV = list.length ? list[0].v : 1;
+  const totalAll = list.reduce((sum, x) => sum + x.v, 0);
+
+  // Hero
+  document.getElementById('m-and-hero').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div class="m-an-icon" style="background:${meta.iconBg};color:${meta.iconColor}">${meta.icon}</div>
+      <div>
+        <div class="m-and-cat">${meta.cat} · ${monthLabel}</div>
+        <div class="m-and-name">${meta.name}</div>
+      </div>
+    </div>
+    <div class="m-and-sub">총 ${list.length}개 지점 · 합계 ${meta.fmt(totalAll)}</div>
+  `;
+
+  // 순위 카드
+  let rankHtml = '';
+  list.forEach((item, idx) => {
+    const w = maxV ? (item.v / maxV * 100) : 0;
+    const pct = totalAll ? (item.v / totalAll * 100) : 0;
+    let rowCls = 'm-and-row';
+    if(idx === 0) rowCls += ' first';
+    if(idx === list.length - 1 && list.length > 1) rowCls += ' last';
+    rankHtml += `
+      <div class="${rowCls}">
+        <span class="m-and-rk">${idx + 1}위</span>
+        <div>
+          <div class="m-and-info">
+            <span class="m-dot" style="background:${item.color}"></span>${item.s}
+          </div>
+          <div class="m-and-bar-wrap">
+            <div style="background:${item.color};width:${w}%"></div>
+          </div>
+        </div>
+        <div class="m-and-side">
+          <div class="v">${meta.fmt(item.v)}</div>
+          ${metricKey !== 'ticket' ? `<div class="pct">${pct.toFixed(1)}%</div>` : ''}
+        </div>
+      </div>`;
+  });
+  document.getElementById('m-and-rank').innerHTML = rankHtml;
+
+  // 격차
+  if(list.length >= 2){
+    const top = list[0].v, bot = list[list.length - 1].v;
+    const gap = top - bot;
+    const pctDiff = bot ? ((top - bot) / bot * 100).toFixed(0) : '∞';
+    document.getElementById('m-and-gap').innerHTML = `
+      <span class="gap-lbl">1·${list.length}위 격차</span>
+      <span class="gap-val">${meta.fmt(gap)} (+${pctDiff}%)</span>
+    `;
+    document.getElementById('m-and-gap').style.display = '';
+  } else {
+    document.getElementById('m-and-gap').style.display = 'none';
+  }
+
+  // 화면 전환
+  document.querySelectorAll('.m-screen').forEach(sc => sc.classList.remove('active'));
+  document.getElementById('m-an-detail').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function mobileBackToAnalysis(){
+  document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('m-analysis').classList.add('active');
+  window.scrollTo(0, 0);
 }
 
 function mobileInit(){
