@@ -2047,7 +2047,8 @@ function renderMobileStoreMonth(){
   // 해당 월에 해당 지점 데이터 합산
   const monthDates = Object.keys(ALL_DATA).filter(d => d.startsWith(monthStr));
   let agg = { total:0, lunch:0, dinner:0, guests:0, lunch_guests:0, dinner_guests:0,
-              alcohol:0, alcohol_qty:0, days:0, color:'#666', menu:{} };
+              alcohol:0, alcohol_qty:0, days:0, color:'#666', menu:{},
+              rateSum:0, rateDays:0 };
 
   // 색상 추출 (다른 날짜에서라도)
   for(const d of Object.keys(ALL_DATA)){
@@ -2067,6 +2068,8 @@ function renderMobileStoreMonth(){
     agg.alcohol        += sd.alcohol_sales  || 0;
     agg.alcohol_qty    += sd.alcohol_qty    || 0;
     agg.days           += 1;
+    const rate = sd.turnover?.rate || 0;
+    if(rate > 0){ agg.rateSum += rate; agg.rateDays += 1; }
     // 메뉴 누적
     (sd.menu || []).forEach(item => {
       if(!agg.menu[item.name]) agg.menu[item.name] = { qty:0, sales:0 };
@@ -2113,12 +2116,16 @@ function renderMobileStoreMonth(){
     </div>
   `;
 
-  // 월간 KPI 4개
+  // 월간 KPI 6개
+  const avgRate = agg.rateDays ? (agg.rateSum / agg.rateDays).toFixed(2) : '-';
+  const alcPct = agg.total ? (agg.alcohol / agg.total * 100).toFixed(1) : '0.0';
   document.getElementById('m-sm-kpis').innerHTML = `
+    <div class="m-mini"><div class="lbl">평균 매출</div><div class="val">${won(avg)}</div></div>
     <div class="m-mini"><div class="lbl">총 객수</div><div class="val">${agg.guests.toLocaleString()}<span class="suf"> 명</span></div></div>
     <div class="m-mini"><div class="lbl">객단가</div><div class="val">${won(ticket).replace('₩','')}<span class="suf"> 원</span></div></div>
-    <div class="m-mini"><div class="lbl">주류 매출</div><div class="val" style="font-size:14px">${won(agg.alcohol)}</div></div>
-    <div class="m-mini"><div class="lbl">주류 비중</div><div class="val">${agg.total ? (agg.alcohol/agg.total*100).toFixed(1) : 0}<span class="suf">%</span></div></div>
+    <div class="m-mini"><div class="lbl">주류 비중</div><div class="val">${alcPct}<span class="suf">%</span></div></div>
+    <div class="m-mini"><div class="lbl">회전율</div><div class="val">${avgRate}<span class="suf">${avgRate !== '-' ? ' 회' : ''}</span></div></div>
+    <div class="m-mini"><div class="lbl">영업일자</div><div class="val">${agg.days}<span class="suf"> 일</span></div></div>
   `;
 
   // 캘린더 (지점별)
