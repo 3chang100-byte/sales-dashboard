@@ -780,6 +780,10 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-pl-final .v{font-size:28px;font-weight:800;letter-spacing:-.4px;margin-top:4px}
   .m-pl-final.loss{background:#f87171;color:#fff}
 
+
+  /* ★ 비용/손익/설정 탭 임시 비활성화 (코드 보존, 이 줄만 제거하면 즉시 활성화) */
+  .m-tab[data-tab="cost"], .m-tab[data-tab="pl"], .m-tab[data-tab="settings"]{display:none}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
