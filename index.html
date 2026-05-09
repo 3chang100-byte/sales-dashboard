@@ -784,6 +784,43 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   /* ★ 비용/손익/설정 탭 임시 비활성화 (코드 보존, 이 줄만 제거하면 즉시 활성화) */
   .m-tab[data-tab="cost"], .m-tab[data-tab="pl"], .m-tab[data-tab="settings"]{display:none}
 
+
+  /* AI 인사이트 상세 화면 */
+  .m-ai-detail-hero{padding:0 16px 16px}
+  .m-ai-detail-hero .icon-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .m-ai-detail-hero .big-icon{width:40px;height:40px;border-radius:11px;
+    display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+  .m-ai-detail-hero .cat{font-size:11px;color:var(--muted);
+    letter-spacing:.4px;text-transform:uppercase}
+  .m-ai-detail-hero .title{font-size:18px;font-weight:700;color:var(--text);margin-top:1px}
+  .m-ai-detail-hero .summary{font-size:13px;color:var(--muted);line-height:1.6;
+    margin-top:6px;padding:10px 12px;background:var(--card);border-radius:10px;
+    border-left:3px solid #22d3ee}
+
+  .m-ai-detail-data, .m-ai-detail-actions, .m-ai-detail-impact{padding:0 16px 14px}
+  .m-ai-data-card{padding:11px 13px;background:var(--card);border:1px solid var(--border);
+    border-radius:10px;margin-bottom:7px}
+  .m-ai-data-card .label{font-size:11px;color:var(--muted);margin-bottom:4px}
+  .m-ai-data-card .value{font-size:15px;font-weight:600;color:var(--text)}
+  .m-ai-data-card .compare{font-size:11px;color:var(--muted);margin-top:3px}
+
+  .m-ai-action-item{padding:11px 13px;background:var(--card);
+    border-left:3px solid #4ade80;border-radius:8px;margin-bottom:7px;
+    border-top:1px solid var(--border);border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .m-ai-action-item .num{display:inline-block;width:22px;height:22px;border-radius:50%;
+    background:#4ade80;color:#0f172a;font-size:11px;font-weight:700;
+    text-align:center;line-height:22px;margin-right:6px}
+  .m-ai-action-item .title{font-size:13px;font-weight:600;color:var(--text);
+    display:inline-block;vertical-align:middle}
+  .m-ai-action-item .desc{font-size:11.5px;color:var(--muted);line-height:1.55;
+    margin-top:6px;padding-left:28px}
+
+  .m-ai-impact-card{padding:13px;background:linear-gradient(135deg,#0f3a4a,#1e293b);
+    border:1px solid #22d3ee;border-radius:11px;margin-bottom:7px}
+  .m-ai-impact-card .lbl{font-size:11px;color:#94a3b8;margin-bottom:3px}
+  .m-ai-impact-card .v{font-size:16px;font-weight:700;color:#22d3ee}
+  .m-ai-impact-card .desc{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.55}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -903,6 +940,18 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
       <div class="m-ai-header">AI 매출 분석 · 인사이트</div>
       <div id="m-ai-cards"></div>
     </div>
+  </div>
+
+  <!-- AI 인사이트 상세 화면 -->
+  <div class="m-screen" id="m-ai-detail">
+    <div class="m-back" onclick="mobileBackToAnalysis()">‹ 분석</div>
+    <div class="m-ai-detail-hero" id="m-ai-detail-hero"></div>
+    <div class="m-section">데이터 상세</div>
+    <div class="m-ai-detail-data" id="m-ai-detail-data"></div>
+    <div class="m-section">실행 가능한 액션</div>
+    <div class="m-ai-detail-actions" id="m-ai-detail-actions"></div>
+    <div class="m-section">예상 효과 / 벤치마크</div>
+    <div class="m-ai-detail-impact" id="m-ai-detail-impact"></div>
   </div>
 
   <!-- 비용 화면 -->
@@ -2676,10 +2725,9 @@ function generateAIInsights(monthDates, agg, stores, monthLabel){
   const insights = [];
   const fmtKR = v => v >= 1e8 ? (v/1e8).toFixed(2) + '억' : v >= 1e4 ? Math.round(v/1e4).toLocaleString() + '만' : Math.round(v).toLocaleString();
 
-  // 활성 지점만 (데이터 있는)
   const activeStores = stores.filter(s => agg[s].total > 0);
   if(activeStores.length === 0){
-    return [{type:'info', title:'데이터 부족', text:`${monthLabel}에 매출 데이터가 없어 분석 불가합니다.`}];
+    return [{key:'no_data', type:'info', title:'데이터 부족', text:`${monthLabel}에 매출 데이터가 없어 분석 불가합니다.`}];
   }
 
   const totalAll = activeStores.reduce((s, x) => s + agg[x].total, 0);
@@ -2687,16 +2735,16 @@ function generateAIInsights(monthDates, agg, stores, monthLabel){
   const dinnerAll = activeStores.reduce((s, x) => s + agg[x].dinner, 0);
   const alcoholAll = activeStores.reduce((s, x) => s + agg[x].alcohol, 0);
   const guestsAll = activeStores.reduce((s, x) => s + agg[x].guests, 0);
-  const ticketAvg = guestsAll ? totalAll / guestsAll : 0;
 
-  // 1. 매출 1위 (highlight)
+  // 1. 매출 1위
   const sortedByTotal = [...activeStores].sort((a, b) => agg[b].total - agg[a].total);
   const topStore = sortedByTotal[0];
   const topPct = (agg[topStore].total / totalAll * 100).toFixed(1);
   insights.push({
+    key:'top_sales',
     type:'highlight',
     title: '매출 1위 · ' + topStore,
-    text: `${monthLabel} 누계 <strong>${fmtKR(agg[topStore].total)}</strong>로 전체의 <strong>${topPct}%</strong> 차지. ${topPct >= 25 ? '브랜드 핵심 지점, 안정적 성장 유지가 관건.' : '비중이 분산되어 있어 균형 잡힌 포트폴리오.'}`
+    text: `${monthLabel} 누계 <strong>${fmtKR(agg[topStore].total)}</strong>로 전체의 <strong>${topPct}%</strong> 차지.`
   });
 
   // 2. 객단가 분석
@@ -2707,21 +2755,23 @@ function generateAIInsights(monthDates, agg, stores, monthLabel){
     const top = ticketList[0], bot = ticketList[ticketList.length - 1];
     const ratio = (top.t / bot.t).toFixed(1);
     insights.push({
+      key:'ticket',
       type:'positive',
       title: '객단가 1위 · ' + top.s,
-      text: `1인당 <strong>${fmtKR(top.t)}원</strong> (최저 ${bot.s} 대비 <strong>${ratio}배</strong>). 고가 메뉴 비중·세트 구성·단체 주문 비율을 다른 지점에 적용하면 객단가 ${Math.round((top.t/bot.t-1)*100*0.3)}% 향상 여지.`
+      text: `1인당 <strong>${fmtKR(top.t)}원</strong> (최저 ${bot.s} 대비 <strong>${ratio}배</strong>).`
     });
   }
 
-  // 3. 약세 지점 — 액션 제안
+  // 3. 약세 지점
   if(sortedByTotal.length >= 3){
     const last = sortedByTotal[sortedByTotal.length - 1];
     const lastPct = (agg[last].total / totalAll * 100).toFixed(1);
     const gap = agg[topStore].total - agg[last].total;
     insights.push({
+      key:'weak',
       type:'warning',
       title: '약세 지점 · ' + last,
-      text: `비중 <strong>${lastPct}%</strong> (1위와 ${fmtKR(gap)} 격차). 객수: ${agg[last].guests}명 / 일평균 ${fmtKR(monthDates.length ? agg[last].total/monthDates.length : 0)}. <strong>점심 영업 강화 또는 평일 프로모션</strong> 검토 권장.`
+      text: `비중 <strong>${lastPct}%</strong> (1위와 ${fmtKR(gap)} 격차).`
     });
   }
 
@@ -2732,9 +2782,10 @@ function generateAIInsights(monthDates, agg, stores, monthLabel){
       s, p: agg[s].total ? agg[s].lunch/agg[s].total*100 : 0
     })).sort((a, b) => b.p - a.p)[0];
     insights.push({
+      key:'lunch',
       type:'info',
       title: '점심 비중 ' + lunchPct + '%',
-      text: `${lunchTopStore.s}이 점심 비중 <strong>${lunchTopStore.p.toFixed(1)}%</strong>로 점심 매출 강세. ${parseFloat(lunchPct) < 15 ? '전반적 점심 약세 — 직장인·관광객 대상 점심 세트 메뉴 강화 시 매출 +10% 잠재력.' : '점심·저녁 균형 양호.'}`
+      text: `${lunchTopStore.s}이 점심 비중 <strong>${lunchTopStore.p.toFixed(1)}%</strong>로 점심 매출 강세.`
     });
   }
 
@@ -2757,9 +2808,10 @@ function generateAIInsights(monthDates, agg, stores, monthLabel){
     const dt = dowList[0], db = dowList[dowList.length - 1];
     const ratio = db.v ? (dt.v / db.v).toFixed(1) : '∞';
     insights.push({
+      key:'dow',
       type:'info',
       title: '요일별 격차 ' + ratio + '배',
-      text: `<strong>${dt.l}요일</strong> 평균 ${fmtKR(dt.v)} vs <strong>${db.l}요일</strong> ${fmtKR(db.v)}. ${db.l}요일은 <strong>인력 효율화·평일 한정 메뉴</strong>로 비용 최적화 + 매출 견인 검토.`
+      text: `<strong>${dt.l}요일</strong> 평균 ${fmtKR(dt.v)} vs <strong>${db.l}요일</strong> ${fmtKR(db.v)}.`
     });
   }
 
@@ -2771,39 +2823,25 @@ function generateAIInsights(monthDates, agg, stores, monthLabel){
     if(alcF < 5){
       type = 'warning';
       title = '주류 비중 낮음 · ' + alcPct + '%';
-      text = `장어 전문점 평균 8~15% 대비 낮음. <strong>주류 페어링 추천·생일 1+1 이벤트·맥주 세트</strong> 등으로 <strong>객단가 +10~15%</strong> 잠재력.`;
+      text = `장어 전문점 평균 8~15% 대비 낮음.`;
     } else if(alcF > 12){
       type = 'positive';
       title = '주류 비중 양호 · ' + alcPct + '%';
-      text = `평균 이상으로 객단가 향상에 기여. <strong>고급 청주·소주·복분자 라인업 확장</strong> 시 추가 상승 여지.`;
+      text = `평균 이상으로 객단가 향상에 기여.`;
     } else {
       type = 'info';
       title = '주류 비중 ' + alcPct + '%';
-      text = `평균 수준. 직장인 회식·단체 손님에 <strong>주류 패키지 추천</strong>으로 비중 +3~5%p 향상 가능.`;
+      text = `평균 수준.`;
     }
-    insights.push({type, title, text});
+    insights.push({key:'alcohol', type, title, text});
   }
 
-  // 7. 회전율 (전체 평균)
-  const turnoverList = activeStores
-    .map(s => agg[s].guests / monthDates.length)
-    .filter(x => x > 0);
-  if(turnoverList.length > 0){
-    const avgGuests = turnoverList.reduce((a,b)=>a+b,0) / turnoverList.length;
-    if(avgGuests < 30){
-      insights.push({
-        type:'action',
-        title: '일평균 객수 개선 권장',
-        text: `지점당 일평균 <strong>${avgGuests.toFixed(0)}명</strong>. 장어 전문점 손익분기 일평균 50~60명 권장. <strong>온라인 마케팅·예약 인센티브·시간대 분산 프로모션</strong> 검토.`
-      });
-    }
-  }
-
-  // 8. 종합 액션 제안
+  // 7. 종합 액션
   insights.push({
+    key:'overall',
     type:'action',
     title: '핵심 액션 제안',
-    text: `① <strong>${topStore} 모범 사례</strong>를 약세 지점에 적용 ② <strong>점심 영업 활성화</strong>로 시간대 균형 ③ <strong>주류 페어링 메뉴</strong>로 객단가 향상. 다음달 매출 +5~10% 목표 가능.`
+    text: `① <strong>${topStore} 모범 사례</strong> 적용 ② <strong>점심 영업 활성화</strong> ③ <strong>주류 페어링</strong>으로 객단가 향상.`
   });
 
   return insights;
@@ -2811,9 +2849,11 @@ function generateAIInsights(monthDates, agg, stores, monthLabel){
 
 function renderMobileAIInsights(monthDates, agg, stores, monthLabel){
   const insights = generateAIInsights(monthDates, agg, stores, monthLabel);
+  // 인사이트 캐시 (상세 화면에서 사용)
+  window._aiInsightsCache = { insights, monthDates, agg, stores, monthLabel };
   const html = insights.map(ins => `
-    <div class="m-ai-card ${ins.type}">
-      <div class="m-ai-title">${ins.title}</div>
+    <div class="m-ai-card ${ins.type}" onclick="mobileShowAIInsightDetail('${ins.key}')" style="cursor:pointer">
+      <div class="m-ai-title">${ins.title} <span style="margin-left:auto;color:var(--accent);font-size:13px">›</span></div>
       <div class="m-ai-text">${ins.text}</div>
     </div>
   `).join('');
@@ -3091,6 +3131,207 @@ function mobileShowAnalysisDetail(metricKey){
   // 화면 전환
   document.querySelectorAll('.m-screen').forEach(sc => sc.classList.remove('active'));
   document.getElementById('m-an-detail').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+
+// AI 인사이트 상세 솔루션
+function mobileShowAIInsightDetail(key){
+  const cache = window._aiInsightsCache;
+  if(!cache) return;
+  const { insights, monthDates, agg, stores, monthLabel } = cache;
+  const ins = insights.find(x => x.key === key);
+  if(!ins) return;
+
+  const fmtKR = v => v >= 1e8 ? (v/1e8).toFixed(2) + '억' : v >= 1e4 ? Math.round(v/1e4).toLocaleString() + '만' : Math.round(v).toLocaleString();
+
+  // 카드 타입별 색상/아이콘
+  const typeColors = {
+    highlight: {bg:'#22d3ee', color:'#0f172a', icon:'★'},
+    positive:  {bg:'#4ade80', color:'#0f172a', icon:'↑'},
+    warning:   {bg:'#fbbf24', color:'#0f172a', icon:'!'},
+    info:      {bg:'#94a3b8', color:'#0f172a', icon:'ⓘ'},
+    action:    {bg:'#a78bfa', color:'#fff', icon:'▶'},
+  };
+  const t = typeColors[ins.type] || typeColors.info;
+
+  // Hero
+  document.getElementById('m-ai-detail-hero').innerHTML = `
+    <div class="icon-row">
+      <div class="big-icon" style="background:${t.bg};color:${t.color}">${t.icon}</div>
+      <div>
+        <div class="cat">${monthLabel} · AI 인사이트</div>
+        <div class="title">${ins.title}</div>
+      </div>
+    </div>
+    <div class="summary">${ins.text}</div>
+  `;
+
+  // 카드별 상세 솔루션 데이터 (key별 분기)
+  const totalAll = stores.reduce((s, x) => s + (agg[x].total || 0), 0);
+  let dataHtml = '', actionsHtml = '', impactHtml = '';
+
+  if(key === 'top_sales'){
+    const sorted = stores.filter(s => agg[s].total > 0).sort((a, b) => agg[b].total - agg[a].total);
+    const topStore = sorted[0];
+    const top = agg[topStore];
+    dataHtml = `
+      <div class="m-ai-data-card"><div class="label">월 매출</div><div class="value">${fmtKR(top.total)}</div></div>
+      <div class="m-ai-data-card"><div class="label">총 객수</div><div class="value">${top.guests.toLocaleString()}명</div></div>
+      <div class="m-ai-data-card"><div class="label">객단가</div><div class="value">${fmtKR(top.guests ? top.total/top.guests : 0)}원</div></div>
+      <div class="m-ai-data-card"><div class="label">점심 비중</div><div class="value">${top.total ? (top.lunch/top.total*100).toFixed(1) : 0}%</div><div class="compare">저녁 비중 ${top.total ? (top.dinner/top.total*100).toFixed(1) : 0}%</div></div>
+    `;
+    actionsHtml = `
+      <div class="m-ai-action-item"><span class="num">1</span><span class="title">강점 분석 보고서 작성</span><div class="desc">매장 매니저와 함께 ${topStore} 매출 견인 요인(메뉴 구성·서비스·접객·홍보) 분석 → 다른 지점 매니저에게 공유</div></div>
+      <div class="m-ai-action-item"><span class="num">2</span><span class="title">월 단위 성과 미팅</span><div class="desc">${topStore} 매니저를 모범 사례 발표자로 지정. 비결을 다른 4개 지점에 정기적 전수</div></div>
+      <div class="m-ai-action-item"><span class="num">3</span><span class="title">메뉴 구성 벤치마킹</span><div class="desc">${topStore}의 인기 메뉴 TOP 5와 다른 지점 비교 → 공통 인기 메뉴는 전 지점 추천 메뉴로 지정</div></div>
+      <div class="m-ai-action-item"><span class="num">4</span><span class="title">VIP 관리 시스템</span><div class="desc">${topStore} 단골 고객 파악 → 멤버십·포인트·기념일 메시지 등 단골 우대 제도 도입</div></div>
+    `;
+    impactHtml = `
+      <div class="m-ai-impact-card"><div class="lbl">예상 효과</div><div class="v">전 지점 매출 +5~10%</div><div class="desc">모범 사례 적용 시 약세 지점 평균 8% 향상 가능. 외식업 체인의 일반 모범 사례 전수 효과는 6~12% 범위.</div></div>
+      <div class="m-ai-impact-card"><div class="lbl">투자 수익</div><div class="v">즉시 적용, 추가 비용 없음</div><div class="desc">기존 자원 재배치만으로 가능. 지점 간 인력 교류·교육 프로그램이 핵심.</div></div>
+    `;
+  } else if(key === 'ticket'){
+    const ticketList = stores.map(s => ({s, t: agg[s].guests ? agg[s].total/agg[s].guests : 0}))
+      .filter(x => x.t > 0).sort((a, b) => b.t - a.t);
+    const top = ticketList[0], bot = ticketList[ticketList.length - 1];
+    dataHtml = `
+      <div class="m-ai-data-card"><div class="label">${top.s} 객단가</div><div class="value">${fmtKR(top.t)}원</div></div>
+      <div class="m-ai-data-card"><div class="label">${bot.s} 객단가</div><div class="value">${fmtKR(bot.t)}원</div><div class="compare">차이 ${fmtKR(top.t - bot.t)}원 (${(top.t/bot.t).toFixed(1)}배)</div></div>
+      <div class="m-ai-data-card"><div class="label">${top.s} 객수</div><div class="value">${agg[top.s].guests.toLocaleString()}명</div></div>
+    `;
+    actionsHtml = `
+      <div class="m-ai-action-item"><span class="num">1</span><span class="title">고가 메뉴 비중 확대</span><div class="desc">${top.s}의 인기 고가 메뉴(예: 장어 정식·특선)를 ${bot.s}에 적극 추천. 직원 권유 멘트 표준화</div></div>
+      <div class="m-ai-action-item"><span class="num">2</span><span class="title">세트 메뉴 강화</span><div class="desc">2~4인 세트, 코스 메뉴 비중 늘려 객단가 ↑. 특히 단체 손님 대상 패키지 메뉴 개발</div></div>
+      <div class="m-ai-action-item"><span class="num">3</span><span class="title">사이드/디저트 추가 판매</span><div class="desc">메인 주문 시 사이드(국·반찬), 후식(차·디저트) 추천 캠페인. 1인당 +3,000~5,000원 효과</div></div>
+      <div class="m-ai-action-item"><span class="num">4</span><span class="title">주류 페어링</span><div class="desc">장어 메뉴와 주류 페어링 추천. 직원 교육 + 메뉴판에 페어링 가이드 표시</div></div>
+    `;
+    const target = top.t * 0.8;
+    const gap = target - bot.t;
+    impactHtml = `
+      <div class="m-ai-impact-card"><div class="lbl">${bot.s} 객단가 +${fmtKR(gap)} 향상 시</div><div class="v">월매출 +${fmtKR(gap * agg[bot.s].guests)}</div><div class="desc">현재 객수 유지하며 객단가만 ${top.s}의 80% 수준까지 끌어올릴 경우 추가 매출.</div></div>
+      <div class="m-ai-impact-card"><div class="lbl">외식업 평균 객단가</div><div class="v">장어 전문점 ₩60~120k</div><div class="desc">${top.t > 100000 ? '귀하의 1위 매장은 평균 상회로 프리미엄 포지셔닝 잘 되어 있음' : '평균 수준이나 향상 여지 큼'}</div></div>
+    `;
+  } else if(key === 'weak'){
+    const sorted = stores.filter(s => agg[s].total > 0).sort((a, b) => agg[b].total - agg[a].total);
+    const last = sorted[sorted.length - 1];
+    const top = sorted[0];
+    const lastA = agg[last];
+    dataHtml = `
+      <div class="m-ai-data-card"><div class="label">${last} 월 매출</div><div class="value">${fmtKR(lastA.total)}</div><div class="compare">전체 비중 ${(lastA.total/totalAll*100).toFixed(1)}%</div></div>
+      <div class="m-ai-data-card"><div class="label">${last} 객수</div><div class="value">${lastA.guests.toLocaleString()}명</div><div class="compare">일평균 ${Math.round(lastA.guests / monthDates.length)}명</div></div>
+      <div class="m-ai-data-card"><div class="label">${last} vs ${top}</div><div class="value">매출 차 ${fmtKR(agg[top].total - lastA.total)}</div></div>
+    `;
+    actionsHtml = `
+      <div class="m-ai-action-item"><span class="num">1</span><span class="title">현장 진단 (1주차)</span><div class="desc">${last} 직접 방문 → 입지·접객·메뉴 품질·청결 등 7대 점검표 작성. ${top}와 다른 점 5가지 식별</div></div>
+      <div class="m-ai-action-item"><span class="num">2</span><span class="title">인근 상권 분석</span><div class="desc">${last} 반경 500m 경쟁 매장 5곳 메뉴/가격/평점 비교. 차별화 포인트 정의</div></div>
+      <div class="m-ai-action-item"><span class="num">3</span><span class="title">집중 마케팅 (2~4주차)</span><div class="desc">지역 SNS·블로그·당근마켓 광고. 평일 점심 한정 할인 쿠폰. 신규 방문자 유치 캠페인</div></div>
+      <div class="m-ai-action-item"><span class="num">4</span><span class="title">매니저 코칭</span><div class="desc">${top} 매니저가 ${last}에 1주일 파견. 운영 노하우 직접 전수. 인사·서비스 매뉴얼 표준화</div></div>
+    `;
+    impactHtml = `
+      <div class="m-ai-impact-card"><div class="lbl">3개월 목표</div><div class="v">${last} 매출 +20~30%</div><div class="desc">집중 진단·마케팅·코칭으로 약세 지점 회복 사례 평균. 평균 ${last} 월매출 ${fmtKR(lastA.total * 0.25)} 추가 가능</div></div>
+      <div class="m-ai-impact-card"><div class="lbl">6개월 목표</div><div class="v">전 지점 평균 수준 도달</div><div class="desc">5개 지점 평균 매출 ${fmtKR(totalAll/sorted.length)} 수준까지 격차 축소.</div></div>
+    `;
+  } else if(key === 'lunch'){
+    const lunchAll = stores.reduce((s, x) => s + agg[x].lunch, 0);
+    const lunchPct = (lunchAll / totalAll * 100);
+    const lunchTopStore = stores.map(s => ({s, p: agg[s].total ? agg[s].lunch/agg[s].total*100 : 0}))
+      .sort((a, b) => b.p - a.p)[0];
+    dataHtml = `
+      <div class="m-ai-data-card"><div class="label">전 지점 점심 매출</div><div class="value">${fmtKR(lunchAll)}</div><div class="compare">전체 매출의 ${lunchPct.toFixed(1)}%</div></div>
+      <div class="m-ai-data-card"><div class="label">${lunchTopStore.s} 점심 비중</div><div class="value">${lunchTopStore.p.toFixed(1)}%</div></div>
+      <div class="m-ai-data-card"><div class="label">외식업 평균</div><div class="value">15~25%</div><div class="compare">${lunchPct < 15 ? '하회 — 개선 여지 큼' : lunchPct > 25 ? '상회 — 점심 강자' : '평균 수준'}</div></div>
+    `;
+    actionsHtml = `
+      <div class="m-ai-action-item"><span class="num">1</span><span class="title">점심 한정 메뉴</span><div class="desc">11~14시 한정 ₩10,000~15,000 점심 정식 출시. 회전율 ↑ 객수 ↑ 동시에 가능</div></div>
+      <div class="m-ai-action-item"><span class="num">2</span><span class="title">직장인 타겟</span><div class="desc">반경 500m 사무실에 점심 쿠폰 배포. 단체 도시락·회식 예약 우대. 평일 점심 ↑</div></div>
+      <div class="m-ai-action-item"><span class="num">3</span><span class="title">${lunchTopStore.s} 점심 메뉴 벤치마크</span><div class="desc">${lunchTopStore.s}의 점심 인기 메뉴/시간대를 다른 지점에 도입</div></div>
+      <div class="m-ai-action-item"><span class="num">4</span><span class="title">SNS 점심 마케팅</span><div class="desc">인스타그램에 매일 점심 메뉴 사진 + 위치 태그. 동네 손님 유치</div></div>
+    `;
+    const targetPct = 20;
+    const targetSales = totalAll * targetPct / 100;
+    impactHtml = `
+      <div class="m-ai-impact-card"><div class="lbl">점심 비중 ${targetPct}% 도달 시</div><div class="v">+${fmtKR(targetSales - lunchAll)} 추가 매출</div><div class="desc">점심 매출만 ${fmtKR(targetSales - lunchAll)} 증가. 인력·식자재는 기존 그대로 활용 가능 → 영업이익률 향상 효과 큼</div></div>
+      <div class="m-ai-impact-card"><div class="lbl">투자 회수</div><div class="v">1~2개월 내</div><div class="desc">점심 캠페인 비용 대비 효과 빠름. 외식업 평균 ROI 200~300%</div></div>
+    `;
+  } else if(key === 'dow'){
+    dowList.length === 0 ? null : null;
+    const dowSums2 = [0,0,0,0,0,0,0];
+    const dowCnts2 = [0,0,0,0,0,0,0];
+    monthDates.forEach(d => {
+      const t = ALL_DATA[d]?.summary?.total || 0;
+      if(t > 0){
+        const dow = new Date(d + 'T00:00:00').getDay();
+        dowSums2[dow] += t;
+        dowCnts2[dow] += 1;
+      }
+    });
+    const dowList2 = ['일','월','화','수','목','금','토'].map((l, i) => ({
+      l, v: dowCnts2[i] ? dowSums2[i]/dowCnts2[i] : 0, n: dowCnts2[i]
+    })).filter(x => x.n > 0).sort((a, b) => b.v - a.v);
+    const dt = dowList2[0], db = dowList2[dowList2.length - 1];
+    dataHtml = `
+      <div class="m-ai-data-card"><div class="label">최고 매출 요일 · ${dt.l}요일</div><div class="value">${fmtKR(dt.v)}</div></div>
+      <div class="m-ai-data-card"><div class="label">최저 매출 요일 · ${db.l}요일</div><div class="value">${fmtKR(db.v)}</div><div class="compare">${dt.l}요일 대비 ${(db.v/dt.v*100).toFixed(0)}% 수준</div></div>
+      <div class="m-ai-data-card"><div class="label">격차</div><div class="value">${(dt.v/db.v).toFixed(1)}배</div></div>
+    `;
+    actionsHtml = `
+      <div class="m-ai-action-item"><span class="num">1</span><span class="title">${db.l}요일 인력 효율화</span><div class="desc">매출 약한 ${db.l}요일 정규직 1명 줄이고 알바·시간제 인력 활용. 인건비 ↓</div></div>
+      <div class="m-ai-action-item"><span class="num">2</span><span class="title">${db.l}요일 한정 프로모션</span><div class="desc">${db.l}요일 방문 시 음료 1개 무료, 회식 우대, 단체 할인 등 평일 한정 쿠폰</div></div>
+      <div class="m-ai-action-item"><span class="num">3</span><span class="title">${dt.l}요일 만석 대비</span><div class="desc">예약 시스템 강화, 회전율 향상 위한 메뉴 간소화 또는 사전 주문 시스템</div></div>
+      <div class="m-ai-action-item"><span class="num">4</span><span class="title">정기 모임 유치</span><div class="desc">${db.l}요일 한정 동호회·소모임 우대. 정기 단골 확보로 ${db.l}요일 매출 안정화</div></div>
+    `;
+    const reduction = (dt.v - db.v) * 0.2 * (db.n + 1);
+    impactHtml = `
+      <div class="m-ai-impact-card"><div class="lbl">${db.l}요일 매출 +20% 시</div><div class="v">월 +${fmtKR(reduction)} 추가</div><div class="desc">${db.l}요일이 한 달 ${db.n}일이라면 작은 % 향상도 누적 효과 큼.</div></div>
+      <div class="m-ai-impact-card"><div class="lbl">${db.l}요일 인건비 절감</div><div class="v">월 50~100만 원</div><div class="desc">정규직 1명 → 시간제 전환 시 평균. 약매출 요일 인력 효율화는 즉각 효과.</div></div>
+    `;
+  } else if(key === 'alcohol'){
+    const alcoholAll2 = stores.reduce((s, x) => s + (agg[x].alcohol || 0), 0);
+    const alcPct = totalAll ? (alcoholAll2/totalAll*100) : 0;
+    dataHtml = `
+      <div class="m-ai-data-card"><div class="label">전 지점 주류 매출</div><div class="value">${fmtKR(alcoholAll2)}</div><div class="compare">전체 매출의 ${alcPct.toFixed(1)}%</div></div>
+      <div class="m-ai-data-card"><div class="label">장어집 평균 비중</div><div class="value">8~15%</div><div class="compare">${alcPct < 8 ? '하회 — 향상 여지 큼' : alcPct > 15 ? '상회 — 강자' : '평균 수준'}</div></div>
+    `;
+    actionsHtml = `
+      <div class="m-ai-action-item"><span class="num">1</span><span class="title">장어 + 주류 페어링</span><div class="desc">장어 정식 + 청하 1병 세트, 장어 + 막걸리 코스 등 주력 페어링 메뉴 출시</div></div>
+      <div class="m-ai-action-item"><span class="num">2</span><span class="title">고급 주류 라인업</span><div class="desc">청주·소주 프리미엄 4~5종 선별 추가. 메뉴판 별도 페이지로 부각</div></div>
+      <div class="m-ai-action-item"><span class="num">3</span><span class="title">직원 추천 멘트</span><div class="desc">"장어와 잘 어울리는 청주 추천드릴까요?" 같이 자연스러운 권유. 직원 교육 매뉴얼 표준화</div></div>
+      <div class="m-ai-action-item"><span class="num">4</span><span class="title">단체 회식 패키지</span><div class="desc">4인 이상 단체 시 1병 무료 또는 50% 할인. 회식 단골 유치</div></div>
+    `;
+    const target = totalAll * 0.12;
+    impactHtml = `
+      <div class="m-ai-impact-card"><div class="lbl">주류 비중 12% 도달 시</div><div class="v">+${fmtKR(target - alcoholAll2)} 추가</div><div class="desc">주류는 마진율 높음(50~70%) → 객단가 ↑ + 영업이익률 ↑ 동시 효과</div></div>
+      <div class="m-ai-impact-card"><div class="lbl">투자 부담</div><div class="v">초기 재고 + 직원 교육</div><div class="desc">신규 라인업 도입 비용 약 200~500만 원. 1~2개월 내 회수 가능</div></div>
+    `;
+  } else if(key === 'overall'){
+    dataHtml = `
+      <div class="m-ai-data-card"><div class="label">${monthLabel} 전 지점 매출</div><div class="value">${fmtKR(totalAll)}</div></div>
+      <div class="m-ai-data-card"><div class="label">총 객수</div><div class="value">${stores.reduce((s,x)=>s+(agg[x].guests||0),0).toLocaleString()}명</div></div>
+      <div class="m-ai-data-card"><div class="label">활성 지점</div><div class="value">${stores.filter(s=>agg[s].total>0).length}/${stores.length}개</div></div>
+    `;
+    actionsHtml = `
+      <div class="m-ai-action-item"><span class="num">1</span><span class="title">단기 (1개월)</span><div class="desc">매출 1위 지점 모범 사례 분석 → 다른 지점 매니저 미팅 → 즉시 적용 가능한 3가지 액션 도출</div></div>
+      <div class="m-ai-action-item"><span class="num">2</span><span class="title">중기 (2~3개월)</span><div class="desc">점심 한정 메뉴 출시 + 주류 페어링 강화 → 객단가 향상. 약세 요일 인력 효율화</div></div>
+      <div class="m-ai-action-item"><span class="num">3</span><span class="title">장기 (6개월~)</span><div class="desc">멤버십·VIP 시스템 도입. SNS 마케팅 정기 운영. 데이터 기반 의사결정 문화 정착</div></div>
+      <div class="m-ai-action-item"><span class="num">4</span><span class="title">상시 운영</span><div class="desc">주간 매출 점검 미팅 (월요일). 월간 손익 회의 (말일). 분기별 전략 점검</div></div>
+    `;
+    impactHtml = `
+      <div class="m-ai-impact-card"><div class="lbl">3개월 목표</div><div class="v">전 지점 매출 +5~10%</div><div class="desc">위 액션들의 단기 효과 합산. 객단가 ↑ + 약세 지점 회복으로 합계 매출 향상.</div></div>
+      <div class="m-ai-impact-card"><div class="lbl">6개월 목표</div><div class="v">영업이익률 +3~5%p</div><div class="desc">매출 향상 + 비용 효율화로 수익성 개선. 주류 비중 향상 효과가 핵심.</div></div>
+    `;
+  } else {
+    // 기본 (no_data 등)
+    dataHtml = '<div class="m-empty">상세 데이터를 분석할 수 없습니다.</div>';
+  }
+
+  document.getElementById('m-ai-detail-data').innerHTML = dataHtml;
+  document.getElementById('m-ai-detail-actions').innerHTML = actionsHtml;
+  document.getElementById('m-ai-detail-impact').innerHTML = impactHtml;
+
+  // 화면 전환
+  document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('m-ai-detail').classList.add('active');
   window.scrollTo(0, 0);
 }
 
