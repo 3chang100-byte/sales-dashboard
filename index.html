@@ -1658,10 +1658,17 @@ function renderMobile(date){
   } else {
     // ── 월간 모드 ──
     document.getElementById('m-hero').innerHTML = `
-      <div class="m-hero-label">${monthLabel} 누계 매출</div>
-      <div class="m-hero-val" style="color:#22d3ee">${won(totalMonth)}</div>
-      <div class="m-hero-delta" style="color:var(--muted)">영업 ${monthDates.length}일 · 일평균 ${won(monthDates.length ? Math.round(totalMonth/monthDates.length) : 0)}</div>
+      <div class="m-hero-label">${monthLabel} 누계 매출 추이</div>
+      <div class="m-hero-chart-wrap" style="height:170px;position:relative;margin:8px 0 6px">
+        <canvas id="m-month-chart"></canvas>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);padding:0 4px">
+        <span style="color:#22d3ee;font-weight:600">${monthLabel} ${won(totalMonth)}</span>
+        <span>일평균 ${won(monthDates.length ? Math.round(totalMonth/monthDates.length) : 0)}</span>
+      </div>
     `;
+    // 차트 렌더 — layout 후
+    setTimeout(() => renderMonthAccumChart(month), 50);
     document.getElementById('m-kpis').innerHTML = `
       <div class="m-mini">
         <div class="lbl">월 누계 객수</div>
@@ -1840,6 +1847,111 @@ function mobileShowStoreMonth(storeName){
   document.querySelectorAll('.m-screen').forEach(s => s.classList.remove('active'));
   document.getElementById('m-store-month').classList.add('active');
   window.scrollTo(0, 0);
+}
+
+
+// ── 월간 누계 매출 추이 (이번달 vs 전월 vs 전년 동월) ──
+let mobileMonthChart = null;
+
+function getCumForMonth(yr, mo){
+  // YYYY-MM 형식의 월에 대해 1일~말일까지 누적 매출 배열 반환 (null = 데이터 없음)
+  const monthStr = yr + '-' + String(mo).padStart(2,'0');
+  const ld = new Date(yr, mo, 0).getDate();
+  let running = 0;
+  let hasAny = false;
+  const data = [];
+  for(let i = 1; i <= ld; i++){
+    const ds = monthStr + '-' + String(i).padStart(2,'0');
+    const t = ALL_DATA[ds]?.summary?.total || 0;
+    if(t > 0){ running += t; hasAny = true; }
+    data.push(hasAny ? running : null);
+  }
+  return data;
+}
+
+function renderMonthAccumChart(currentMonth){
+  const [y, m] = currentMonth.split('-').map(Number);
+
+  const cur = getCumForMonth(y, m);
+
+  const prevD = new Date(y, m - 2, 1);
+  const prev = getCumForMonth(prevD.getFullYear(), prevD.getMonth() + 1);
+
+  const lastYear = getCumForMonth(y - 1, m);
+
+  const maxLen = Math.max(cur.length, prev.length, lastYear.length, 28);
+  const labels = Array.from({length: maxLen}, (_, i) => (i+1));
+
+  function pad(arr){ return arr.concat(Array(maxLen - arr.length).fill(null)); }
+
+  const datasets = [
+    {
+      label: y + '년 ' + m + '월',
+      data: pad(cur),
+      borderColor: '#22d3ee',
+      backgroundColor: 'rgba(34,211,238,.08)',
+      borderWidth: 2.2,
+      tension: 0.25,
+      fill: true,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      spanGaps: false,
+    },
+    {
+      label: '전월 (' + (prevD.getMonth() + 1) + '월)',
+      data: pad(prev),
+      borderColor: '#94a3b8',
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      borderDash: [5, 4],
+      tension: 0.25,
+      fill: false,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      spanGaps: false,
+    },
+    {
+      label: '전년 동월 (' + (y - 1) + '년 ' + m + '월)',
+      data: pad(lastYear),
+      borderColor: '#f97316',
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      borderDash: [2, 3],
+      tension: 0.25,
+      fill: false,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      spanGaps: false,
+    },
+  ];
+
+  if(mobileMonthChart) mobileMonthChart.destroy();
+  const canvas = document.getElementById('m-month-chart');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  mobileMonthChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: { color: '#94a3b8', font: { size: 9 }, boxWidth: 10, boxHeight: 2, padding: 6, usePointStyle: false }
+        },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        x: { ticks: { color: '#94a3b8', font: { size: 9 }, maxTicksLimit: 8 }, grid: { display: false } },
+        y: { ticks: { color: '#94a3b8', font: { size: 9 },
+          callback: v => (v >= 1e8 ? (v/1e8).toFixed(1) + '억' : v >= 1e4 ? Math.round(v/1e4).toLocaleString() + '만' : v.toLocaleString())
+        }, grid: { color: 'rgba(148,163,184,0.08)' } }
+      }
+    }
+  });
 }
 
 function mobileSwitchStoreMonth(newStore){
