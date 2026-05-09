@@ -341,6 +341,28 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
 
   .m-empty{text-align:center;color:var(--muted);font-size:12px;padding:20px}
 
+
+  /* 월간 누계 섹션 */
+  .m-monthly{padding:0 12px 16px;display:flex;flex-direction:column;gap:8px}
+  .m-monthly-total{display:flex;justify-content:space-between;align-items:center;
+    padding:12px 14px;border-radius:12px;background:linear-gradient(135deg,#1e293b,#0f3a4a);
+    border:1px solid #22d3ee;margin-bottom:4px}
+  .m-monthly-total .lbl{font-size:11px;color:#94a3b8;letter-spacing:.4px}
+  .m-monthly-total .v{font-size:18px;font-weight:700;color:#22d3ee;letter-spacing:-.3px}
+  .m-monthly-card{padding:11px 14px;border:1px solid var(--border);border-radius:11px;
+    background:var(--card)}
+  .m-monthly-card .head{display:grid;grid-template-columns:auto 1fr auto;gap:10px;
+    align-items:center;margin-bottom:8px}
+  .m-monthly-card .name{font-size:14px;font-weight:600;color:var(--text)}
+  .m-monthly-card .v{font-size:16px;font-weight:700;color:var(--text);
+    letter-spacing:-.3px;text-align:right;white-space:nowrap}
+  .m-monthly-card .barwrap{height:5px;background:#0f172a;border-radius:3px;
+    overflow:hidden;margin-bottom:6px}
+  .m-monthly-card .barwrap > div{height:100%;border-radius:3px;transition:width .4s}
+  .m-monthly-card .meta{display:flex;justify-content:space-between;font-size:10px;
+    color:var(--muted)}
+  .m-monthly-card .pct{color:#fbbf24;font-weight:600}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -374,6 +396,9 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
 
     <div class="m-section">지점별 매출 (탭하여 상세)</div>
     <div class="m-store-list" id="m-store-list"></div>
+
+    <div class="m-section" id="m-monthly-h">지점별 월간 누계</div>
+    <div class="m-monthly" id="m-monthly"></div>
   </div>
 
   <!-- 드릴다운 화면 -->
@@ -1366,6 +1391,52 @@ function renderMobile(date){
       </div>`;
   }).join('');
   document.getElementById('m-store-list').innerHTML = storeListHTML;
+
+  // 5) 지점별 월간 누계
+  const month = date.slice(0, 7);  // YYYY-MM
+  const monthLabel = month.slice(0,4) + '년 ' + parseInt(month.slice(5,7),10) + '월 누계';
+  const monthDates = Object.keys(ALL_DATA).filter(d => d.startsWith(month));
+  const storeMonthly = {};
+  let totalMonth = 0;
+  D.stores.forEach(s => {
+    storeMonthly[s] = { total: 0, color: D.storeData[s].color, days: 0 };
+  });
+  monthDates.forEach(d => {
+    const dd = ALL_DATA[d];
+    if(!dd) return;
+    dd.stores.forEach(s => {
+      const sd = dd.storeData[s];
+      if(sd && !sd.missing){
+        storeMonthly[s].total += sd.total || 0;
+        storeMonthly[s].days  += 1;
+        totalMonth += sd.total || 0;
+      }
+    });
+  });
+  document.getElementById('m-monthly-h').textContent = '지점별 ' + monthLabel;
+  let monthlyHTML = `<div class="m-monthly-total">
+    <div><div class="lbl">${monthLabel} (${monthDates.length}일)</div></div>
+    <div class="v">${won(totalMonth)}</div>
+  </div>`;
+  Object.entries(storeMonthly)
+    .sort((a, b) => b[1].total - a[1].total)
+    .forEach(([s, sm]) => {
+      const pct = totalMonth > 0 ? (sm.total / totalMonth * 100) : 0;
+      const avg = sm.days > 0 ? Math.round(sm.total / sm.days) : 0;
+      monthlyHTML += `<div class="m-monthly-card">
+        <div class="head">
+          <span class="m-dot" style="background:${sm.color}"></span>
+          <span class="name">${s}</span>
+          <span class="v">${won(sm.total)}</span>
+        </div>
+        <div class="barwrap"><div style="background:${sm.color};width:${pct}%"></div></div>
+        <div class="meta">
+          <span>영업 ${sm.days}일 · 일평균 ${won(avg)}</span>
+          <span class="pct">${pct.toFixed(1)}%</span>
+        </div>
+      </div>`;
+    });
+  document.getElementById('m-monthly').innerHTML = monthlyHTML;
 }
 
 function mobileSetDate(date){
