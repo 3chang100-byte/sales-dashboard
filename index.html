@@ -248,11 +248,11 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
 
 
 /* ═════════════════════════════════════════════════════════════ */
-/* 모바일 전용 디자인 (≤600px) — desktop 뷰는 숨기고 mobile-app 표시 */
+/* 모바일 전용 디자인 (≤768px) — desktop 뷰는 숨기고 mobile-app 표시 */
 /* ═════════════════════════════════════════════════════════════ */
 .mobile-app{display:none}
 
-@media (max-width: 600px){
+@media (max-width: 768px){
   body > .header, body > .view{display:none !important}
   .mobile-app{display:block;background:var(--bg);min-height:100vh;padding-bottom:80px}
 
