@@ -611,7 +611,7 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
         <h1>분석</h1>
       </div>
     </div>
-    <div class="m-section">지점별 매출 추이</div>
+    <div class="m-section">지점별 누적 매출 추이</div>
     <div class="m-period-tabs" id="m-an-period-tabs">
       <button class="m-period-tab active" data-period="30" onclick="mobileSetAnPeriod(30)">30일</button>
       <button class="m-period-tab" data-period="90" onclick="mobileSetAnPeriod(90)">90일</button>
@@ -2137,20 +2137,25 @@ function renderMobileTrend(){
     return (dt.getMonth() + 1) + '/' + dt.getDate();
   });
 
-  const datasets = stores.map(s => ({
-    label: s,
-    data: recent.map(d => {
+  const datasets = stores.map(s => {
+    let runningSum = 0;
+    const cumData = recent.map(d => {
       const sd = ALL_DATA[d]?.storeData?.[s];
-      return (sd && !sd.missing) ? (sd.total || 0) : null;
-    }),
-    borderColor: colors[s],
-    backgroundColor: colors[s] + '20',
-    borderWidth: 1.8,
-    tension: 0.3,
-    pointRadius: 0,
-    pointHoverRadius: 4,
-    spanGaps: true,
-  }));
+      if(sd && !sd.missing && sd.total) runningSum += sd.total;
+      return runningSum;
+    });
+    return {
+      label: s,
+      data: cumData,
+      borderColor: colors[s],
+      backgroundColor: colors[s] + '20',
+      borderWidth: 1.8,
+      tension: 0.25,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      spanGaps: false,
+    };
+  });
 
   // Trend summary (전체 합계)
   let totalSum = 0, dayCount = 0, peakDate = '', peakVal = 0;
