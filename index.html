@@ -680,6 +680,13 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     background:rgba(248,113,113,0.05)}
   .m-section-locked{opacity:.7;font-size:11px;color:var(--muted);margin-left:8px}
 
+
+  /* 직원 입사일 */
+  .m-set-staff-row input.staff-date{background:#0f172a;border:1px solid var(--border);
+    color:var(--text);font-size:13px;font-family:inherit;padding:6px 9px;
+    border-radius:7px;font-weight:500;width:100%;color-scheme:dark}
+  .m-set-staff-row input.staff-date:focus{outline:none;border-color:var(--accent)}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -3324,11 +3331,22 @@ function onStaffSalaryChange(idx, val){
   renderMobileSettingsOverview();
 }
 
+
+function onStaffHireDateChange(idx, val){
+  const data = loadSettings(mobileSettingsStore);
+  if(!data.staff) data.staff = [];
+  while(data.staff.length <= idx) data.staff.push({name:'', salary:0, hireDate:''});
+  data.staff[idx].hireDate = val || '';
+  saveSettings(mobileSettingsStore, data);
+}
+
 function mobileSetAddStaff(){
   const data = loadSettings(mobileSettingsStore);
   if(!data.staff) data.staff = [];
-  data.staff.push({name:'', salary:0});
+  data.staff.push({name:'', salary:0, hireDate:''});
   saveSettings(mobileSettingsStore, data);
+  // 추가 시 편집 모드로 전환 (잠금 해제)
+  sectionLocks[lockKey('staff', mobileSettingsStore)] = false;
   renderMobileSettings();
 }
 
@@ -3399,6 +3417,7 @@ function renderMobileSettings(){
   let staffHtml = '';
   staff.forEach((p, idx) => {
     const sal = p.salary ? Number(p.salary).toLocaleString() : '';
+    const hire = p.hireDate || '';
     staffHtml += `
       <div class="m-set-staff-row">
         <span class="num">${idx + 1}</span>
@@ -3410,6 +3429,9 @@ function renderMobileSettings(){
             ${staffLocked ? 'readonly' : ''}
             oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value) this.value = Number(this.value).toLocaleString();"
             onchange="onStaffSalaryChange(${idx}, this.value)">
+          <input type="date" class="staff-date ${staffCls}" placeholder="입사일" value="${hire}"
+            ${staffLocked ? 'readonly' : ''}
+            onchange="onStaffHireDateChange(${idx}, this.value)">
         </div>
         ${staffLocked ? '' : `<button class="delete-btn" onclick="mobileSetDeleteStaff(${idx})" title="삭제">×</button>`}
       </div>`;
@@ -3535,7 +3557,7 @@ function hasSectionData(section, store){
   }
   if(section === 'staff'){
     const d = loadSettings(store);
-    return (d.staff || []).some(p => (p.name || '').trim() || (p.salary || 0) > 0);
+    return (d.staff || []).some(p => (p.name || '').trim() || (p.salary || 0) > 0 || (p.hireDate || ''));
   }
   if(section === 'cost'){
     const d = loadCostData(store);
