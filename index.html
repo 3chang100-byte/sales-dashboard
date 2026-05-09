@@ -2423,20 +2423,25 @@ function renderMobileAnTrend(){
     return (dt.getMonth() + 1) + '/' + dt.getDate();
   });
 
-  const datasets = stores.map(s => ({
-    label: s,
-    data: recent.map(d => {
+  const datasets = stores.map(s => {
+    let runningSum = 0;
+    const cumData = recent.map(d => {
       const sd = ALL_DATA[d]?.storeData?.[s];
-      return (sd && !sd.missing) ? (sd.total || 0) : null;
-    }),
-    borderColor: colors[s],
-    backgroundColor: colors[s] + '20',
-    borderWidth: 1.8,
-    tension: 0.3,
-    pointRadius: 0,
-    pointHoverRadius: 4,
-    spanGaps: true,
-  }));
+      if(sd && !sd.missing && sd.total) runningSum += sd.total;
+      return runningSum;
+    });
+    return {
+      label: s,
+      data: cumData,
+      borderColor: colors[s],
+      backgroundColor: colors[s] + '20',
+      borderWidth: 1.8,
+      tension: 0.25,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+      spanGaps: false,
+    };
+  });
 
   window.__renderCallCount = (window.__renderCallCount || 0) + 1;
   if(mobileAnTrendChart){ mobileAnTrendChart.destroy(); }
