@@ -1825,26 +1825,37 @@ function mobileShowStore(date, storeName, fromScreen){
     </div>
   `;
 
-  // 일간 KPI 4개
+  // 일간 KPI 6개
   const ticket = sd.ticket || (sd.guests ? Math.round(sd.total / sd.guests) : 0);
   const alcoholPct = sd.total ? ((sd.alcohol_sales || 0) / sd.total * 100) : 0;
   const turnRate = sd.turnover?.rate || 0;
+  const dt = new Date(date + 'T00:00:00');
+  const dowKor = ['일','월','화','수','목','금','토'][dt.getDay()];
+  const dateLabel = (dt.getMonth()+1) + '/' + dt.getDate() + ' (' + dowKor + ')';
   document.getElementById('m-drill-kpis').innerHTML = `
+    <div class="m-mini">
+      <div class="lbl">매출</div>
+      <div class="val">${won(sd.total)}</div>
+    </div>
+    <div class="m-mini">
+      <div class="lbl">총 객수</div>
+      <div class="val">${sd.guests}<span class="suf"> 명</span></div>
+    </div>
     <div class="m-mini">
       <div class="lbl">객단가</div>
       <div class="val">${won(ticket).replace('₩','')}<span class="suf"> 원</span></div>
+    </div>
+    <div class="m-mini">
+      <div class="lbl">주류 비중</div>
+      <div class="val">${alcoholPct.toFixed(1)}<span class="suf">%</span></div>
     </div>
     <div class="m-mini">
       <div class="lbl">회전율</div>
       <div class="val">${turnRate ? turnRate.toFixed(2) : '-'}<span class="suf">${turnRate ? ' 회' : ''}</span></div>
     </div>
     <div class="m-mini">
-      <div class="lbl">주류 매출</div>
-      <div class="val" style="font-size:14px">${won(sd.alcohol_sales || 0)}</div>
-    </div>
-    <div class="m-mini">
-      <div class="lbl">주류 비중</div>
-      <div class="val">${alcoholPct.toFixed(1)}<span class="suf">%</span></div>
+      <div class="lbl">영업일자</div>
+      <div class="val">${dateLabel}</div>
     </div>
   `;
 
