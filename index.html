@@ -2906,18 +2906,21 @@ function renderMobileAnTrend(){
 
 
 // ── 비용 탭 (고정비 입력) ──
-const COST_ITEMS = [
-  { key:'임차료',    icon:'\u{1F3E0}' },
-  { key:'인건비',    icon:'\u{1F465}' },
-  { key:'4대보험',   icon:'\u{1F4C4}' },
-  { key:'공과금',    icon:'\u{1F4A1}' },
-  { key:'통신비',    icon:'\u{1F4DE}' },
-  { key:'보험료',    icon:'\u{1F6E1}' },
-  { key:'세금',      icon:'\u{1F4DD}' },
-  { key:'카드수수료',icon:'\u{1F4B3}' },
-  { key:'감가상각',  icon:'\u{1F4C9}' },
-  { key:'기타',      icon:'\u{2026}' },
+// 지점별 고정비 항목 (각 지점이 자체 부담)
+const COST_ITEMS_BY_STORE = [
+  { key:'임차료', icon:'\u{1F3E0}' },
+  { key:'인건비', icon:'\u{1F465}' },
 ];
+// 공용지출 고정비 항목 (전 지점 매출 비중으로 분배)
+const COST_ITEMS_SHARED = [
+  { key:'통신비',     icon:'\u{1F4DE}' },
+  { key:'정수기',     icon:'\u{1F4A7}' },
+  { key:'보험료',     icon:'\u{1F6E1}' },
+  { key:'차량대여료', icon:'\u{1F697}' },
+];
+function getCostItems(store){
+  return store === '공용' ? COST_ITEMS_SHARED : COST_ITEMS_BY_STORE;
+}
 
 let mobileCostMonth = null;
 
@@ -2993,9 +2996,10 @@ function renderMobileCost(){
 
   const data = loadCostData(monthStr, mobileCostStore);
 
-  // 항목 입력 폼
+  // 항목 입력 폼 (모드에 따라 다른 항목)
+  const items = getCostItems(mobileCostStore);
   let formHtml = '';
-  COST_ITEMS.forEach(item => {
+  items.forEach(item => {
     const v = data[item.key] || '';
     const display = v ? Number(v).toLocaleString() : '';
     formHtml += `
@@ -3040,11 +3044,11 @@ function renderMobileCostSummary(monthStr){
 
   // 공용 합계
   const sharedData = loadCostData(monthStr, '공용');
-  const sharedTotal = COST_ITEMS.reduce((sum, item) => sum + (sharedData[item.key] || 0), 0);
+  const sharedTotal = COST_ITEMS_SHARED.reduce((sum, item) => sum + (sharedData[item.key] || 0), 0);
 
   // 선택 지점/공용 입력값
   const dataSelected = loadCostData(monthStr, selectedStore);
-  const directFixed = COST_ITEMS.reduce((sum, item) => sum + (dataSelected[item.key] || 0), 0);
+  const directFixed = getCostItems(selectedStore).reduce((sum, item) => sum + (dataSelected[item.key] || 0), 0);
 
   // 선택이 공용인 경우: 공용 자체만 표시
   if(selectedStore === '공용'){
@@ -3104,7 +3108,7 @@ function renderMobileCostSummary(monthStr){
 
   stores.forEach(s => {
     const data = loadCostData(monthStr, s);
-    const direct = COST_ITEMS.reduce((sum, item) => sum + (data[item.key] || 0), 0);
+    const direct = COST_ITEMS_BY_STORE.reduce((sum, item) => sum + (data[item.key] || 0), 0);
     const sales = storeAgg[s].total;
     const sharedAlloc = salesAll && sharedTotal ? Math.round(sharedTotal * sales / salesAll) : 0;
     const totalFixed = direct + sharedAlloc;
