@@ -554,6 +554,46 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-and-row.clickable:active{transform:scale(.985);background:rgba(34,211,238,0.05)}
   .m-and-row .m-and-info{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600}
 
+
+  /* 비용 탭 */
+  .m-cost-summary{margin:0 16px 16px;padding:14px;border-radius:12px;
+    background:var(--card);border:1px solid var(--border)}
+  .m-cost-summary .row{display:flex;justify-content:space-between;align-items:baseline;
+    padding:4px 0}
+  .m-cost-summary .row .lbl{font-size:13px;color:var(--muted)}
+  .m-cost-summary .row .v{font-size:18px;font-weight:700;color:var(--text)}
+  .m-cost-summary .row.profit .v{color:#4ade80}
+  .m-cost-summary .row.profit.loss .v{color:#f87171}
+  .m-cost-summary .row.fixed .v{color:#fbbf24}
+  .m-cost-summary .divider{height:1px;background:var(--border);margin:6px 0}
+  .m-cost-summary .pct{font-size:11px;color:var(--muted);margin-left:6px}
+
+  .m-cost-form{padding:0 16px 16px;display:flex;flex-direction:column;gap:6px}
+  .m-cost-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;
+    align-items:center;padding:10px 12px;border-radius:10px;
+    background:var(--card);border:1px solid var(--border)}
+  .m-cost-row .icon{width:28px;height:28px;border-radius:8px;background:rgba(34,211,238,0.12);
+    display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .m-cost-row .name{font-size:14px;font-weight:600;color:var(--text)}
+  .m-cost-row input{background:#0f172a;border:1px solid var(--border);
+    color:var(--text);font-size:14px;font-family:inherit;
+    padding:8px 10px;border-radius:8px;text-align:right;
+    width:130px;font-weight:600}
+  .m-cost-row input:focus{outline:none;border-color:var(--accent)}
+  .m-cost-row .unit{font-size:12px;color:var(--muted);margin-left:-4px}
+
+  .m-cost-stores{padding:0 12px 16px;display:flex;flex-direction:column;gap:5px}
+  .m-cost-store{display:grid;grid-template-columns:auto 1fr auto;gap:10px;
+    align-items:center;padding:9px 12px;border-radius:9px;
+    background:var(--card);border:0.5px solid var(--border);font-size:13px}
+  .m-cost-store .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .m-cost-store .name{font-weight:500}
+  .m-cost-store .pct{font-size:11px;color:var(--muted)}
+  .m-cost-store .v{font-weight:600;text-align:right}
+
+  .m-cost-note{padding:8px 16px 24px;font-size:11px;color:var(--muted);
+    text-align:center;line-height:1.5}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -675,18 +715,32 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     </div>
   </div>
 
-  <!-- 비용 화면 (placeholder) -->
+  <!-- 비용 화면 -->
   <div class="m-screen" id="m-cost">
     <div class="m-back" onclick="mobileTab('summary')">‹ 요약</div>
     <div class="m-appbar">
       <div>
-        <div class="m-appbar-title">월간 비용 / 손익 분석</div>
+        <div class="m-appbar-title">월간 고정비 입력 · 손익 분석</div>
         <h1>비용</h1>
       </div>
     </div>
-    <div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6">
-      비용 분석 기능 준비 중<br>
-      <span style="font-size:11px">월별 손익 자동화(run_pl.py)와 연동 예정</span>
+
+    <div class="m-cal-head" style="margin-top:0">
+      <button class="m-cal-arr" onclick="mobileCostMonthShift(-1)">‹</button>
+      <span class="m-cal-month" id="m-cost-month"></span>
+      <button class="m-cal-arr" onclick="mobileCostMonthShift(1)">›</button>
+    </div>
+
+    <div class="m-cost-summary" id="m-cost-summary"></div>
+
+    <div class="m-section">고정비 항목별 입력</div>
+    <div class="m-cost-form" id="m-cost-form"></div>
+
+    <div class="m-section">지점별 고정비 분배 (매출 비중 기준)</div>
+    <div class="m-cost-stores" id="m-cost-stores"></div>
+
+    <div class="m-cost-note">
+      입력값은 이 기기 브라우저에 저장됩니다. 자동으로 모든 기기에 공유되지는 않습니다.
     </div>
   </div>
 
@@ -2303,6 +2357,7 @@ function mobileTab(tab){
     setTimeout(() => renderMobileAnTrend(), 80);
   } else if(tab === 'cost'){
     document.getElementById('m-cost').classList.add('active');
+    renderMobileCost();
   } else if(tab === 'settings'){
     alert('설정 탭 — 추후 추가 예정');
     document.querySelectorAll('.m-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'summary'));
@@ -2833,6 +2888,158 @@ function renderMobileAnTrend(){
       }
     }
   });
+}
+
+
+// ── 비용 탭 (고정비 입력) ──
+const COST_ITEMS = [
+  { key:'임차료',    icon:'\u{1F3E0}' },
+  { key:'인건비',    icon:'\u{1F465}' },
+  { key:'4대보험',   icon:'\u{1F4C4}' },
+  { key:'공과금',    icon:'\u{1F4A1}' },
+  { key:'통신비',    icon:'\u{1F4DE}' },
+  { key:'보험료',    icon:'\u{1F6E1}' },
+  { key:'세금',      icon:'\u{1F4DD}' },
+  { key:'카드수수료',icon:'\u{1F4B3}' },
+  { key:'감가상각',  icon:'\u{1F4C9}' },
+  { key:'기타',      icon:'\u{2026}' },
+];
+
+let mobileCostMonth = null;
+
+function mobileCostMonthShift(delta){
+  const baseStr = mobileCostMonth || (mobileCurrentDate || Object.keys(ALL_DATA).sort().pop()).slice(0,7);
+  const [y, m] = baseStr.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  mobileCostMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  renderMobileCost();
+}
+
+function getCostStorageKey(monthStr){
+  return 'cost-' + monthStr;
+}
+
+function loadCostData(monthStr){
+  try {
+    const raw = localStorage.getItem(getCostStorageKey(monthStr));
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) {
+    return {};
+  }
+}
+
+function saveCostData(monthStr, data){
+  try {
+    localStorage.setItem(getCostStorageKey(monthStr), JSON.stringify(data));
+  } catch(e){}
+}
+
+function onCostInputChange(monthStr, key, valStr){
+  const data = loadCostData(monthStr);
+  const num = parseInt((valStr || '').replace(/[^0-9]/g, ''), 10) || 0;
+  if(num > 0) data[key] = num;
+  else delete data[key];
+  saveCostData(monthStr, data);
+  renderMobileCostSummary(monthStr);
+}
+
+function renderMobileCost(){
+  const monthStr = mobileCostMonth || (mobileCurrentDate || Object.keys(ALL_DATA).sort().pop()).slice(0,7);
+  if(!mobileCostMonth) mobileCostMonth = monthStr;
+  const [y, m] = monthStr.split('-').map(Number);
+  const monthLabel = y + '년 ' + m + '월';
+  document.getElementById('m-cost-month').textContent = monthLabel;
+
+  const data = loadCostData(monthStr);
+
+  // 항목 입력 폼
+  let formHtml = '';
+  COST_ITEMS.forEach(item => {
+    const v = data[item.key] || '';
+    const display = v ? Number(v).toLocaleString() : '';
+    formHtml += `
+      <div class="m-cost-row">
+        <div class="icon">${item.icon}</div>
+        <div class="name">${item.key}</div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <input type="text" inputmode="numeric" placeholder="0" value="${display}"
+            oninput="this.value = this.value.replace(/[^0-9]/g, ''); if(this.value) this.value = Number(this.value).toLocaleString();"
+            onchange="onCostInputChange('${monthStr}', '${item.key}', this.value)">
+          <span class="unit">원</span>
+        </div>
+      </div>`;
+  });
+  document.getElementById('m-cost-form').innerHTML = formHtml;
+
+  renderMobileCostSummary(monthStr);
+}
+
+function renderMobileCostSummary(monthStr){
+  const data = loadCostData(monthStr);
+  const fixedTotal = COST_ITEMS.reduce((sum, item) => sum + (data[item.key] || 0), 0);
+
+  // 그 달 매출 합계
+  const monthDates = Object.keys(ALL_DATA).filter(d => d.startsWith(monthStr));
+  let salesTotal = 0;
+  const storeAgg = {};
+  if(monthDates.length > 0){
+    const stores = ALL_DATA[monthDates[0]].stores;
+    stores.forEach(s => { storeAgg[s] = { total:0, color: ALL_DATA[monthDates[0]].storeData[s].color }; });
+    monthDates.forEach(d => {
+      const dd = ALL_DATA[d];
+      if(!dd) return;
+      dd.stores.forEach(s => {
+        const sd = dd.storeData[s];
+        if(sd && !sd.missing){
+          storeAgg[s].total += sd.total || 0;
+          salesTotal += sd.total || 0;
+        }
+      });
+    });
+  }
+
+  const profit = salesTotal - fixedTotal;
+  const fixedPct = salesTotal ? (fixedTotal / salesTotal * 100).toFixed(1) : '0.0';
+  const profitPct = salesTotal ? (profit / salesTotal * 100).toFixed(1) : '0.0';
+
+  document.getElementById('m-cost-summary').innerHTML = `
+    <div class="row">
+      <span class="lbl">월 매출</span>
+      <span class="v">${won(salesTotal)}</span>
+    </div>
+    <div class="row fixed">
+      <span class="lbl">고정비 합계</span>
+      <span class="v">${won(fixedTotal)}<span class="pct">${fixedPct}%</span></span>
+    </div>
+    <div class="divider"></div>
+    <div class="row profit ${profit < 0 ? 'loss' : ''}">
+      <span class="lbl">손익 (매출 − 고정비)</span>
+      <span class="v">${profit >= 0 ? '+' : '-'}${won(Math.abs(profit))}<span class="pct">${profitPct}%</span></span>
+    </div>
+  `;
+
+  // 지점별 분배
+  const sortedStores = Object.entries(storeAgg)
+    .filter(([, v]) => v.total > 0)
+    .sort((a, b) => b[1].total - a[1].total);
+  let storesHtml = '';
+  sortedStores.forEach(([s, v]) => {
+    const pct = salesTotal ? (v.total / salesTotal * 100) : 0;
+    const allocated = Math.round(fixedTotal * pct / 100);
+    storesHtml += `
+      <div class="m-cost-store">
+        <span class="dot" style="background:${v.color}"></span>
+        <div>
+          <div class="name">${s}</div>
+          <div class="pct">매출 비중 ${pct.toFixed(1)}%</div>
+        </div>
+        <div class="v">${won(allocated)}</div>
+      </div>`;
+  });
+  if(!storesHtml){
+    storesHtml = '<div class="m-empty">월 매출 데이터 없음</div>';
+  }
+  document.getElementById('m-cost-stores').innerHTML = storesHtml;
 }
 
 function mobileInit(){
