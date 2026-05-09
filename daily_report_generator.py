@@ -622,7 +622,7 @@ def main():
 
     # 4) HTML 파일 저장
     out_dir = Path(args.out) if args.out else SCRIPT_DIR / "reports" / "일일"
-    out_dir.mkdir(exist_ok=True)
+    out_dir.mkdir(parents=True, exist_ok=True)
     report_path = out_dir / f"보고서_{args.date}.html"
     with open(report_path, 'w', encoding='utf-8') as f:
         f.write(html)
