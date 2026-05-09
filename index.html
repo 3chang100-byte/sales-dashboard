@@ -513,6 +513,19 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-sm-name select:focus{outline:none;background-color:rgba(34,211,238,0.08)}
   .m-sm-name select option{background:#1e293b;color:var(--text)}
 
+
+  /* 일별 드릴다운 일자 드롭다운 */
+  .m-drill-date-wrap{padding:0 16px 6px}
+  .m-drill-date-wrap select{background:transparent;border:none;color:var(--accent);
+    font-size:24px;font-weight:700;font-family:inherit;cursor:pointer;
+    padding:2px 28px 2px 4px;border-radius:8px;-webkit-appearance:none;appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,#22d3ee 50%),linear-gradient(135deg,#22d3ee 50%,transparent 50%);
+    background-position:calc(100% - 14px) 55%, calc(100% - 8px) 55%;
+    background-size:6px 6px,6px 6px;background-repeat:no-repeat;
+    letter-spacing:-.3px}
+  .m-drill-date-wrap select:focus{outline:none;background-color:rgba(34,211,238,0.08)}
+  .m-drill-date-wrap select option{background:#1e293b;color:var(--text);font-size:14px}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -563,6 +576,7 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   <!-- 드릴다운 화면 -->
   <div class="m-screen" id="m-drill">
     <div class="m-back" onclick="mobileBack()" id="m-drill-back">‹ 뒤로</div>
+    <div class="m-drill-date-wrap" id="m-drill-date-wrap"></div>
     <div class="m-drill-hero" id="m-drill-hero"></div>
     <div id="m-split-wrap"></div>
     <div class="m-section">일간 KPI</div>
@@ -1733,8 +1747,20 @@ function mobileShowStore(date, storeName, fromScreen){
   const sd = D.storeData[storeName];
   if(!sd || sd.missing) return;
 
-  // back 버튼
-  document.getElementById('m-drill-back').textContent = `‹ ${D.dateDisp || date}`;
+  // back 버튼 (단순화)
+  document.getElementById('m-drill-back').textContent = '‹ 뒤로';
+
+  // 일자 드롭다운 (큰 글씨)
+  const allDates = Object.keys(ALL_DATA).sort().reverse();
+  const dateOptionsHtml = allDates.map(d => {
+    const dt = new Date(d + 'T00:00:00');
+    const dow = ['일','월','화','수','목','금','토'][dt.getDay()];
+    const lbl = (dt.getMonth()+1) + '월 ' + dt.getDate() + '일 (' + dow + ')';
+    return `<option value="${d}" ${d === date ? 'selected' : ''}>${lbl}</option>`;
+  }).join('');
+  document.getElementById('m-drill-date-wrap').innerHTML = `
+    <select onchange="mobileSwitchDrillDate(this.value, '${storeName}')">${dateOptionsHtml}</select>
+  `;
 
   // 헤더 (지점 선택 드롭다운 포함)
   const otherStores = D.stores.filter(s => !D.storeData[s].missing);
@@ -1816,6 +1842,11 @@ function mobileSwitchDrillStore(date, newStore){
   if(!newStore) return;
   // 현재 fromScreen 유지하면서 새 지점으로 전환
   mobileShowStore(date, newStore, mobileDrillFrom);
+}
+
+function mobileSwitchDrillDate(newDate, currentStore){
+  if(!newDate || !currentStore) return;
+  mobileShowStore(newDate, currentStore, mobileDrillFrom);
 }
 
 function mobileBack(){
