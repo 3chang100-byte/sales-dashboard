@@ -3523,6 +3523,11 @@ function onCostStoreChange(newStore){
 }
 
 function renderMobileCost(){
+  // cost-data.json 비동기 로드 (필요 시)
+  if(mobilePLData === null){
+    loadPLDataIfNeeded().then(() => renderMobileCost());
+    return;
+  }
   const monthStr = mobileCostMonth || (mobileCurrentDate || Object.keys(ALL_DATA).sort().pop()).slice(0,7);
   if(!mobileCostMonth) mobileCostMonth = monthStr;
   const [y, m] = monthStr.split('-').map(Number);
@@ -3591,7 +3596,10 @@ function calcCostForLevel(monthStr, store){
     }
     return [];
   })();
-  const sharedData = loadCostData('공용');
+  // cost-data.json (자동) + localStorage(수동) 통합 데이터 사용
+  const sharedData = getCostForMonth(monthStr, '공용');
+  const storeDataMap = {};
+  stores.forEach(s => { storeDataMap[s] = getCostForMonth(monthStr, s); });
   const monthDates = Object.keys(ALL_DATA).filter(d => d.startsWith(monthStr));
   let salesAll = 0; const salesByStore = {};
   stores.forEach(s => salesByStore[s] = 0);
@@ -3614,13 +3622,13 @@ function calcCostForLevel(monthStr, store){
   function getItemValue(key){
     if(store === '전체'){
       let total = 0;
-      stores.forEach(s => { total += loadCostData(s)[key] || 0; });
+      stores.forEach(s => { total += (storeDataMap[s][key] || 0); });
       total += sharedData[key] || 0;
       return total;
     } else if(store === '공용'){
       return sharedData[key] || 0;
     } else {
-      const direct = loadCostData(store)[key] || 0;
+      const direct = (storeDataMap[store] || {})[key] || 0;
       const sharedVal = sharedData[key] || 0;
       const ratio = salesAll ? (salesByStore[store] || 0) / salesAll : 0;
       return direct + Math.round(sharedVal * ratio);
