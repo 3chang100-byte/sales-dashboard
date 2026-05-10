@@ -821,6 +821,13 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-ai-impact-card .v{font-size:16px;font-weight:700;color:#22d3ee}
   .m-ai-impact-card .desc{font-size:11.5px;color:var(--muted);margin-top:5px;line-height:1.55}
 
+
+  .m-pl-item.zero{opacity:.45}
+  .m-pl-item.zero .v{color:var(--muted)}
+  .m-pl-subheader{font-size:10px;color:#22d3ee;letter-spacing:.4px;
+    text-transform:uppercase;margin:6px 0 2px;padding-bottom:3px;
+    border-bottom:0.5px solid rgba(34,211,238,0.25);font-weight:600}
+
   /* 하단 탭바 */
   .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
@@ -4355,28 +4362,33 @@ async function renderMobilePL(){
 
   function renderSection(cat){
     const data = pl.breakdown[cat.code];
-    if(!data || data.total === 0){
-      // 빈 섹션은 헤더만 표시
-      return `
-        <div class="m-pl-section">
-          <div class="m-pl-section-head">
-            <span class="lbl"><span class="roman">${cat.roman}</span>${cat.label}</span>
-            <span class="v" style="color:var(--muted);font-size:13px">미입력</span>
-          </div>
-        </div>`;
-    }
+    if(!data) return '';
+    // 모든 소분류 항목 표시 (값 0 포함)
+    const allItems = cat.scope === 'mixed' ?
+      [...(cat.items_store || []), ...(cat.items_shared || [])] :
+      cat.items;
     let body = '';
-    Object.entries(data.items).forEach(([k, v]) => {
-      if(v === 0) return;
-      const allItems = cat.scope === 'mixed' ?
-        [...(cat.items_store || []), ...(cat.items_shared || [])] :
-        cat.items;
-      const item = allItems.find(it => it.key === k);
-      const icon = item ? item.icon : '·';
-      body += `
-        <div class="m-pl-item">
-          <span class="icon">${icon}</span>
-          <span class="name">${k}</span>
+    let hasStoreSubHeader = false;
+    let hasSharedSubHeader = false;
+    allItems.forEach(item => {
+      const v = data.items[item.key] || 0;
+      // mixed 모드면 지점/공용 구분 라벨
+      let subHeader = '';
+      if(cat.scope === 'mixed'){
+        const isStore = (cat.items_store || []).some(s => s.key === item.key);
+        if(isStore && !hasStoreSubHeader){
+          subHeader = '<div class="m-pl-subheader">지점별 직접</div>';
+          hasStoreSubHeader = true;
+        } else if(!isStore && !hasSharedSubHeader){
+          subHeader = '<div class="m-pl-subheader">공용 분배</div>';
+          hasSharedSubHeader = true;
+        }
+      }
+      const cls = v === 0 ? 'm-pl-item zero' : 'm-pl-item';
+      body += subHeader + `
+        <div class="${cls}">
+          <span class="icon">${item.icon}</span>
+          <span class="name">${item.key}</span>
           <span class="v">${fmtKRW(v)}</span>
         </div>`;
     });
@@ -4386,7 +4398,7 @@ async function renderMobilePL(){
           <span class="lbl"><span class="roman">${cat.roman}</span>${cat.label}</span>
           <span class="v">${fmtKRW(data.total)}<span class="pct">${pctOf(data.total)}</span></span>
         </div>
-        ${body ? '<div class="m-pl-section-body">' + body + '</div>' : ''}
+        <div class="m-pl-section-body">${body}</div>
       </div>`;
   }
 
