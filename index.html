@@ -3640,11 +3640,19 @@ function calcCostForLevel(monthStr, store){
   const mid = window.mobileCostMid || '전체';
   const minor = window.mobileCostMinor || '전체';
 
+  // 그룹 합계 계산 — dataKey가 있으면 그 키로 직접 lookup, 없으면 소분류 합산
+  function getGroupTotal(g){
+    if(g.dataKey) return getItemValue(g.dataKey);
+    let t = 0;
+    g.items.forEach(it => { t += getItemValue(it.key); });
+    return t;
+  }
+
   if(major === '전체'){
     result.levelLabel = '전체 비용';
     PL_HIERARCHY.forEach(cat => {
       let catTotal = 0;
-      cat.groups.forEach(g => g.items.forEach(it => { catTotal += getItemValue(it.key); }));
+      cat.groups.forEach(g => { catTotal += getGroupTotal(g); });
       result.items.push({ name: cat.icon + ' ' + cat.label, value: catTotal, isHeader: true });
       result.total += catTotal;
     });
@@ -3652,8 +3660,7 @@ function calcCostForLevel(monthStr, store){
     const cat = PL_HIERARCHY.find(c => c.code === major);
     result.levelLabel = cat.label;
     cat.groups.forEach(g => {
-      let gTotal = 0;
-      g.items.forEach(it => { gTotal += getItemValue(it.key); });
+      const gTotal = getGroupTotal(g);
       result.items.push({ name: g.label, value: gTotal, isHeader: true });
       result.total += gTotal;
     });
@@ -3661,11 +3668,20 @@ function calcCostForLevel(monthStr, store){
     const cat = PL_HIERARCHY.find(c => c.code === major);
     const grp = cat.groups.find(g => g.label === mid);
     result.levelLabel = cat.label + ' › ' + grp.label;
+    result.total = getGroupTotal(grp);
+    let subSum = 0;
     grp.items.forEach(it => {
       const v = getItemValue(it.key);
       result.items.push({ name: it.icon + ' ' + it.key, value: v });
-      result.total += v;
+      subSum += v;
     });
+    // dataKey 합계와 소분류 합이 다르면 미분류 표시
+    if(grp.dataKey){
+      const unalloc = result.total - subSum;
+      if(unalloc > 0){
+        result.items.push({ name: '⏳ 미분류 (세부 미입력)', value: unalloc });
+      }
+    }
   } else {
     const cat = PL_HIERARCHY.find(c => c.code === major);
     const grp = cat.groups.find(g => g.label === mid);
@@ -4057,12 +4073,20 @@ const PL_HIERARCHY = [
   {
     code:'cost', label:'I 판매원가', icon:'🛒',
     groups: [
-      { label:'판매원가', items: [
-        {key:'원재료비', icon:'🐟'},
-        {key:'부재료비', icon:'🥬'},
-        {key:'주류 및 음료', icon:'🍶'},
-        {key:'직접 소모품', icon:'📦'},
-      ]}
+      { label:'원재료비', dataKey:'원재료비', items: [
+        {key:'민물장어', icon:'🐟'},
+      ]},
+      { label:'부재료비', dataKey:'부재료비', items: [
+        {key:'가락시장(농수산물)', icon:'🥬'},
+        {key:'식자재', icon:'🍱'},
+      ]},
+      { label:'주류 및 음료', dataKey:'주류 및 음료', items: [
+        {key:'주류', icon:'🍶'},
+        {key:'음료', icon:'🥤'},
+      ]},
+      { label:'직접 소모품', dataKey:'직접 소모품', items: [
+        {key:'숯', icon:'📦'},
+      ]},
     ]
   },
   {
