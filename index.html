@@ -4101,61 +4101,66 @@ function renderActions(section, store){
 // ── 손익계산서 (정통 형식) ──
 const PL_CATEGORIES = [
   {
-    code:'variable', label:'변동비', roman:'I', scope:'store',
+    code:'cost', label:'판매원가', roman:'I', scope:'store',
+    desc:'매출에 비례하는 변동비',
     items:[
-      {key:'식자재',     icon:'🥬'},
-      {key:'주류 매입',  icon:'🍶'},
-      {key:'음료',       icon:'🥤'},
-      {key:'소모품',     icon:'📦'},
-      {key:'가스비',     icon:'🔥'},
-      {key:'전기료',     icon:'💡'},
-      {key:'수도료',     icon:'💧'},
+      {key:'원재료비',     icon:'🐟', sub:'장어(생물)'},
+      {key:'부재료비',     icon:'🥬', sub:'농수산물·식자재'},
+      {key:'주류 및 음료', icon:'🍶', sub:'주류·음료 매입'},
+      {key:'직접 소모품',  icon:'📦', sub:'숯·포장재'},
     ]
   },
   {
     code:'labor', label:'인건비', roman:'II', scope:'mixed',
+    desc:'급여·복리후생·법정비용',
     items_store:[
-      {key:'정직원 급여',     icon:'👤'},
-      {key:'일용직 인건비',   icon:'👥'},
-      {key:'4대보험료',       icon:'📄'},
+      {key:'정규직 급여',     icon:'👤'},
+      {key:'비정규직 급여',   icon:'👥'},
+      {key:'사대보험·퇴직금', icon:'📄'},
+      {key:'복리후생비',      icon:'🍱'},
     ],
     items_shared:[
-      {key:'임직원 급여',     icon:'💼'},
-      {key:'본사 인건비',     icon:'🏢'},
+      {key:'임직원 급여',  icon:'💼'},
+      {key:'영업지원직',   icon:'🏢'},
+      {key:'비상근인력',   icon:'🤵'},
     ]
   },
   {
-    code:'operating', label:'매장 운영비', roman:'III', scope:'mixed',
+    code:'operating', label:'운영비', roman:'III', scope:'mixed',
+    desc:'매장 유지·활성화 비용',
     items_store:[
-      {key:'임대료',          icon:'🏠'},
-      {key:'관리비',          icon:'🛠'},
-      {key:'수리비',          icon:'🔧'},
-      {key:'환경/방역/소방',  icon:'🌱'},
+      {key:'전기료',          icon:'💡'},
+      {key:'수도료',          icon:'💧'},
+      {key:'가스비',          icon:'🔥'},
+      {key:'건물 관리비',     icon:'🏗️'},
+      {key:'소모품비',        icon:'🧻'},
+      {key:'비품/시설비',     icon:'🛋️'},
+      {key:'수리/유지보수',   icon:'🔧'},
     ],
     items_shared:[
-      {key:'통신비',          icon:'📞'},
-      {key:'보험료',          icon:'🛡'},
-      {key:'정수기',          icon:'💦'},
-      {key:'차량비',          icon:'🚗'},
-      {key:'세무/법무비',     icon:'⚖️'},
-      {key:'용역수수료',      icon:'🤝'},
-      {key:'기타 본사비',     icon:'…'},
+      {key:'판매촉진비',          icon:'📢'},
+      {key:'대외활동비',          icon:'🤝'},
+      {key:'연구개발비',          icon:'🔬'},
+      {key:'주유비',              icon:'⛽'},
+      {key:'차량 수리비',         icon:'🚗'},
+      {key:'교통비',              icon:'🚕'},
+      {key:'차량 렌탈료',         icon:'🚙'},
+      {key:'소방/보안/환경/방충', icon:'🛡️'},
+      {key:'세무/노무/법무',      icon:'⚖️'},
+      {key:'통신료',              icon:'📞'},
+      {key:'보험료',              icon:'🛡'},
+      {key:'카드수수료',          icon:'💳'},
+      {key:'잡비',                icon:'…'},
     ]
   },
   {
-    code:'tax', label:'세금', roman:'IV', scope:'shared',
-    items:[
-      {key:'부가세',     icon:'📝'},
-      {key:'법인세',     icon:'📋'},
-      {key:'지방세',     icon:'📜'},
-      {key:'기타세금',   icon:'🧾'},
-    ]
-  },
-  {
-    code:'nonOp', label:'영업외 비용', roman:'V', scope:'shared',
-    items:[
-      {key:'이자비용',      icon:'💰'},
-      {key:'과태료/기타',   icon:'🚨'},
+    code:'fixed', label:'고정비 및 금융', roman:'IV', scope:'mixed',
+    desc:'매출과 무관한 고정 지출',
+    items_store:[
+      {key:'임차료',  icon:'🏠'},
+    ],
+    items_shared:[
+      {key:'금융비용(이자)', icon:'💰'},
     ]
   }
 ];
@@ -4266,7 +4271,7 @@ function calcStorePL(monthStr, store){
     sales: salesStore,
     salesAll, ratio,
     breakdown,
-    operatingProfit: salesStore - breakdown.variable.total - breakdown.labor.total - breakdown.operating.total,
+    operatingProfit: salesStore - breakdown.cost.total - breakdown.labor.total - breakdown.operating.total,
     pretaxProfit: 0,  // = operatingProfit - nonOp.total
     netProfit: 0,    // = pretaxProfit - tax.total
   };
@@ -4344,14 +4349,13 @@ async function renderMobilePL(){
   // 손익계산서 본문
   const pl = mobilePLStore === '전체' ? calcTotalPL(monthStr) : calcStorePL(monthStr, mobilePLStore);
   const sales = pl.sales;
-  const variable = pl.breakdown.variable.total;
-  const labor = pl.breakdown.labor.total;
-  const operating = pl.breakdown.operating.total;
-  const tax = pl.breakdown.tax.total;
-  const nonOp = pl.breakdown.nonOp.total;
-  const operatingProfit = sales - variable - labor - operating;
-  const pretaxProfit = operatingProfit - nonOp;
-  const netProfit = pretaxProfit - tax;
+  const cost = pl.breakdown.cost ? pl.breakdown.cost.total : 0;
+  const labor = pl.breakdown.labor ? pl.breakdown.labor.total : 0;
+  const operating = pl.breakdown.operating ? pl.breakdown.operating.total : 0;
+  const fixed = pl.breakdown.fixed ? pl.breakdown.fixed.total : 0;
+  const grossProfit = sales - cost;          // 매출총이익
+  const operatingProfit = grossProfit - labor - operating;  // 영업이익
+  const netProfit = operatingProfit - fixed;  // 순이익
 
   const fmtKRW = v => {
     const sign = v < 0 ? '-' : '';
@@ -4410,35 +4414,35 @@ async function renderMobilePL(){
       <div class="v">${fmtKRW(sales)}</div>
     </div>`;
 
-  // I 변동비
+  // I 판매원가
   html += renderSection(PL_CATEGORIES[0]);
+
+  // 매출총이익
+  html += `
+    <div class="m-pl-result ${grossProfit >= 0 ? 'up' : 'down'}">
+      <div class="lbl">매출총이익 (= 매출 - I)</div>
+      <div class="v">${fmtKRW(grossProfit)}<span class="pct">${pctOf(grossProfit)}</span></div>
+    </div>`;
+
   // II 인건비
   html += renderSection(PL_CATEGORIES[1]);
-  // III 매장 운영비
+  // III 운영비
   html += renderSection(PL_CATEGORIES[2]);
 
   // 영업이익
   html += `
     <div class="m-pl-result ${operatingProfit >= 0 ? 'up' : 'down'}">
-      <div class="lbl">영업이익 (= 매출 - I - II - III)</div>
+      <div class="lbl">영업이익 (= 매출총이익 - II - III)</div>
       <div class="v">${fmtKRW(operatingProfit)}<span class="pct">${pctOf(operatingProfit)}</span></div>
     </div>`;
 
-  // V 영업외 (먼저 차감 → 세전이익)
-  html += renderSection(PL_CATEGORIES[4]);
-  html += `
-    <div class="m-pl-result ${pretaxProfit >= 0 ? 'up' : 'down'}">
-      <div class="lbl">세전이익 (= 영업이익 - V)</div>
-      <div class="v">${fmtKRW(pretaxProfit)}<span class="pct">${pctOf(pretaxProfit)}</span></div>
-    </div>`;
-
-  // IV 세금
+  // IV 고정비 및 금융
   html += renderSection(PL_CATEGORIES[3]);
 
   // 당기순이익
   html += `
     <div class="m-pl-final ${netProfit < 0 ? 'loss' : ''}">
-      <div class="lbl">당기순이익 (= 세전이익 - IV)</div>
+      <div class="lbl">당기순이익 (= 영업이익 - IV)</div>
       <div class="v">${fmtKRW(netProfit)} (${pctOf(netProfit)})</div>
     </div>`;
 
@@ -4449,7 +4453,7 @@ async function renderMobilePL(){
   if(mobilePLStore === '전체' && allStores.length > 0){
     const storesPL = allStores.map(s => {
       const sp = calcStorePL(monthStr, s);
-      const op = sp.sales - sp.breakdown.variable.total - sp.breakdown.labor.total - sp.breakdown.operating.total;
+      const op = sp.sales - sp.breakdown.cost.total - sp.breakdown.labor.total - sp.breakdown.operating.total;
       return { s, sales: sp.sales, op, color: ALL_DATA[monthDates[0]].storeData[s].color };
     }).filter(x => x.sales > 0).sort((a, b) => b.op - a.op);
     const maxAbs = Math.max(...storesPL.map(x => Math.abs(x.op)), 1);
@@ -4500,27 +4504,26 @@ function renderMobilePLInsightsV2(pl, sales, opProfit, netProfit, monthStr){
       insights.push({
         type:'warning',
         title:'영업 적자 ' + opPct.toFixed(1) + '%',
-        text:`<strong>${fmt(Math.abs(opProfit))}</strong> 손실. 변동비 ${fmt(pl.breakdown.variable.total)} + 인건비 ${fmt(pl.breakdown.labor.total)} + 운영비 ${fmt(pl.breakdown.operating.total)} 점검 필요.`
+        text:`<strong>${fmt(Math.abs(opProfit))}</strong> 손실. 판매원가 ${fmt(pl.breakdown.cost.total)} + 인건비 ${fmt(pl.breakdown.labor.total)} + 운영비 ${fmt(pl.breakdown.operating.total)} 점검 필요.`
       });
     }
 
-    // 비중 분석
-    const variablePct = pl.breakdown.variable.total / sales * 100;
+    // 비중 분석 (외식업 표준)
+    const costPct = pl.breakdown.cost.total / sales * 100;
     const laborPct = pl.breakdown.labor.total / sales * 100;
     const operatingPct = pl.breakdown.operating.total / sales * 100;
+    const fixedPct = pl.breakdown.fixed.total / sales * 100;
+    if(costPct > 35){
+      insights.push({type:'warning', title:`판매원가 ${costPct.toFixed(1)}% (높음)`, text:'장어 외식업 표준 30~35% 대비 높음. 원가율 관리 필요.'});
+    }
     if(laborPct > 35){
-      insights.push({type:'warning', title:`인건비 ${laborPct.toFixed(1)}% (높음)`, text:'외식업 평균 25~30% 대비 높음. 인력 효율화·근무시간 조정 검토.'});
+      insights.push({type:'warning', title:`인건비 ${laborPct.toFixed(1)}% (높음)`, text:'외식업 평균 25~30% 대비 높음. 인력 효율화 검토.'});
     }
-    if(operatingPct > 25){
-      insights.push({type:'warning', title:`운영비 ${operatingPct.toFixed(1)}% (높음)`, text:'임대료 재협상 또는 본사 비용 절감 검토.'});
+    if(operatingPct > 20){
+      insights.push({type:'warning', title:`운영비 ${operatingPct.toFixed(1)}% (높음)`, text:'본사 비용 점검 + 절감 가능 항목 식별 필요.'});
     }
-    if(variablePct > 35){
-      insights.push({type:'warning', title:`변동비 ${variablePct.toFixed(1)}% (높음)`, text:'식자재 원가 + 공과금 비중 높음. 원가율 관리 필요.'});
-    }
-
-    // 미입력 안내
-    if(pl.breakdown.tax.total === 0 && pl.breakdown.nonOp.total === 0){
-      insights.push({type:'info', title:'세금/이자 미반영', text:'설정 탭에서 부가세·법인세·이자비용 등을 입력하면 정확한 순이익이 산출됩니다.'});
+    if(fixedPct > 12){
+      insights.push({type:'warning', title:`고정비 ${fixedPct.toFixed(1)}% (높음)`, text:'임차료 또는 금융비용 부담 큼. 임차료 재협상·대출 구조 검토.'});
     }
   }
 
