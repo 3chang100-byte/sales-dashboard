@@ -4043,6 +4043,84 @@ function renderActions(section, store){
 
 
 // ── 손익계산서 (정통 형식) ──
+
+// ── 비용 탭용 3단계 분류 (대/중/소) ──
+const PL_HIERARCHY = [
+  {
+    code:'cost', label:'I 판매원가', icon:'🛒',
+    groups: [
+      { label:'판매원가', items: [
+        {key:'원재료비', icon:'🐟'},
+        {key:'부재료비', icon:'🥬'},
+        {key:'주류 및 음료', icon:'🍶'},
+        {key:'직접 소모품', icon:'📦'},
+      ]}
+    ]
+  },
+  {
+    code:'labor', label:'II 인건비', icon:'👥',
+    groups: [
+      { label:'급여', items: [
+        {key:'정규직 급여', icon:'👤'},
+        {key:'비정규직 급여', icon:'👥'},
+        {key:'임직원 급여', icon:'💼'},
+        {key:'영업지원직', icon:'🏢'},
+        {key:'비상근인력', icon:'🤵'},
+      ]},
+      { label:'법정비용', items: [
+        {key:'사대보험·퇴직금', icon:'📄'},
+      ]},
+      { label:'복리후생', items: [
+        {key:'복리후생비', icon:'🍱'},
+      ]},
+    ]
+  },
+  {
+    code:'operating', label:'III 운영비', icon:'🛠',
+    groups: [
+      { label:'수도광열비', items: [
+        {key:'전기료', icon:'💡'},
+        {key:'수도료', icon:'💧'},
+        {key:'가스비', icon:'🔥'},
+        {key:'건물 관리비', icon:'🏗'},
+      ]},
+      { label:'물건비(유지비)', items: [
+        {key:'소모품비', icon:'🧻'},
+        {key:'비품/시설비', icon:'🛋'},
+        {key:'수리/유지보수', icon:'🔧'},
+      ]},
+      { label:'판매촉진비', items: [
+        {key:'판매촉진비', icon:'📢'},
+        {key:'대외활동비', icon:'🤝'},
+        {key:'연구개발비', icon:'🔬'},
+      ]},
+      { label:'차량비', items: [
+        {key:'주유비', icon:'⛽'},
+        {key:'차량 수리비', icon:'🚗'},
+        {key:'교통비', icon:'🚕'},
+        {key:'차량 렌탈료', icon:'🚙'},
+      ]},
+      { label:'지급수수료(용역)', items: [
+        {key:'소방/보안/환경/방충', icon:'🛡'},
+        {key:'세무/노무/법무', icon:'⚖️'},
+      ]},
+      { label:'기타 운영', items: [
+        {key:'통신료', icon:'📞'},
+        {key:'보험료', icon:'🛡'},
+        {key:'카드수수료', icon:'💳'},
+        {key:'잡비', icon:'…'},
+      ]},
+    ]
+  },
+  {
+    code:'fixed', label:'IV 고정비 및 금융', icon:'🏠',
+    groups: [
+      { label:'임차료', items: [{key:'임차료', icon:'🏠'}] },
+      { label:'금융비용', items: [{key:'금융비용(이자)', icon:'💰'}] },
+    ]
+  },
+];
+
 const PL_CATEGORIES = [
   {
     code:'cost', label:'판매원가', roman:'I', scope:'store',
