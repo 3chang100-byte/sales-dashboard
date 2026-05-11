@@ -3,7 +3,7 @@ name: Daily Dashboard Update
 on:
   schedule:
     # 평일(월~금) 12 PM KST = 03:00 UTC
-    - cron: '0 3 * * 1-5'
+    - cron: '0 2 * * 1-5'
   workflow_dispatch:
     inputs:
       date:
