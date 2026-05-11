@@ -683,20 +683,9 @@ def main():
     seen_md5 = {}   # store → md5 (중복 감지용)
     store_data = {} # store → 합산 dict
 
-    import os, hashlib as _hl
-    _summary_path = os.environ.get('GITHUB_STEP_SUMMARY')
-    def _write_summary(text):
-        if _summary_path:
-            with open(_summary_path, 'a', encoding='utf-8') as sf:
-                sf.write(text + "\n")
-        print(text)
-    _write_summary(f"### 🐞 {args.date} 디버그 ({len(files)}개 파일)")
-    _write_summary("| 파일명 | 크기 | 분류 store | MD5 |")
-    _write_summary("|---|---|---|---|")
+    print(f"  [DEBUG] 대상 파일 {len(files)}개:")
     for _f in files:
-        _st = store_name_from_filename(_f.name)
-        _md5 = _hl.md5(open(_f,'rb').read()).hexdigest()[:8]
-        _write_summary(f"| `{_f.name}` | {_f.stat().st_size:,}B | `{_st}` | `{_md5}` |")
+        print(f"      · {_f.name} ({_f.stat().st_size}B)")
     for f in files:
         store = store_name_from_filename(f.name)
         print(f"  [DEBUG] processing {f.name} → store={store!r}, size={f.stat().st_size}")
