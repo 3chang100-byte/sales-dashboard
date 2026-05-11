@@ -683,12 +683,8 @@ def main():
     seen_md5 = {}   # store → md5 (중복 감지용)
     store_data = {} # store → 합산 dict
 
-    print(f"  [DEBUG] 대상 파일 {len(files)}개:")
-    for _f in files:
-        print(f"      · {_f.name} ({_f.stat().st_size}B)")
     for f in files:
         store = store_name_from_filename(f.name)
-        print(f"  [DEBUG] processing {f.name} → store={store!r}, size={f.stat().st_size}")
         if store == '?':
             print(f"  · {f.name}: 지점 미확인 — 건너뜀")
             continue
