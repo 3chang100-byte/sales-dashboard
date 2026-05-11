@@ -716,8 +716,10 @@ def main():
             else:
                 info = parse_okpos_xls(f)
             if info is None:
+                _write_summary(f"- ⚠️ `{f.name}` → parse 결과 None (skip)")
                 print(f"  · {f.name}: 지원하지 않는 형식 — 건너뜀")
                 continue
+            _write_summary(f"- 🔍 `{f.name}` parse: lunch ₩{info['lunch']['매출']:,}/{info['lunch']['객수']}객, dinner ₩{info['dinner']['매출']:,}/{info['dinner']['객수']}객")
             if store in store_data:
                 # 동일 지점 두 번째 파일 → 합산
                 prev = store_data[store]
@@ -742,10 +744,12 @@ def main():
                 pt['visits'] += nt.get('visits', 0)
                 pt['rate']    = round(pt['visits']/pt['tables'],2) if pt['tables'] else 0
                 total = prev['lunch']['매출'] + prev['dinner']['매출']
+                _write_summary(f"- ➕ `{f.name}` → {store} 누계 ₩{total:,}")
                 print(f"  · {f.name}: {store}에 합산 → 누계 ₩{total:,}")
             else:
                 store_data[store] = info
                 total = info['lunch']['매출'] + info['dinner']['매출']
+                _write_summary(f"- ✅ `{f.name}` → {store} 최초 ₩{total:,}")
                 print(f"  · {store}: 매출 ₩{total:,}, 객수 {info['lunch']['객수']+info['dinner']['객수']}")
         except Exception as e:
             import traceback; traceback.print_exc()
