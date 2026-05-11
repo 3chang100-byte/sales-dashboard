@@ -666,9 +666,10 @@ def main():
     print(f"└{'─'*70}\n")
 
     # 1) 해당 날짜 .xls + .xlsx 모두 수집 (서브폴더와 루트 둘 다)
+    # 파일명이 [평택점_2026-05-09.xls].xls 같은 변형도 매칭하기 위해 패턴 완화
     files = []
     for ext in ('xls', 'xlsx'):
-        pat = f"*_{args.date}.{ext}"
+        pat = f"*{args.date}*.{ext}"
         files.extend(download_dir.glob(pat))
         files.extend((download_dir / args.date).glob(pat))
     # 중복 제거 (같은 파일이 두 곳에서 검색될 가능성)
