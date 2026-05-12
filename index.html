@@ -2121,7 +2121,21 @@ function renderMobile(date){
     }).join('');
   } else {
     // ── 월간 모드 ──
+    // 사용 가능한 월 목록 (오름차순)
+    const availMonths = [...new Set(Object.keys(ALL_DATA).map(d => d.slice(0,7)))].sort();
+    const curMonthIdx = availMonths.indexOf(month);
+    const hasPrev = curMonthIdx > 0;
+    const hasNext = curMonthIdx >= 0 && curMonthIdx < availMonths.length - 1;
+    const monthOpts = availMonths.map(mm => {
+      const lbl = mm.slice(0,4) + '년 ' + parseInt(mm.slice(5,7),10) + '월';
+      return `<option value="${mm}" ${mm===month?'selected':''}>${lbl}</option>`;
+    }).join('');
     document.getElementById('m-hero').innerHTML = `
+      <div style="display:flex;justify-content:center;align-items:center;gap:10px;margin-bottom:10px">
+        <button onclick="mobileShiftMonth(-1)" ${hasPrev?'':'disabled'} style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#e2e8f0;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;${hasPrev?'':'opacity:0.3'}">‹</button>
+        <select onchange="mobileSetSpecificMonth(this.value)" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#e2e8f0;font-size:15px;font-weight:600;padding:6px 12px;border-radius:8px;min-width:140px;text-align:center;text-align-last:center">${monthOpts}</select>
+        <button onclick="mobileShiftMonth(1)" ${hasNext?'':'disabled'} style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:#e2e8f0;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;${hasNext?'':'opacity:0.3'}">›</button>
+      </div>
       <div class="m-hero-label">${monthLabel} 누계 매출 추이</div>
       <div class="m-hero-chart-wrap" style="height:170px;position:relative;margin:8px 0 6px">
         <canvas id="m-month-chart"></canvas>
@@ -2188,6 +2202,28 @@ function mobileSetDate(date){
 function mobileSetMonth(){
   mobileMode = 'month';
   renderMobile();
+}
+
+function mobileSetSpecificMonth(monthStr){
+  // monthStr: 'YYYY-MM' — 해당 월의 가장 최근 데이터일로 mobileCurrentDate 변경
+  if(!monthStr) return;
+  const monthDates = Object.keys(ALL_DATA).filter(d => d.startsWith(monthStr)).sort();
+  if(monthDates.length){
+    mobileCurrentDate = monthDates[monthDates.length - 1];
+  } else {
+    mobileCurrentDate = monthStr + '-01';
+  }
+  mobileCalMonth = monthStr;
+  mobileMode = 'month';
+  renderMobile();
+}
+
+function mobileShiftMonth(delta){
+  const cur = (mobileCurrentDate || Object.keys(ALL_DATA).sort().pop()).slice(0,7);
+  const [y, m] = cur.split('-').map(Number);
+  const d = new Date(y, m - 1 + delta, 1);
+  const newMonth = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  mobileSetSpecificMonth(newMonth);
 }
 
 let mobileDrillFrom = 'm-main';
