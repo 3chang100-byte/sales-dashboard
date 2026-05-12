@@ -157,13 +157,13 @@ def parse_asp2_xlsx(filepath: Path):
         except: return 0
 
     n_receipts = to_int(cell(labels.get('영수건수', 5), 2))
-    객수_total = to_int(cell(labels.get('객수', 6), 2))
     총매출 = to_int(cell(labels.get('총매출', 15), 3))
 
-    lunch_sales = lunch_cust = 0
-    dinner_sales = dinner_cust = 0
+    lunch_sales = 0
+    dinner_sales = 0
     hourly = {}
 
+    # 1) 시간대별 매출만 추출 (객수는 무시 — 영수건수 단위라 부정확)
     time_header_r = None
     for r in range(1, min(ws.max_row + 1, 60)):
         v = cell(r, 5)
@@ -186,22 +186,22 @@ def parse_asp2_xlsx(filepath: Path):
             except:
                 r += 1
                 continue
-            cust = to_int(cell(r, 7))
             sales = to_int(cell(r, 8))
             is_lunch = (hour < 17)
             if is_lunch:
-                lunch_sales += sales; lunch_cust += cust
+                lunch_sales += sales
             else:
-                dinner_sales += sales; dinner_cust += cust
+                dinner_sales += sales
             if sales > 0:
                 hourly[hour] = hourly.get(hour, 0) + sales
             r += 1
 
     if (lunch_sales + dinner_sales) == 0 and 총매출 > 0:
         dinner_sales = 총매출
-        dinner_cust = 객수_total
 
+    # 2) 메뉴 영역 파싱 + 상차림 수량 합산 → 진짜 객수
     menu = {}
+    cust_total = 0  # 상차림 수량 = 실제 객수 (1인 1메뉴)
     menu_header_r = labels.get('상품명')
     if menu_header_r:
         r = menu_header_r + 1
@@ -216,10 +216,17 @@ def parse_asp2_xlsx(filepath: Path):
                 continue
             qty_i = to_int(qty)
             sales_i = to_int(sales)
-            if sales_i <= 0:
+            # 상차림 — 객수만 집계하고 메뉴 집계는 제외
+            if '상차림' in name:
+                m2 = re.search(r'(\d+)\s*인', name)
+                per_unit = int(m2.group(1)) if m2 else 1
+                cust_total += qty_i * per_unit
                 r += 1
                 continue
-            if '상차림' in name or '할인' in name or '적용' in name:
+            if '할인' in name or '적용' in name:
+                r += 1
+                continue
+            if sales_i <= 0:
                 r += 1
                 continue
             total = lunch_sales + dinner_sales
@@ -232,6 +239,19 @@ def parse_asp2_xlsx(filepath: Path):
                 'dinner': sales_i - l_part,
             }
             r += 1
+
+    # 3) 점심/저녁 객수 = 상차림 총객수 × 매출비율 안분
+    total_sales = lunch_sales + dinner_sales
+    if total_sales > 0 and cust_total > 0:
+        ratio_l = lunch_sales / total_sales
+        lunch_cust = round(cust_total * ratio_l)
+        dinner_cust = cust_total - lunch_cust
+    elif cust_total > 0:
+        # 매출이 한쪽으로 몰려있을 때
+        lunch_cust = cust_total if lunch_sales > 0 else 0
+        dinner_cust = cust_total - lunch_cust
+    else:
+        lunch_cust = dinner_cust = 0
 
     avg_l = (lunch_sales // lunch_cust) if lunch_cust else 0
     avg_d = (dinner_sales // dinner_cust) if dinner_cust else 0
