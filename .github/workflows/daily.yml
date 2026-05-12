@@ -2,14 +2,21 @@ name: Daily Dashboard Update
 
 on:
   schedule:
-    # 평일(월~금) 12 PM KST = 03:00 UTC
-    - cron: '0 2 * * 1-5'
+    # KST 11:13 / 11:37 / 11:57 (UTC 02:13 / 02:37 / 02:57) — 매일 3중 트리거
+    # 정시(02:00) 회피 + GitHub Actions cron 누락 대비. 두 번 실행돼도 idempotent하므로 안전.
+    - cron: '13 2 * * *'
+    - cron: '37 2 * * *'
+    - cron: '57 2 * * *'
   workflow_dispatch:
     inputs:
       date:
-        description: '대상 날짜 YYYY-MM-DD (콤마/공백 구분 가능. 비워두면 자동: 평일=어제, 월요일=금토일)'
+        description: '대상 날짜 YYYY-MM-DD (콤마/공백 구분. 비워두면 자동: 평일=어제, 월요일=금토일, 누락분 자동 백필)'
         required: false
         default: ''
+
+concurrency:
+  group: daily-dashboard-update
+  cancel-in-progress: false
 
 jobs:
   update:
@@ -28,7 +35,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Resolve target dates
+      - name: Resolve target dates (with backfill)
         id: dates
         env:
           INPUT_DATE: ${{ inputs.date }}
@@ -37,6 +44,7 @@ jobs:
             DATES=$(echo "$INPUT_DATE" | tr ',' ' ')
           else
             DOW=$(TZ=Asia/Seoul date +%u)
+            # 기본 — 평일: 어제, 월요일: 금토일 3일치
             if [ "$DOW" = "1" ]; then
               D1=$(TZ=Asia/Seoul date -d '3 days ago' +%Y-%m-%d)
               D2=$(TZ=Asia/Seoul date -d '2 days ago' +%Y-%m-%d)
@@ -45,6 +53,27 @@ jobs:
             else
               DATES=$(TZ=Asia/Seoul date -d 'yesterday' +%Y-%m-%d)
             fi
+            # 백필 — 지난 7일 중 sales_history.json에 없는 날짜 자동 추가
+            BACKFILL=$(python -c "
+import json, sys
+from datetime import datetime, timedelta
+try:
+    d=json.load(open('sales_history.json'))
+except Exception:
+    d={}
+today_kst=datetime.utcnow()+timedelta(hours=9)
+out=[]
+for i in range(1,8):
+    target=(today_kst-timedelta(days=i)).strftime('%Y-%m-%d')
+    if target not in d or not d[target]:
+        out.append(target)
+print(' '.join(out))
+")
+            if [ -n "$BACKFILL" ]; then
+              DATES="$DATES $BACKFILL"
+            fi
+            # 중복 제거
+            DATES=$(echo "$DATES" | tr ' ' '\n' | sort -u | tr '\n' ' ')
           fi
           echo "value=$DATES" >> "$GITHUB_OUTPUT"
           echo "Target dates: $DATES"
@@ -65,12 +94,12 @@ jobs:
                 echo "[!] $D 다운로드 폴더 비어있음 — 스킵"
               fi
             else
-              echo "[!] $D Drive에 파일 없음 — 스킵 (다른 날짜는 계속 처리)"
+              echo "[!] $D Drive에 파일 없음 — 스킵"
             fi
             echo "::endgroup::"
           done
           if [ "$PROCESSED_ANY" = "0" ]; then
-            echo "[i] 처리된 날짜 0개 — index.html 갱신만 시도"
+            echo "[i] 처리된 날짜 0개"
           fi
 
       - name: Update index.html
@@ -82,7 +111,7 @@ jobs:
           git config user.email "dashboard-bot@samchang-dashboard.iam.gserviceaccount.com"
           git add sales_history.json index.html
           if git diff --staged --quiet; then
-            echo "변경 없음 — commit 생략"
+            echo "변경 없음 — commit 생략 (이미 처리됨)"
           else
             git commit -m "Auto update for ${{ steps.dates.outputs.value }}"
             git push
