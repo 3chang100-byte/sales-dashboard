@@ -345,13 +345,14 @@ def parse_okpos_xls(filepath: Path):
                 if is_lunch: menu[product]['lunch'] += sales
                 else:        menu[product]['dinner'] += sales
 
-            # 객수: 상차림N인 × 수량
+            # 객수: (상차림N인 × 수량) + 점심 1인 메뉴 (시래기밥장어탕/시래기밥청국장)
             if '상차림' in product:
-                m2 = re.search(r'(\d+)인', product)
+                m2 = re.search(r'(\d+)\s*인', product)
                 per_unit = int(m2.group(1)) if m2 else 1
                 if is_lunch: cust_l += qty * per_unit
                 else:        cust_d += qty * per_unit
-                              elif '시래기밥' in product and ('장어탕' in product or '청국장' in product):
+            elif '시래기밥' in product and ('장어탕' in product or '청국장' in product):
+                # 점심 1인 단일 메뉴 — 객수에 1:1 추가
                 if is_lunch: cust_l += qty
                 else:        cust_d += qty
 
