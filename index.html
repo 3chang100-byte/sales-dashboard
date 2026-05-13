@@ -2053,6 +2053,8 @@ function renderMobile(date){
 
   // 2) 날짜 가로 스크롤 칩
   const todayStr = new Date().toLocaleDateString('en-CA', {timeZone: 'Asia/Seoul'});
+  // 오늘 데이터가 없으면 가장 최근 일자를 'today'로 fallback
+  const effectiveToday = ALL_DATA[todayStr] ? todayStr : Object.keys(ALL_DATA).sort().pop();
   const recentDates = Object.keys(ALL_DATA).sort().slice(-14);
   document.getElementById('m-datestrip').innerHTML = recentDates.map(d => {
     const dt = new Date(d + 'T00:00:00');
@@ -2060,7 +2062,7 @@ function renderMobile(date){
     const dow = KOR_DOW[dowIdx];
     const day = dt.getDate();
     const isActive = (d === date) && (mobileMode === 'day');
-    const isToday = (d === todayStr);
+    const isToday = (d === effectiveToday);
     let cls = 'm-dpill';
     if(isActive) cls += ' active';
     if(isToday) cls += ' today';
