@@ -351,6 +351,9 @@ def parse_okpos_xls(filepath: Path):
                 per_unit = int(m2.group(1)) if m2 else 1
                 if is_lunch: cust_l += qty * per_unit
                 else:        cust_d += qty * per_unit
+                              elif '시래기밥' in product and ('장어탕' in product or '청국장' in product):
+                if is_lunch: cust_l += qty
+                else:        cust_d += qty
 
         n_rec = len(n_receipts)
         # 회전율 계산 (포장 제외 숫자 테이블만)
