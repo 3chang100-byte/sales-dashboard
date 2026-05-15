@@ -2575,6 +2575,7 @@ function renderMobileStoreMonth(){
   const avgGuests = agg.days ? Math.round(agg.guests / agg.days) : 0;
   document.getElementById('m-sm-kpis').innerHTML = `
     <div class="m-mini"><div class="lbl">평균 일매출</div><div class="val">${won(avg)}</div></div>
+    <div class="m-mini"><div class="lbl">영업일자</div><div class="val">${agg.days}<span class="suf"> 일</span></div></div>
     <div class="m-mini"><div class="lbl">일평균 점심</div><div class="val">${won(avgLunch)}</div></div>
     <div class="m-mini"><div class="lbl">일평균 저녁</div><div class="val">${won(avgDinner)}</div></div>
     <div class="m-mini"><div class="lbl">총 객수</div><div class="val">${agg.guests.toLocaleString()}<span class="suf"> 명</span></div></div>
@@ -2582,7 +2583,6 @@ function renderMobileStoreMonth(){
     <div class="m-mini"><div class="lbl">객단가</div><div class="val">${won(ticket).replace('₩','')}<span class="suf"> 원</span></div></div>
     <div class="m-mini"><div class="lbl">주류 비중</div><div class="val">${alcPct}<span class="suf">%</span></div></div>
     <div class="m-mini"><div class="lbl">회전율</div><div class="val">${avgRate}<span class="suf">${avgRate !== '-' ? ' 회' : ''}</span></div></div>
-    <div class="m-mini"><div class="lbl">영업일자</div><div class="val">${agg.days}<span class="suf"> 일</span></div></div>
   `;
 
   // 캘린더 (지점별)
