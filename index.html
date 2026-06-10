@@ -743,6 +743,26 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   /* 손익 인사이트는 분석 탭의 m-ai-card 스타일 재사용 */
 
 
+  /* 인력 효율 (인시매출액) */
+  .m-labor-datestrip{display:flex;gap:8px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none}
+  .m-labor-datestrip::-webkit-scrollbar{display:none}
+  .m-labor-bep{margin:0 16px 12px;padding:10px 12px;border-radius:10px;background:var(--card);border:1px solid var(--border);font-size:11.5px;color:var(--muted);line-height:1.5}
+  .m-labor-bep b{color:#22d3ee;font-size:13px}
+  .m-labor-list{padding:0 16px 24px;display:flex;flex-direction:column;gap:10px}
+  .m-labor-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .m-labor-card .lb-head{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:15px;font-weight:700;border-bottom:1px solid var(--border)}
+  .lb-row{display:grid;grid-template-columns:40px 1fr auto;gap:1px 10px;padding:9px 14px;align-items:center}
+  .lb-row + .lb-row{border-top:1px dashed var(--border)}
+  .lb-row .lb-t{grid-row:1/3;font-size:13px;font-weight:600;color:var(--muted)}
+  .lb-row .lb-sales{font-size:13px;color:var(--text)}
+  .lb-row .lb-sales small{color:var(--muted);margin-left:5px}
+  .lb-row .lb-ph{grid-row:1/3;text-align:right;font-size:18px;font-weight:700}
+  .lb-row .lb-extra{font-size:11px;color:var(--muted);grid-column:2/4}
+  .lb-row.pos .lb-ph{color:#4ade80}
+  .lb-row.neg .lb-ph{color:#f87171}
+  .lb-row.none .lb-ph{color:#64748b;font-size:13px;font-weight:600}
+  .m-labor-empty{padding:40px 16px;text-align:center;color:var(--muted)}
+
   /* 손익계산서 (정통 형식) */
   .m-pl-statement{padding:0 16px 20px}
   .m-pl-store-select{padding:0 16px 12px}
@@ -788,6 +808,28 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-pl-final .v{font-size:28px;font-weight:800;letter-spacing:-.4px;margin-top:4px}
   .m-pl-final.loss{background:#f87171;color:#fff}
 
+
+  /* ── 양만 손익 탭 ── */
+  .m-ym-months{display:flex;gap:8px;padding:6px 16px 12px;overflow-x:auto}
+  .m-ym-mon{flex:0 0 auto;padding:7px 13px;border-radius:18px;background:var(--card);
+    border:1.5px solid var(--border);color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+  .m-ym-mon.active{background:var(--accent);border-color:var(--accent);color:#0f172a}
+  .m-ym-kpis{display:flex;gap:10px;padding:0 16px 12px}
+  .m-ym-kpi{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px}
+  .m-ym-kpi .v{font-size:19px;font-weight:800;letter-spacing:-.3px}
+  .m-ym-kpi .k{font-size:11px;color:var(--muted);margin-top:3px}
+  .m-ym-rows{margin:0 16px 14px;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .m-ym-row{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;
+    border-bottom:1px solid var(--border);font-size:14px}
+  .m-ym-row:last-child{border-bottom:none}
+  .m-ym-row .lbl{color:var(--muted)}
+  .m-ym-row .val{font-weight:700}
+  .m-ym-row.sub .lbl{padding-left:12px;font-size:13px}
+  .m-ym-row.profit{background:rgba(34,211,238,.10)}
+  .m-ym-row.profit .lbl{color:var(--text);font-weight:700}
+  .m-ym-row.profit .val{color:#06b6d4;font-weight:800;font-size:15px}
+  .m-ym-note{margin:0 16px 20px;padding:12px 14px;border-radius:10px;
+    background:rgba(34,211,238,.08);font-size:12.5px;color:var(--muted);line-height:1.6}
 
   /* ★ 설정 탭만 임시 비활성화 (코드 보존) */
   .m-tab[data-tab="settings"]{display:none}
@@ -1178,6 +1220,26 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   </div>
 
 
+  <!-- 인력 효율 화면 -->
+  <div class="m-screen" id="m-labor">
+    <div class="m-appbar">
+      <div><div class="m-appbar-title">인력 효율 · 인시매출액</div><h1 id="m-labor-date">인시매출액</h1></div>
+      <button class="m-reload" onclick="location.reload()" title="새로고침">⟳</button>
+    </div>
+    <div class="m-labor-datestrip" id="m-labor-datestrip"></div>
+    <div class="m-labor-bep" id="m-labor-bep"></div>
+    <div class="m-labor-list" id="m-labor-list"></div>
+  </div>
+
+  <div class="m-screen" id="m-yangman">
+    <div class="m-appbar">
+      <div><div class="m-appbar-title">삼창양만 · 생산(양식) 손익</div><h1>양만 월별 손익</h1></div>
+      <button class="m-reload" onclick="location.reload()" title="새로고침">⟳</button>
+    </div>
+    <div class="m-ym-months" id="m-ym-months"></div>
+    <div id="m-ym-body"></div>
+  </div>
+
   <!-- 하단 탭바 -->
   <div class="m-tabbar">
     <div class="m-tab active" onclick="mobileTab('summary')" data-tab="summary">
@@ -1199,6 +1261,14 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
     <div class="m-tab" onclick="mobileTab('fixed')" data-tab="fixed">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
       <span>고정비</span>
+    </div>
+    <div class="m-tab" onclick="mobileTab('labor')" data-tab="labor">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>인력</span>
+    </div>
+    <div class="m-tab" onclick="mobileTab('yangman')" data-tab="yangman">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12c3-5 9-7 14-7 0 0-2 3-2 7s2 7 2 7c-5 0-11-2-14-7z"/><circle cx="8" cy="11" r="1" fill="currentColor"/><path d="M19 8l3-2v12l-3-2"/></svg>
+      <span>양만</span>
     </div>
         <div class="m-tab" onclick="mobileTab('settings')" data-tab="settings">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -3171,6 +3241,12 @@ function mobileTab(tab){
   } else if(tab === 'fixed'){
     document.getElementById('m-fixed').classList.add('active');
     renderMobileFixed();
+  } else if(tab === 'labor'){
+    document.getElementById('m-labor').classList.add('active');
+    renderMobileLabor();
+  } else if(tab === 'yangman'){
+    document.getElementById('m-yangman').classList.add('active');
+    renderMobileYangman();
   } else if(tab === 'settings'){
     document.getElementById('m-settings').classList.add('active');
     renderMobileSettings();
@@ -4511,6 +4587,124 @@ function renderActions(section, store){
 }
 
 
+// ── 인력 효율 (인시매출액) ──
+let mobileMHData = null;
+let mobileLaborDate = null;
+const LB_WAGE = 12000, LB_VAR = 0.276, LB_BEP = Math.round(12000 / (1 - 0.276)); // 손익분기 인시매출액 ≈ 16,575
+async function loadMHIfNeeded(){
+  if(mobileMHData !== null) return mobileMHData;
+  try { const r = await fetch('manhours.json?t=' + Date.now()); mobileMHData = r.ok ? await r.json() : {}; }
+  catch(e){ mobileMHData = {}; }
+  return mobileMHData;
+}
+function mobileLaborSetDate(d){ mobileLaborDate = d; renderMobileLabor(); }
+function laborStoreCard(name, color, lSales, dSales, lMH, dMH){
+  const rowf = (label, sales, mh) => {
+    if(!mh){
+      return `<div class="lb-row none"><span class="lb-t">${label}</span><span class="lb-sales">${won(sales)}</span><span class="lb-ph">미입력</span><span class="lb-extra">man-hours 미입력</span></div>`;
+    }
+    const ph = sales / mh, labor = mh * LB_WAGE;
+    const dist = sales > 0 ? labor / sales * 100 : 0;
+    const profit = sales * (1 - LB_VAR) - labor;
+    const ok = ph >= LB_BEP;
+    return `<div class="lb-row ${ok ? 'pos' : 'neg'}">
+      <span class="lb-t">${label}</span>
+      <span class="lb-sales">${won(sales)}<small>${mh}h</small></span>
+      <span class="lb-ph">${won(Math.round(ph))}</span>
+      <span class="lb-extra">노동분배 ${dist.toFixed(0)}% · 시간대손익 ${profit >= 0 ? '+' : ''}${won(Math.round(profit))}</span>
+    </div>`;
+  };
+  return `<div class="m-labor-card"><div class="lb-head"><span class="m-dot" style="background:${color}"></span>${name}</div>${rowf('점심', lSales, lMH)}${rowf('저녁', dSales, dMH)}</div>`;
+}
+async function renderMobileLabor(){
+  await loadMHIfNeeded();
+  const dates = Object.keys(ALL_DATA).sort();
+  if(dates.length === 0){ document.getElementById('m-labor-list').innerHTML = '<div class="m-labor-empty">매출 데이터 없음</div>'; return; }
+  if(!mobileLaborDate || !ALL_DATA[mobileLaborDate]) mobileLaborDate = dates[dates.length - 1];
+  const date = mobileLaborDate, D = ALL_DATA[date];
+  const recent = dates.slice(-14);
+  document.getElementById('m-labor-datestrip').innerHTML = recent.map(d => {
+    const dt = new Date(d + 'T00:00:00'), dow = KOR_DOW[dt.getDay()];
+    let cls = 'm-dpill'; if(d === date) cls += ' active';
+    if(dt.getDay() === 0) cls += ' sun'; else if(dt.getDay() === 6) cls += ' sat';
+    return `<div class="${cls}" onclick="mobileLaborSetDate('${d}')"><div class="w">${dow}</div><div class="d">${dt.getDate()}</div></div>`;
+  }).join('');
+  setTimeout(() => { const st = document.getElementById('m-labor-datestrip'); if(st) st.scrollLeft = st.scrollWidth; }, 50);
+  document.getElementById('m-labor-date').textContent = (D ? (D.dateDisp || date) : date) + ' 인시매출액';
+  document.getElementById('m-labor-bep').innerHTML = `손익분기 인시매출액 <b>${won(LB_BEP)}</b> 이상이면 흑자 (시급 ${won(LB_WAGE)} · 변동원가율 ${(LB_VAR * 100).toFixed(1)}%). 초록=흑자 / 빨강=적자.`;
+  if(!D){ document.getElementById('m-labor-list').innerHTML = '<div class="m-labor-empty">이 날짜 매출 데이터 없음</div>'; return; }
+  const mh = mobileMHData[date] || {};
+  let html = '';
+  D.stores.forEach(s => {
+    const sd = D.storeData[s];
+    if(!sd || sd.missing) return;
+    const m = mh[s] || {};
+    html += laborStoreCard(s, sd.color || '#888', sd.lunch || 0, sd.dinner || 0, m.lunch_mh || 0, m.dinner_mh || 0);
+  });
+  document.getElementById('m-labor-list').innerHTML = html || '<div class="m-labor-empty">데이터 없음</div>';
+}
+
+// ── 양만(생산) 손익 탭 ──
+let mobileYMData = null, mobileYMMonth = null;
+async function loadYMIfNeeded(){
+  if(mobileYMData) return;
+  try { const r = await fetch('yangman-pl.json?t=' + Date.now()); mobileYMData = r.ok ? await r.json() : {}; }
+  catch(e){ mobileYMData = {}; }
+}
+function mobileYMSetMonth(m){ mobileYMMonth = m; renderMobileYangman(); }
+function ymWon(n){ return (n == null) ? '–' : Math.round(n).toLocaleString() + '원'; }
+function ymShort(n){
+  if(n == null) return '–';
+  const a = Math.abs(n);
+  if(a >= 1e8) return (n / 1e8).toFixed(1) + '억';
+  if(a >= 1e4) return Math.round(n / 1e4).toLocaleString() + '만';
+  return Math.round(n).toLocaleString();
+}
+function ymRow(label, val, sub){
+  return '<div class="m-ym-row' + (sub ? ' sub' : '') + '"><span class="lbl">' + label +
+         '</span><span class="val">' + ymWon(val) + '</span></div>';
+}
+async function renderMobileYangman(){
+  await loadYMIfNeeded();
+  const data = mobileYMData || {};
+  const months = Object.keys(data).filter(k => /^\d{4}-\d{2}$/.test(k)).sort();
+  const monEl = document.getElementById('m-ym-months');
+  const bodyEl = document.getElementById('m-ym-body');
+  if(!months.length){
+    monEl.innerHTML = '';
+    bodyEl.innerHTML = '<div class="m-ym-note">양만 손익 데이터가 아직 없습니다. 양만 시트를 대시보드 봇 계정에 공유하고 워크플로우가 1회 실행되면 채워집니다.</div>';
+    return;
+  }
+  if(!mobileYMMonth || !data[mobileYMMonth]) mobileYMMonth = months[months.length - 1];
+  monEl.innerHTML = months.map(m =>
+    '<div class="m-ym-mon' + (m === mobileYMMonth ? ' active' : '') + '" onclick="mobileYMSetMonth(\'' + m + '\')">' +
+    m.slice(2).replace('-', '.') + '</div>').join('');
+  const d = data[mobileYMMonth];
+  const rev = d['매출'] || 0, profit = d['순이익'], margin = d['마진율'];
+  let html = '<div class="m-ym-kpis">';
+  html += '<div class="m-ym-kpi"><div class="v">' + ymShort(rev) + '</div><div class="k">매출</div></div>';
+  html += '<div class="m-ym-kpi"><div class="v">' + (profit == null ? '산출중' : ymShort(profit)) + '</div><div class="k">순이익</div></div>';
+  html += '<div class="m-ym-kpi"><div class="v">' + (margin == null ? '–' : margin + '%') + '</div><div class="k">마진율</div></div>';
+  html += '</div>';
+  html += '<div class="m-ym-rows">';
+  html += ymRow('매출 합계', rev);
+  html += ymRow('내부(그룹 출하)', d['매출_내부'], true);
+  html += ymRow('외부 판매', d['매출_외부'], true);
+  html += ymRow('사료비', d['사료비']);
+  html += ymRow('전기료', d['전기료']);
+  html += ymRow('인건비', d['인건비']);
+  if(d['기타운영비']) html += ymRow('기타운영비', d['기타운영비']);
+  if(d['입식비']) html += ymRow('입식비(종묘)', d['입식비']);
+  html += '<div class="m-ym-row profit"><span class="lbl">순이익</span><span class="val">' +
+          (profit == null ? '산출중' : ymWon(profit)) + '</span></div>';
+  html += '</div>';
+  const kg = d['출하kg'] ? Math.round(d['출하kg']).toLocaleString() + 'kg' : '';
+  html += '<div class="m-ym-note">이 달 출하 ' + kg + ' 중 그룹 내부거래(조합법인行) ' + ymWon(d['매출_내부']) +
+          '. 그룹 연결손익에서는 이 내부매출이 상계됩니다. 출하단가는 매월 생산자협회 시장가. ' +
+          '사료비·순이익은 첫 자동실행 후 정밀 반영됩니다.</div>';
+  bodyEl.innerHTML = html;
+}
+
 // ── 손익계산서 (정통 형식) ──
 
 // ── 비용 탭용 3단계 분류 (대/중/소) ──
@@ -4833,7 +5027,12 @@ function calcTotalPL(monthStr){
 async function renderMobilePL(){
   await loadPLDataIfNeeded();
 
-  const monthStr = mobilePLMonth || (mobileCurrentDate || Object.keys(ALL_DATA).sort().pop()).slice(0,7);
+  // 기본 월: 비용데이터(cost-data) 있는 최신 월 우선 → 없으면 최신 매출월
+  let monthStr = mobilePLMonth;
+  if(!monthStr){
+    const _cm = mobilePLData ? Object.keys(mobilePLData).filter(function(k){return k.length===7 && k.charAt(4)==='-';}).sort() : [];
+    monthStr = _cm.length ? _cm[_cm.length-1] : (mobileCurrentDate || Object.keys(ALL_DATA).sort().pop()).slice(0,7);
+  }
   if(!mobilePLMonth) mobilePLMonth = monthStr;
   const [y, m] = monthStr.split('-').map(Number);
   document.getElementById('m-pl-month').textContent = y + '년 ' + m + '월 손익계산서';
