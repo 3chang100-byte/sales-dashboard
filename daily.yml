@@ -112,7 +112,7 @@ jobs:
         run: |
           git config user.name  "dashboard-bot"
           git config user.email "dashboard-bot@samchang-dashboard.iam.gserviceaccount.com"
-          git add sales_history.json index.html cost-data.json manhours.json yangman-pl.json
+          git add sales_history.json index.html cost-data.json manhours.json yangman-pl.json johap-pl.json
           if git diff --staged --quiet; then
             echo "변경 없음 — commit 생략 (이미 처리됨)"
           else
