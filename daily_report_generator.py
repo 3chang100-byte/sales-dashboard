@@ -118,6 +118,106 @@ def parse_html_settlement(filepath: Path):
         return None
 
 
+
+def _bok_num(v):
+    if v is None: return 0
+    if isinstance(v,(int,float)): return int(v)
+    s=str(v).replace(',','').strip()
+    try: return int(float(s))
+    except: return 0
+
+def is_new_bokdae_format(ws):
+    """복대 신형식(영수증 상세) 감지: 상단부에 '조회일자'/'매장코드' 또는 헤더에 '총매출액'+'영수증번호'."""
+    for r in range(1, min(ws.max_row + 1, 30)):
+        joined = ' '.join(str(ws.cell(row=r, column=c).value) for c in range(1, min(ws.max_column + 1, 20)) if ws.cell(row=r, column=c).value)
+        if '조회일자' in joined or '매장코드' in joined:
+            return True
+        if ('총매출액' in joined) and ('영수증번호' in joined):
+            return True
+    return False
+
+def parse_bokdae_new(ws):
+    """복대점 신형식(영수증별 거래상세) .xlsx 파싱. parse_asp2_xlsx와 동일 dict 반환.
+    - 총매출 = '매출' 행의 총매출액 합(상차림비 포함, 할인행 제외, 부가세 포함 gross)
+    - 점심/저녁 = 결제시각 시(hour<17 점심)
+    - 메뉴 = 상품명별(상차림비·할인 제외)
+    - 객수 = 상차림비 수량 합(1인 1메뉴)
+    """
+    # 날짜
+    date = None
+    for r in range(1, min(ws.max_row + 1, 30)):
+        for c in range(1, min(ws.max_column + 1, 20)):
+            v = ws.cell(row=r, column=c).value
+            if isinstance(v, str) and '조회일자' in v:
+                m = re.search(r'(\d{4})[-_.](\d{2})[-_.](\d{2})', v)
+                if m:
+                    date = f"{m.group(1)}-{m.group(2)}-{m.group(3)}"
+                    break
+        if date: break
+    # 헤더 행 + 컬럼 매핑
+    hdr_r = None; col = {}
+    for r in range(1, min(ws.max_row + 1, 40)):
+        names = {str(ws.cell(row=r, column=c).value).strip(): c
+                 for c in range(1, ws.max_column + 1)
+                 if isinstance(ws.cell(row=r, column=c).value, str)}
+        if '상품명' in names and '총매출액' in names and '영수증번호' in names:
+            hdr_r = r; col = names; break
+    if not hdr_r:
+        return None
+    c_pos = col.get('포스번호'); c_rcp = col.get('영수증번호'); c_div = col.get('구분')
+    c_time = col.get('결제시각'); c_name = col.get('상품명'); c_qty = col.get('수량'); c_amt = col.get('총매출액')
+    lunch = dinner = cust = 0; menu = {}; receipts = set(); hourly = {}
+    for r in range(hdr_r + 1, ws.max_row + 1):
+        name = ws.cell(row=r, column=c_name).value if c_name else None
+        if not name or not isinstance(name, str):
+            continue
+        div = ws.cell(row=r, column=c_div).value if c_div else '매출'
+        if div is not None and str(div).strip() != '매출':
+            continue  # 취소/반품 등 제외
+        qty = _bok_num(ws.cell(row=r, column=c_qty).value)
+        amt = _bok_num(ws.cell(row=r, column=c_amt).value)
+        tstr = ws.cell(row=r, column=c_time).value if c_time else None
+        try:
+            hour = int(str(tstr).split(':')[0])
+        except Exception:
+            hour = 19
+        is_lunch = hour < 17
+        if c_pos and c_rcp:
+            receipts.add((ws.cell(row=r, column=c_pos).value, ws.cell(row=r, column=c_rcp).value))
+        name = name.strip()
+        if '할인' in name:
+            continue
+        if amt > 0:
+            if is_lunch: lunch += amt
+            else: dinner += amt
+            hourly[hour] = hourly.get(hour, 0) + amt
+        if '상차림' in name:
+            cust += qty  # 매출엔 포함, 메뉴 집계엔 제외
+            continue
+        if amt <= 0:
+            continue
+        m = menu.setdefault(name, {'qty': 0, 'sales': 0, 'lunch': 0, 'dinner': 0})
+        m['qty'] += qty; m['sales'] += amt
+        if is_lunch: m['lunch'] += amt
+        else: m['dinner'] += amt
+    total = lunch + dinner
+    if cust > 0 and total > 0:
+        rl = lunch / total; lc = round(cust * rl); dc = cust - lc
+    elif cust > 0:
+        lc = cust if lunch > 0 else 0; dc = cust - lc
+    else:
+        lc = dc = 0
+    return {
+        'date': date,
+        'n_receipts': len(receipts),
+        'lunch':  {'매출': lunch,  '객수': lc, '단가': (lunch // lc if lc else 0)},
+        'dinner': {'매출': dinner, '객수': dc, '단가': (dinner // dc if dc else 0)},
+        'menu': menu,
+        'hourly': hourly,
+        'turnover': {'tables': 0, 'visits': len(receipts), 'rate': 0},
+    }
+
+
 def parse_asp2_xlsx(filepath: Path):
     """
     ASP2 (복대점) 정산보고서 .xlsx 파싱.
@@ -135,6 +235,8 @@ def parse_asp2_xlsx(filepath: Path):
         return None
 
     ws = wb[wb.sheetnames[0]]
+    if is_new_bokdae_format(ws):
+        return parse_bokdae_new(ws)
     sheet_name = wb.sheetnames[0]
     m = re.search(r'(\d{4})_(\d{2})_(\d{2})', sheet_name)
     date = f"{m.group(1)}-{m.group(2)}-{m.group(3)}" if m else None
