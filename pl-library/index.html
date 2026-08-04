@@ -223,6 +223,19 @@ function renderStore(m){
     '<div class="kpis">'+kpi('총매출',s.total.toFixed(1),'백만원 (정산)')+'</div>'+
     '<div class="note">매장별 손익 상세는 이 달 미확정. 매장 총매출만 표시.</div></div>';
 }
+function assetCard(y){
+  if(!y||!y.assetVal) return '';
+  var won=(y.assetVal/1e8).toFixed(2);
+  var warn = (y.shipActual&&y.shipActual!==y.ship) ? '<div class="note" style="border-left-color:#f59e0b">⚠️ 참고: 급이일지 기준 7월 실제 출하는 '+y.shipActual.toLocaleString()+'kg(7/31 990kg 포함)입니다. 현 손익은 현금주의 '+y.ship.toLocaleString()+'kg 유지 중 — 계산서 물량 보정은 조합·매장 입고 확인 후 반영 예정.</div>' : '';
+  return '<div class="card"><h2>💎 양만장 자산가치 (생산 관점 · 병기)</h2><div class="cs">'+(y.assetDate||'')+' 실시간 · 재고 생체중 기준</div>'+
+    '<div class="kpis">'+
+      kpi('현재 생체중(재고)',y.bioKg.toLocaleString()+' kg','급이일지 추정')+
+      kpi('자산가치',won+'억','생체중 × 사이즈별 시세')+
+      kpi('현금화 손익(출하)',(y.oi>=0?'+':'')+y.oi.toFixed(1),'이 달 출하분만')+'</div>'+
+    '<div class="note"><b>현금주의 손익(출하 기준)은 이 달 출하(현금화)분만</b> 반영합니다. 아직 출하하지 않은 재고는 <b>자산가치 '+won+'억</b>으로 양식장에 쌓여 증육으로 계속 커집니다. 양만의 실질 생산성은 손익표의 현금이익이 아니라 <b>재고 자산의 증육</b>으로 보아야 정확합니다. 실시간·호지별 증육은 <a href="https://samchang-eel.netlify.app/" target="_blank">생산 대시보드</a> 참조.</div>'+
+    warn+
+    '</div>';
+}
 function renderYangman(m){
   var y=D[m].yangman;
   if(!y) return empty(m+' 양만장 손익 데이터 미확정');
@@ -236,7 +249,7 @@ function renderYangman(m){
       '<div class="kpis">'+kpi('출하 매출',y.rev.toFixed(1),'출하 '+y.ship.toLocaleString()+'kg×'+y.price.toLocaleString())+kpi('생산비용',y.cost.toFixed(1),'백만원')+kpi('영업손익',(y.oi>=0?'+':'')+y.oi.toFixed(1),y.rate)+'</div>'+
       '<table><thead><tr><th>비용 항목</th><th>금액</th><th>비중</th></tr></thead><tbody>'+b0+
       '<tr class="tot"><td>비용 합계</td><td>'+y.cost.toFixed(1)+'</td><td>100%</td></tr></tbody></table>'+
-      (y.extNote?'<div class="note">'+y.extNote+'</div>':'')+(y.assetNote?'<div class="note">'+y.assetNote+'</div>':'')+'</div>';
+      (y.extNote?'<div class="note">'+y.extNote+'</div>':'')+(y.assetNote?'<div class="note">'+y.assetNote+'</div>':'')+'</div>'+assetCard(y);
   }
   var body='';
   y.items.forEach(function(it){ body+='<tr><td>'+it[0]+'</td><td>'+it[1].toFixed(1)+'</td><td>'+(it[1]/y.cost*100).toFixed(1)+'%</td></tr>'; });
