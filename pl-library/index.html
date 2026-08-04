@@ -226,7 +226,7 @@ function renderStore(m){
 function assetCard(y){
   if(!y||!y.assetVal) return '';
   var won=(y.assetVal/1e8).toFixed(2);
-  var warn = (y.shipActual&&y.shipActual!==y.ship) ? '<div class="note" style="border-left-color:#f59e0b">⚠️ 참고: 급이일지 기준 7월 실제 출하는 '+y.shipActual.toLocaleString()+'kg(7/31 990kg 포함)입니다. 현 손익은 현금주의 '+y.ship.toLocaleString()+'kg 유지 중 — 계산서 물량 보정은 조합·매장 입고 확인 후 반영 예정.</div>' : '';
+  var warn = (y.shipActual&&y.shipActual!==y.ship) ? '<div class="note">참고: 급이일지상 7/31 B5 출하 990kg은 현금주의 기준 <b>8월로 이월</b> 처리했습니다. 7월 양만 손익은 '+y.ship.toLocaleString()+'kg 유지, 해당 990kg(출하매출 등)은 8월 손익·계산서에 반영됩니다. (급이일지 실제 7월 출하 '+y.shipActual.toLocaleString()+'kg)</div>' : '';
   return '<div class="card"><h2>💎 양만장 자산가치 (생산 관점 · 병기)</h2><div class="cs">'+(y.assetDate||'')+' 실시간 · 재고 생체중 기준</div>'+
     '<div class="kpis">'+
       kpi('현재 생체중(재고)',y.bioKg.toLocaleString()+' kg','급이일지 추정')+
