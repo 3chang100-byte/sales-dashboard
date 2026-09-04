@@ -91,11 +91,43 @@ jobs:
       - name: Update index.html
         run: python update_index.py
 
+      - name: Sync pl-library from Drive (손익 라이브러리 자동 반영)
+        env:
+          GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
+        run: |
+          python - <<'PYEOF' || echo "[!] pl-library 동기화 실패 — 스킵"
+          import os, io, json
+          from google.oauth2 import service_account
+          from googleapiclient.discovery import build
+          from googleapiclient.http import MediaIoBaseDownload
+          FOLDER = "1Q19nlAJWpLa-FYoOOOLd0lsypBsRWjYz"  # Drive: 삼창수산_매출자료_v2/pl-library
+          creds = service_account.Credentials.from_service_account_info(
+              json.loads(os.environ["GDRIVE_CREDENTIALS"]),
+              scopes=["https://www.googleapis.com/auth/drive.readonly"])
+          svc = build("drive", "v3", credentials=creds)
+          q = f"'{FOLDER}' in parents and name='pl-data.json' and trashed=false"
+          fs = svc.files().list(q=q, fields="files(id,modifiedTime)").execute().get("files", [])
+          if not fs:
+              print("[i] Drive에 pl-data.json 없음 — 스킵")
+          else:
+              buf = io.BytesIO()
+              dl = MediaIoBaseDownload(buf, svc.files().get_media(fileId=fs[0]["id"]))
+              done = False
+              while not done:
+                  _, done = dl.next_chunk()
+              data = buf.getvalue()
+              json.loads(data.decode("utf-8"))  # 유효성 검증
+              os.makedirs("pl-library", exist_ok=True)
+              open("pl-library/pl-data.json", "wb").write(data)
+              print(f"[OK] pl-data.json {len(data)}B 동기화")
+          PYEOF
+
+
       - name: Commit and push
         run: |
           git config user.name  "dashboard-bot"
           git config user.email "dashboard-bot@samchang-dashboard.iam.gserviceaccount.com"
-          git add sales_history.json index.html
+          git add sales_history.json index.html pl-library/pl-data.json
           if git diff --staged --quiet; then
             echo "변경 없음 — commit 생략 (이미 처리됨)"
           else
