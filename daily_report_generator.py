@@ -32,6 +32,15 @@ except ImportError:
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 DEFAULT_CONFIG = SCRIPT_DIR / "config.json"
+
+def normalize_menu_name(name):
+    """양기지문 장어진액 상품명 통일 (장어즙/장어진액/양기지문 → '양기지문 장어진액')."""
+    n = str(name).strip()
+    b = n.replace(' ', '')
+    if ('장어즙' in b) or ('장어진액' in b) or ('양기지문' in b):
+        return '양기지문 장어진액'
+    return n
+
 HISTORY_FILE = SCRIPT_DIR / "sales_history.json"
 
 STORE_COLOR = {
@@ -196,7 +205,7 @@ def parse_bokdae_new(ws):
             continue
         if amt <= 0:
             continue
-        m = menu.setdefault(name, {'qty': 0, 'sales': 0, 'lunch': 0, 'dinner': 0})
+        m = menu.setdefault(normalize_menu_name(name), {'qty': 0, 'sales': 0, 'lunch': 0, 'dinner': 0})
         m['qty'] += qty; m['sales'] += amt
         if is_lunch: m['lunch'] += amt
         else: m['dinner'] += amt
@@ -334,12 +343,12 @@ def parse_asp2_xlsx(filepath: Path):
             total = lunch_sales + dinner_sales
             ratio_l = lunch_sales / total if total else 0
             l_part = int(sales_i * ratio_l)
-            menu[name] = {
-                'qty': qty_i,
-                'sales': sales_i,
-                'lunch': l_part,
-                'dinner': sales_i - l_part,
-            }
+            _k = normalize_menu_name(name)
+            _m = menu.setdefault(_k, {'qty': 0, 'sales': 0, 'lunch': 0, 'dinner': 0})
+            _m['qty'] += qty_i
+            _m['sales'] += sales_i
+            _m['lunch'] += l_part
+            _m['dinner'] += sales_i - l_part
             r += 1
 
     # 3) 점심/저녁 객수 = 상차림 총객수 × 매출비율 안분
@@ -440,12 +449,13 @@ def parse_okpos_xls(filepath: Path):
 
             # 메뉴 집계 (상차림·할인 제외)
             if product and '상차림' not in product and sales > 0:
-                if product not in menu:
-                    menu[product] = {'qty': 0, 'sales': 0, 'lunch': 0, 'dinner': 0}
-                menu[product]['qty']   += qty
-                menu[product]['sales'] += sales
-                if is_lunch: menu[product]['lunch'] += sales
-                else:        menu[product]['dinner'] += sales
+                pkey = normalize_menu_name(product)
+                if pkey not in menu:
+                    menu[pkey] = {'qty': 0, 'sales': 0, 'lunch': 0, 'dinner': 0}
+                menu[pkey]['qty']   += qty
+                menu[pkey]['sales'] += sales
+                if is_lunch: menu[pkey]['lunch'] += sales
+                else:        menu[pkey]['dinner'] += sales
 
             # 객수: (상차림N인 × 수량) + 점심 1인 메뉴 (시래기밥장어탕/시래기밥청국장)
             if '상차림' in product:
