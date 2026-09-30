@@ -957,6 +957,33 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-tab svg{width:18px;height:18px}
 }
 
+
+/* ===== 데스크톱 전용 넓은 레이아웃 (≥769px) ===== */
+@media (min-width: 769px){
+  .mobile-app{max-width:1120px !important;margin:0 auto;box-shadow:none;padding:8px 28px 90px}
+  /* 상단 요약 버튼·스트립은 전체폭 */
+  .m-totalbtn{margin-left:0;margin-right:0}
+  .m-yearstrip,.m-monthstrip,.m-datestrip{padding-left:0;padding-right:0}
+  /* KPI 미니카드: 넓게 4열까지 */
+  .m-kpis,.m-sm-kpis{grid-template-columns:repeat(4,1fr);margin-left:0;margin-right:0}
+  /* 지점별 매출: 2열 카드 그리드 */
+  .m-store-list{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding-left:0;padding-right:0}
+  .m-section{margin-left:0;margin-right:0}
+  /* 차트/캘린더 영역도 좌우 여백 축소 */
+  .m-hero{margin-left:0;margin-right:0}
+  .m-cal-grid,.m-sm-cal-grid{margin-left:0;margin-right:0}
+  /* 분석·연간 차트 넓게 */
+  .m-trend-chart,#m-year canvas,#m-analysis canvas{max-width:100%}
+  #m-year > div,#m-year table{padding-left:0 !important;padding-right:0 !important}
+  /* 하단 탭바 폭 맞춤 */
+  .m-tabbar{max-width:1120px}
+  /* 분석 카드 2열 */
+  .m-an-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+}
+/* 아주 넓은 화면에서도 과도하게 안 퍼지게 */
+@media (min-width: 1200px){
+  .m-store-list{grid-template-columns:1fr 1fr 1fr}
+}
 </style>
 </head>
 <body>
