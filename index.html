@@ -250,11 +250,11 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
 /* ═════════════════════════════════════════════════════════════ */
 /* 모바일 전용 디자인 (≤768px) — desktop 뷰는 숨기고 mobile-app 표시 */
 /* ═════════════════════════════════════════════════════════════ */
-.mobile-app{display:none}
+.mobile-app{display:none;max-width:480px;margin:0 auto;position:relative;box-shadow:0 0 0 1px rgba(148,163,184,.15)}
 
-@media (max-width: 768px){
+@media all{
   body > .header, body > .view{display:none !important}
-  .mobile-app{display:block;background:var(--bg);min-height:100vh;padding-bottom:80px}
+  .mobile-app{display:block;background:var(--bg);min-height:100vh;padding-bottom:80px;max-width:480px;margin:0 auto}
 
   /* 상단 앱바 */
   .m-appbar{padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:flex-end;
@@ -949,7 +949,7 @@ body{background:var(--bg);color:var(--text);font-family:'Malgun Gothic',sans-ser
   .m-cost-tier-select select option{background:#1e293b;color:var(--text)}
 
   /* 하단 탭바 */
-  .m-tabbar{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-around;
+  .m-tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:flex;justify-content:space-around;
     padding:10px 8px 14px;border-top:1px solid var(--border);background:var(--card);z-index:20}
   .m-tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px;
     color:var(--muted);flex:1;cursor:pointer}
