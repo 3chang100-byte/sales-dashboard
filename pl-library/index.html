@@ -209,9 +209,9 @@ function renderStore(m){
     });
     var trs=s.rows[s.rows.length-1];
     return '<div class="card"><h2>오프라인 매장 손익 요약</h2><div class="cs">'+m+' · 5개 직영매장 · 단위: 백만원</div>'+
-      '<div class="kpis">'+kpi('총매출',trs[1].toFixed(1),'백만원')+kpi('영업이익','+'+trs[6].toFixed(1),'백만원')+kpi('영업이익률',trs[7],'')+'</div>'+
+      '<div class="kpis">'+kpi('총매출',trs[1].toFixed(1),'백만원')+kpi('영업이익',(trs[6]>=0?'+':'')+trs[6].toFixed(1),'백만원')+kpi('영업이익률',trs[7],'')+'</div>'+
       '<table><thead><tr><th>매장</th><th>매출<br><span style="font-weight:400;color:#5b6a80">(비중)</span></th><th>원재료<br><span style="font-weight:400;color:#5b6a80">(매출대비)</span></th><th>인건비<br><span style="font-weight:400;color:#5b6a80">(매출대비)</span></th><th>운영비<br><span style="font-weight:400;color:#5b6a80">(매출대비)</span></th><th>고정비<br><span style="font-weight:400;color:#5b6a80">(매출대비)</span></th><th>영업이익<br><span style="font-weight:400;color:#5b6a80">(매출대비)</span></th><th>이익률</th></tr></thead><tbody>'+body+'</tbody></table>'+
-      '<div class="note">'+(m==='2026-01'?'복대점만 적자(-10.1%). 대표·임직원 급여는 본사 통합 후 매출비중 배분. 장어원가는 매장 입고 3,340kg×30,000 기준.':'안성(-35.3%)·율량(-29.2%) 매출 급감이 이익 하락의 핵심.')+'</div></div>';
+      '<div class="note">'+(s.note||(m==='2026-01'?'복대점만 적자(-10.1%). 대표·임직원 급여는 본사 통합 후 매출비중 배분. 장어원가는 매장 입고 3,340kg×30,000 기준.':'안성(-35.3%)·율량(-29.2%) 매출 급감이 이익 하락의 핵심.'))+'</div>'+detailBlock(s)+'</div>';
   }
   if(s.revOnly){
     var b2=''; s.revOnly.forEach(function(r){ b2+='<tr><td>'+r[0]+'</td><td>'+r[1].toFixed(1)+'</td></tr>'; });
@@ -222,6 +222,25 @@ function renderStore(m){
   return '<div class="card"><h2>오프라인 매장 매출</h2><div class="cs">'+m+'</div>'+
     '<div class="kpis">'+kpi('총매출',s.total.toFixed(1),'백만원 (정산)')+'</div>'+
     '<div class="note">매장별 손익 상세는 이 달 미확정. 매장 총매출만 표시.</div></div>';
+}
+function detailBlock(s){
+  if(!s.detail) return '';
+  var cats=['원재료','인건비','고정비','운영비'];
+  var out='<div style="margin-top:14px"><h3 style="font-size:14px;margin:0 0 6px">📋 매장별 손익 세부항목 <span style="font-weight:400;color:#5b6a80;font-size:12px">(클릭하여 펼치기 · 단위: 백만원 · 괄호는 매출대비)</span></h3>';
+  Object.keys(s.detail).forEach(function(st){
+    var row=null; s.rows.forEach(function(r){ if(r[0]===st) row=r; });
+    var sales=row?row[1]:0;
+    var d=s.detail[st];
+    var cols='';
+    cats.forEach(function(c){
+      var items=d[c]||[]; var sum=0; items.forEach(function(it){ sum+=it[1]; });
+      var li='';
+      items.forEach(function(it){ li+='<tr><td style="padding:3px 6px;color:#cbd5e1">'+it[0]+'</td><td style="padding:3px 6px;text-align:right">'+it[1].toFixed(1)+'<span style="color:#64748b;font-size:10px"> ('+(sales?(it[1]/sales*100).toFixed(1):'0')+'%)</span></td></tr>'; });
+      cols+='<div style="flex:1;min-width:220px"><table style="width:100%;font-size:12px"><thead><tr><th style="text-align:left;padding:4px 6px">'+c+'</th><th style="text-align:right;padding:4px 6px">'+sum.toFixed(1)+' ('+(sales?(sum/sales*100).toFixed(1):'0')+'%)</th></tr></thead><tbody>'+li+'</tbody></table></div>';
+    });
+    out+='<details style="margin:6px 0;border:1px solid #1f2937;border-radius:8px;padding:6px 10px"><summary style="cursor:pointer;font-weight:700">'+st+' <span style="font-weight:400;color:#94a3b8;font-size:12px">매출 '+sales.toFixed(1)+' · 영업이익 '+(row?row[6].toFixed(1)+' ('+row[7]+')':'')+'</span></summary><div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px">'+cols+'</div></details>';
+  });
+  return out+'</div>';
 }
 function assetCard(y){
   if(!y||!y.assetVal) return '';
