@@ -2176,8 +2176,8 @@ function renderStore(storeName) {
 
   // ── 메뉴 ──────────────────────────────────────────
   const menu=d.menu||[];
-  const bySales=[...menu].sort((a,b)=>b.sales-a.sales).slice(0,10);
-  const byQty=[...menu].sort((a,b)=>b.qty-a.qty).slice(0,10);
+  const bySales=[...menu].sort((a,b)=>b.sales-a.sales);
+  const byQty=[...menu].sort((a,b)=>b.qty-a.qty);
   destroyChart('menuSales');
   activeCharts['menuSales']=new Chart(document.getElementById('chart-menu-sales'),{
     type:'bar',indexAxis:'y',
@@ -2597,7 +2597,7 @@ function mobileShowStore(date, storeName, fromScreen){
   if(menuArr.length === 0){
     document.getElementById('m-menu').innerHTML = '<div class="m-empty">메뉴 데이터 없음</div>';
   } else {
-    document.getElementById('m-menu').innerHTML = menuArr.slice(0, 8).map(m => `
+    document.getElementById('m-menu').innerHTML = [...menuArr].sort((a,b)=>b.sales-a.sales).map(m => `
       <div class="m-menu-row">
         <span>${m.name}</span>
         <span class="qty">${m.qty}</span>
@@ -2903,8 +2903,7 @@ function renderMobileStoreMonth(){
   // 메뉴 TOP (월간 합산, 매출 내림차순)
   const menuArr = Object.entries(agg.menu)
     .map(([name, v]) => ({ name, qty:v.qty, sales:v.sales }))
-    .sort((a, b) => b.sales - a.sales)
-    .slice(0, 10);
+    .sort((a, b) => b.sales - a.sales);
   if(menuArr.length === 0){
     document.getElementById('m-sm-menu').innerHTML = '<div class="m-empty">메뉴 데이터 없음</div>';
   } else {
