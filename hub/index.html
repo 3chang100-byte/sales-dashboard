@@ -975,12 +975,16 @@ ul.checklist li.todo-edited label::after {
     <p style="font-size:12.5px;color:#cbd5e1;margin-bottom:8px;">사업 짐 옆에 설렘도. 하나씩 채워가는 개인 목표·버킷리스트.</p>
     <h3 style="color:#5eead4;font-size:13px;margin:6px 0 2px;">✈️ 여행</h3>
     <ul class="checklist" data-key="personal-bucket">
-      <li><input type="checkbox" id="pb_dubai"><label for="pb_dubai"><strong>두바이 여행</strong> — 10월경 (동생 · 박종일 상무 · 본인 3인)</label></li>
+      <li><input type="checkbox" id="pb_dubai"><label for="pb_dubai"><strong>두바이 여행</strong> — 10월경 (동생 · 박종일 상무 · 본인 3인) <span class="note">✈️ 확정 10/22~27 · 에어인디아 D3KW9I (델리 19h 경유, 3인 2,464,800원) · 부동산 실거주 답사(다막 선시티·그랜드 폴로·아라비안 랜치스3) · 10/25 새벽 골프 · 마리나·부르즈할리파</span></label></li>
       <li><input type="checkbox" id="pb_maldives"><label for="pb_maldives"><strong>가족과 몰디브</strong></label></li>
       <li><input type="checkbox" id="pb_disney"><label for="pb_disney"><strong>아이들과 디즈니 크루즈</strong></label></li>
       <li><input type="checkbox" id="pb_chongqing"><label for="pb_chongqing"><strong>충칭 여행</strong></label></li>
-      <li><input type="checkbox" id="pb_bali"><label for="pb_bali"><strong>발리 비치클럽</strong></label></li>
+      <li><input type="checkbox" id="pb_bali"><label for="pb_bali"><strong>발리 비치클럽</strong> <span class="note">✅ 2026-09-10~15 발리(짱구) 다녀옴 · 누사페니다 만타레이 3마리</span></label></li>
       <li><input type="checkbox" id="pb_golf"><label for="pb_golf"><strong>세계 골프장 투어 10개</strong></label></li>
+      <li><input type="checkbox" id="pb_sgjb"><label for="pb_sgjb"><strong>11월 가족여행 싱가포르+조호바루</strong> <span class="note">이삿날 맞춰 · 성인2+아이3 · 5박6일(SG 2박+JB 3박) · 유니버설·레고랜드 · 조호바루 한달살기·유학 답사(EEC·MEC 어학원)</span></label></li>
+      <li><input type="checkbox" id="pb_almaty"><label for="pb_almaty"><strong>알마티 여행</strong></label></li>
+      <li><input type="checkbox" id="pb_manado"><label for="pb_manado"><strong>마나도·부나켄 다이빙</strong></label></li>
+      <li><input type="checkbox" id="pb_krabi"><label for="pb_krabi"><strong>끄라비 혼자 쉼 (4분기)</strong></label></li>
     </ul>
     <h3 style="color:#5eead4;font-size:13px;margin:8px 0 2px;">🏄 액티비티 · 도전</h3>
     <ul class="checklist" data-key="personal-bucket-act">
@@ -996,8 +1000,14 @@ ul.checklist li.todo-edited label::after {
       <li><input type="checkbox" id="pb_vasectomy"><label for="pb_vasectomy"><strong>정관수술</strong></label></li>
       <li><input type="checkbox" id="pb_beard"><label for="pb_beard"><strong>턱수염 제모</strong></label></li>
     </ul>
+    <h3 style="color:#5eead4;font-size:13px;margin:8px 0 2px;">👨‍👩‍👧‍👦 가족 · 교육 (2026-10-01 추가)</h3>
+    <ul class="checklist" data-key="personal-bucket-family">
+      <li><input type="checkbox" id="pb_edu"><label for="pb_edu"><strong>첫째(초4) 두바이 국제학교 입학 준비</strong> <span class="note">현재 영어 0 → 매일 영어 2h · EAL 학교 우선(Dubai British School·GEMS Wellington) · 8/31 기준 학년 배정 · 비교안: 말레이시아·캐나다·베트남</span></label></li>
+      <li><input type="checkbox" id="pb_allow"><label for="pb_allow"><strong>아이들 용돈 → '가족 경제 시스템'</strong> <span class="note">기본일 무급/추가일 유급 · 일요일 월급날 · 쓰기·저축·투자·나눔 4통장 · 참고 『세금 내는 아이들』·데이브 램지</span></label></li>
+      <li><input type="checkbox" id="pb_mkt"><label for="pb_mkt"><strong>마케팅 온라인 교육 시작</strong> <span class="note">배민아카데미 · 소상공인 지식배움터 · 네이버 비즈니스 스쿨 → 메타 블루프린트 → 패스트캠퍼스 AI 마케팅</span></label></li>
+    </ul>
     </div>
-    <script>(function(){var ids=["pb_dubai","pb_maldives","pb_disney","pb_chongqing","pb_bali","pb_golf","pb_moto","pb_motoride","pb_efoil","pb_kite","pb_bodyprofile","pb_weight","pb_vasectomy","pb_beard"];var K="samchang-personal-v1";try{var st=JSON.parse(localStorage.getItem(K)||"{}");ids.forEach(function(i){var e=document.getElementById(i);if(!e)return;e.checked=!!st[i];e.addEventListener("change",function(){var o=JSON.parse(localStorage.getItem(K)||"{}");o[i]=e.checked;localStorage.setItem(K,JSON.stringify(o));});});}catch(e){}})();
+    <script>(function(){var ids=["pb_dubai","pb_maldives","pb_disney","pb_chongqing","pb_bali","pb_golf","pb_moto","pb_motoride","pb_efoil","pb_kite","pb_bodyprofile","pb_weight","pb_vasectomy","pb_beard","pb_sgjb","pb_almaty","pb_manado","pb_krabi","pb_edu","pb_allow","pb_mkt"];var K="samchang-personal-v1";try{var st=JSON.parse(localStorage.getItem(K)||"{}");ids.forEach(function(i){var e=document.getElementById(i);if(!e)return;e.checked=!!st[i];e.addEventListener("change",function(){var o=JSON.parse(localStorage.getItem(K)||"{}");o[i]=e.checked;localStorage.setItem(K,JSON.stringify(o));});});}catch(e){}})();
     var PBK="samchang-personal-collapsed-v1";
     function pbState(){var v=localStorage.getItem(PBK);return v===null?true:v==="1";}
     function pbApply(c){var b=document.getElementById("pb-body"),ch=document.getElementById("pb-chevron");if(b)b.style.display=c?"none":"";if(ch)ch.textContent=c?"▶":"▼";}
@@ -1013,15 +1023,19 @@ ul.checklist li.todo-edited label::after {
     <p style="font-size:12.5px;color:#cbd5e1;margin-bottom:8px;">🎯 목표 <b>월 2권 (하반기 12권)</b> · 읽은 책은 <b>소소한 버킷리스트</b> 블로그에 독후감으로 기록해 자산화.</p>
     <h3 style="color:#c4b5fd;font-size:13px;margin:6px 0 3px;">✅ 지금까지 읽은 책</h3>
     <ul class="checklist" data-key="reading-done" style="list-style:none;padding-left:0;">
+      <li style="padding:4px 0;border-bottom:1px solid #1f2a3a;font-size:13px;color:#e2e8f0;"><b>사업의 철학</b> — 마이클 거버 <span class="note">독후감 1부 블로그 · 시스템으로 일하기</span></li>
+      <li style="padding:4px 0;border-bottom:1px solid #1f2a3a;font-size:13px;color:#e2e8f0;"><b>싯다르타</b> — 헤르만 헤세 <span class="note">스스로 길을 찾는 여정</span></li>
+      <li style="padding:4px 0;border-bottom:1px solid #1f2a3a;font-size:13px;color:#e2e8f0;"><b>돈, 뜨겁게 사랑하고 차갑게 다루어라</b> — 앙드레 코스톨라니 <span class="note">투자 심리·장기 관점</span></li>
+      <li style="padding:4px 0;border-bottom:1px solid #1f2a3a;font-size:13px;color:#e2e8f0;"><b>나발 라비칸트의 부와 행복의 원칙</b> <span class="note">레버리지(코드·미디어·AI) · 행복은 기술</span></li>
       <li style="padding:4px 0;border-bottom:1px solid #1f2a3a;font-size:13px;color:#e2e8f0;"><b>매출 10억 원대 기업을 100억 원 기업으로 만드는 방법</b> <span class="note">2026.06 · 시스템 회사·조직 설계 (100억 전략 직결)</span></li>
       <li style="padding:4px 0;border-bottom:1px solid #1f2a3a;font-size:13px;color:#e2e8f0;"><b>나는 단순하게 살기로 했다</b> — 사사키 후미오 <span class="note">미니멀·본질에 집중</span></li>
       <li style="padding:4px 0;border-bottom:1px solid #1f2a3a;font-size:13px;color:#e2e8f0;"><b>성공의 새로운 심리학 (마인드셋)</b> — 캐롤 드웩 <span class="note">성장 마인드셋</span></li>
       <li style="padding:4px 0;font-size:13px;color:#e2e8f0;"><b>거절은 나를 다치게하지 못한다</b> <span class="note">실패에 대한 패러다임 전환</span></li>
     </ul>
-    <p style="font-size:11.5px;color:#94a3b8;margin:6px 0 0;">※ 블로그 독서 카테고리 기준. 빠진 책 있으면 알려주시면 추가합니다.</p>
+    <p style="font-size:11.5px;color:#94a3b8;margin:6px 0 0;">📊 <b style="color:#c4b5fd;">누적 8권 / 하반기 목표 12권 (67%)</b> · 2026-10-01 독서방 갱신<br>※ 블로그 독서 카테고리 기준. 빠진 책 있으면 알려주시면 추가합니다.</p>
     <h3 style="color:#c4b5fd;font-size:13px;margin:10px 0 3px;">📖 다음 읽을 책 후보 (추천)</h3>
     <p style="font-size:12.5px;color:#cbd5e1;"><b style="color:#c4b5fd;">우선(심리·평온):</b> 미움받을 용기 · 데일 카네기 자기관리론 · 스틸니스</p>
-    <p style="font-size:11.5px;color:#94a3b8;">기타 후보: 사업의 철학 · 나발 라비칸트의 부와 행복의 원칙 · 두 번째 산 · 하마터면 열심히 살 뻔했다 · <span style="color:#64748b;">(독서는 별도 채팅으로 분리 — 인계보고서 작성)</span></p>
+    <p style="font-size:11.5px;color:#94a3b8;">기타 후보: <s>사업의 철학</s>✅ · <s>나발 라비칸트의 부와 행복의 원칙</s>✅ · 두 번째 산 · 하마터면 열심히 살 뻔했다 · <span style="color:#64748b;">(독서는 별도 채팅으로 분리 — 인계보고서 작성)</span></p>
   </div>
 
   <div class="header">
@@ -1042,6 +1056,12 @@ ul.checklist li.todo-edited label::after {
   <div class="section no-collapse" id="update-log" style="border-left:4px solid #94a3b8;">
 <h2><span class="icon-circle" style="background:#1e293b;color:#cbd5e1;">🗂️</span> 갱신 로그 <span class="tag" style="background:#1e293b;color:#94a3b8;">모든 프로젝트방 공용 · 최신이 위</span></h2>
 <ul style="font-size:13px;color:#cbd5e1;padding-left:18px;margin:4px 0;" id="update-log-list">
+<li><b>2026-10-01</b> · 양기지문방 · 현황 업데이트 블록 추가(섹션 상단): 상품 25포·온라인 39,000원 확정, 판매 0건→리뷰 30개 최우선, 판매개시 전제(비엘비 입고·자동발송 테스트), 예산 월 100만+, 고객센터 3채널 상태, 코트라 기업등록·에코넥트 수출, 과세구분·납품확약서 정합성 확인사항</li>
+<li><b>2026-10-01</b> · MT5 자동매매방 · 합산잔고 $198.7K(₩2.7억)·누적수익률 +7.0%(King +7.5%·Athena +4.7%) 반영 · 무포지션 정상·누적인출 $2,889 · 10/8 King+Athena 정기인출 예정 · King 복리 전환 검토 중 (9/30 기준)</li>
+<li><b>2026-10-01</b> · 삼창수산 매출대시보드방 · 2024~2026 3개년 일별매출 통합(891일) · 연도선택/요일패턴/연간비교 탭 신설 · 양기지문 장어진액 상품명 통일(매장판매 45개·267만 합산) · PC 화면 레이아웃 대응 · 7월 매출보고서(3개년)·청주2개점 하락원인 분석 작성 · 통합대시보드에 매출 대시보드 iframe 섹션 추가</li>
+<li><b>2026-10-01</b> · 장어유통·광주방 · 9/21 유통위 출하가 19,000·위원장 교체 / 9/28 회장 보고 자료(축양장 27조 5,000만·인력 18명) / 맹 회장 통화 2건(설 배제·담판 문서·진양상가 1,200평) / 9/29 삼창 프랜차이즈 우선·로봇 보류 / 2미 28톤 대책 / 단톡 설문·카드·도식 게시 대기 / 장어원가표 — 신규사업·축양장 섹션에 누적</li>
+<li><b>2026-10-01</b> · 독서·버킷리스트방 · 두바이 출장 확정(10/22~27 AI D3KW9I·답사 일정) · 발리 완료 표시 · 11월 싱가포르+조호바루 가족여행 · 알마티·마나도·끄라비 추가 · 가족·교육 블록 신설(첫째 두바이 유학 준비·용돈 시스템·마케팅 교육) · 독서 4권 추가(누적 8권)</li>
+<li><b>2026-10-01</b> · HQ방(율량) · 율량 장어광장: B안(1인 300g) 메뉴 채택 · 300g=손질 후 1인분 · 점심 뚝배기 제외 · 전국 100g 최저가 조사(17,900 정가 제안, 결정 대기) · 인수인계 A/B 불일치 점검 · 메뉴판·게시물 시안 3종</li>
 <li><b>2026-10-01</b> · 통합운영방 · 공용 원본으로 전환(허브 _대시보드 폴더) + 갱신 로그 섹션 신설 · 9월 손익 확정(매장 −43.6·통합 −40.8) · 율량 장어광장 인수인계 작성</li>
 </ul>
 <div style="font-size:12px;color:#64748b;margin-top:4px;">형식: 날짜 · 방 이름 · 변경 요약. 다른 방에서 갱신했으면 여기에 남길 것.</div>
@@ -1052,7 +1072,7 @@ ul.checklist li.todo-edited label::after {
     <p style="font-size:12.5px;color:#cbd5e1;margin-bottom:10px;">재무·양만장·양기지문·반듯한·MT5·인사 전 라인의 현재 위치와 '다음 한 걸음' (2026-06-26 기준)</p>
     <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
       <thead><tr style="background:#0b1220;"><th style="padding:7px 9px;border:1px solid #243044;color:#93c5fd;text-align:left;">라인</th><th style="padding:7px 9px;border:1px solid #243044;color:#93c5fd;text-align:left;">현재</th><th style="padding:7px 9px;border:1px solid #243044;color:#93c5fd;text-align:left;">다음 한 걸음</th><th style="padding:7px 9px;border:1px solid #243044;color:#93c5fd;">시급</th></tr></thead>
-      <tbody><tr><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;"><b style="color:#e2e8f0;">🥤 양기지문</b></td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#cbd5e1;">6월말 출시 D-day · 매대 디자인·물류 3PL 계약서 작성</td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#fcd34d;">계약 날인 · 매대 5개점 설치 · 스마트스토어/상세페이지 오픈</td><td style="padding:7px 9px;border:1px solid #243044;text-align:center;color:#f87171;font-weight:700;white-space:nowrap;">🔥 최우선</td></tr><tr><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;"><b style="color:#e2e8f0;">🐟 양만장</b></td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#cbd5e1;">HACCP 등록 완료 ✅ · 법인전환 경로 정정(개인사업→영어조합법인)</td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#fcd34d;">무항생제 인증 추진 · 양상진/세무사 답(어업인 자격·은행 채무이전) 회수</td><td style="padding:7px 9px;border:1px solid #243044;text-align:center;color:#fbbf24;font-weight:700;white-space:nowrap;">중</td></tr><tr><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;"><b style="color:#e2e8f0;">💰 재무관리</b></td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#cbd5e1;">매출·손익 자동화 대시보드 운영</td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#fcd34d;">재무 위임 SOP(입력=황선미 / 승인=대표) 도입</td><td style="padding:7px 9px;border:1px solid #243044;text-align:center;color:#fbbf24;font-weight:700;white-space:nowrap;">중</td></tr><tr><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;"><b style="color:#e2e8f0;">🏢 반듯한</b></td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#cbd5e1;">영광수협 중도매인 정식 등록 ✅ · 산지 직매입 권한</td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#fcd34d;">산지 직매입 운영 안착(가격·물량 루틴)</td><td style="padding:7px 9px;border:1px solid #243044;text-align:center;color:#94a3b8;font-weight:700;white-space:nowrap;">저</td></tr><tr><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;"><b style="color:#e2e8f0;">📈 MT5 자동매매</b></td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#cbd5e1;">Vantage VPS 정상 거래 중(포지션 보유)</td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#fcd34d;">낙폭·손익 주기 점검(일일 잔고 알림 검토) ※투자판단 본인</td><td style="padding:7px 9px;border:1px solid #243044;text-align:center;color:#94a3b8;font-weight:700;white-space:nowrap;">저</td></tr><tr><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;"><b style="color:#e2e8f0;">🧑‍💼 인사·조직</b></td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#cbd5e1;">조직도 정리(점장 4·전예령 온라인) · SV 공석</td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#fcd34d;">SV 채용 JD 확정 · 인시매출액 도구 완성 · 핵심 SOP</td><td style="padding:7px 9px;border:1px solid #243044;text-align:center;color:#fbbf24;font-weight:700;white-space:nowrap;">중 ★채용1순위</td></tr></tbody>
+      <tbody><tr><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;"><b style="color:#e2e8f0;">🥤 양기지문</b></td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#cbd5e1;">6월말 출시 D-day · 매대 디자인·물류 3PL 계약서 작성</td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#fcd34d;">계약 날인 · 매대 5개점 설치 · 스마트스토어/상세페이지 오픈</td><td style="padding:7px 9px;border:1px solid #243044;text-align:center;color:#f87171;font-weight:700;white-space:nowrap;">🔥 최우선</td></tr><tr><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;"><b style="color:#e2e8f0;">🐟 양만장</b></td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#cbd5e1;">HACCP 등록 완료 ✅ · 법인전환 경로 정정(개인사업→영어조합법인)</td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#fcd34d;">무항생제 인증 추진 · 양상진/세무사 답(어업인 자격·은행 채무이전) 회수</td><td style="padding:7px 9px;border:1px solid #243044;text-align:center;color:#fbbf24;font-weight:700;white-space:nowrap;">중</td></tr><tr><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;"><b style="color:#e2e8f0;">💰 재무관리</b></td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#cbd5e1;">매출·손익 자동화 대시보드 운영</td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#fcd34d;">재무 위임 SOP(입력=황선미 / 승인=대표) 도입</td><td style="padding:7px 9px;border:1px solid #243044;text-align:center;color:#fbbf24;font-weight:700;white-space:nowrap;">중</td></tr><tr><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;"><b style="color:#e2e8f0;">🏢 반듯한</b></td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#cbd5e1;">영광수협 중도매인 정식 등록 ✅ · 산지 직매입 권한</td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#fcd34d;">산지 직매입 운영 안착(가격·물량 루틴)</td><td style="padding:7px 9px;border:1px solid #243044;text-align:center;color:#94a3b8;font-weight:700;white-space:nowrap;">저</td></tr><tr><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;"><b style="color:#e2e8f0;">📈 MT5 자동매매</b></td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#cbd5e1;">합산잔고 약 $198.7K(₩2.7억)·누적 +7.0%·무포지션 정상·누적인출 $2,889 (9/30 기준)</td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#fcd34d;">10/8 정기인출(King+Athena 첫 포함)·King 복리 전환 검토 ※투자판단 본인</td><td style="padding:7px 9px;border:1px solid #243044;text-align:center;color:#94a3b8;font-weight:700;white-space:nowrap;">저</td></tr><tr><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;"><b style="color:#e2e8f0;">🧑‍💼 인사·조직</b></td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#cbd5e1;">조직도 정리(점장 4·전예령 온라인) · SV 공석</td><td style="padding:7px 9px;border:1px solid #243044;vertical-align:top;" style="padding:7px 9px;border:1px solid #243044;color:#fcd34d;">SV 채용 JD 확정 · 인시매출액 도구 완성 · 핵심 SOP</td><td style="padding:7px 9px;border:1px solid #243044;text-align:center;color:#fbbf24;font-weight:700;white-space:nowrap;">중 ★채용1순위</td></tr></tbody>
     </table>
     <div style="margin-top:10px;font-size:12px;color:#cbd5e1;background:#0b1220;border-radius:8px;padding:9px 12px;"><b style="color:#6ee7b7;">단기 진행건:</b> (주)삼창 우리은행 여신 서류 마무리 · 파장어뚝배기 4주차 평가(7/3) · 양도세 신고·납부 완료 ✅ · 오사카 여행 7/3~5</div>
     <div style="margin-top:6px;font-size:12px;color:#fca5a5;background:#2a1212;border-radius:8px;padding:9px 12px;">⚠️ <b>인프라 블로커:</b> 허브 폴더 재연결 미완 → 폴더 정리·사본 동기화·예약작업 경로가 막혀 있음 (코워크에서 '삼창 그룹 운영 허브' 폴더 재연결 필요)</div>
@@ -1135,6 +1155,13 @@ ul.checklist li.todo-edited label::after {
     <h2><span class="icon-circle" style="background:#075985;color:#bae6fd;">🧾</span> 통합 손익계산서 라이브러리 <span class="tag" style="background:#075985;color:#bae6fd;">월별 · 항목선택</span></h2>
     <p style="font-size:12px;color:#bae6fd;margin-bottom:8px;">월 선택 + 항목(매장/양만/조합/통합) 선택 시 해당 손익 요약이 나옵니다.</p>
     <iframe title="월별 손익 라이브러리" src="https://3chang100-byte.github.io/sales-dashboard/pl-library/" style="width:100%;height:720px;border:1px solid #1f2a3a;border-radius:10px;background:#fff;"></iframe>
+  </div>
+
+  <!-- 삼창수산 매출 대시보드 (매출 대시보드방) -->
+  <div class="section no-collapse" id="sales-dashboard" style="border-left:4px solid #22d3ee;">
+    <h2><span class="icon-circle" style="background:#0e7490;color:#a5f3fc;">📊</span> 삼창수산 매출 대시보드 <span class="tag" style="background:#0e7490;color:#a5f3fc;">3개년 · 일별 · PC/모바일</span></h2>
+    <p style="font-size:12px;color:#a5f3fc;margin-bottom:8px;">2024~2026년 전 매장 일별 매출 · 연도/월/요일 선택 · 연간 비교 탭 · 양기지문 장어진액 매장 판매 반영. <a href="https://3chang100-byte.github.io/sales-dashboard/" target="_blank" rel="noopener" style="color:#67e8f9;font-weight:700;">새 창으로 열기 ↗</a></p>
+    <iframe title="삼창수산 매출 대시보드" src="https://3chang100-byte.github.io/sales-dashboard/" style="width:100%;height:760px;border:1px solid #1f2a3a;border-radius:10px;background:#0b1220;"></iframe>
   </div>
 
 
@@ -1760,6 +1787,21 @@ ul.checklist li.todo-edited label::after {
   <div class="section">
     <h2><span class="icon-circle" style="background:#fce7f3;color:#9f1239;">🏪</span> 안성 원곡점 — 양기지문(養氣之門) 사업 준비 중 <span class="tag red">우선순위 높음</span> <span class="tag yellow">🎯 6월말 대량 생산 D-day</span></h2>
 
+    <div style="background:#132032;border:1px solid #1f6feb;border-left:4px solid #3b82f6;border-radius:10px;padding:12px 14px;margin:10px 0;">
+      <div style="font-size:13px;font-weight:800;color:#93c5fd;margin-bottom:6px;">🔄 현황 업데이트 (2026-10-01) · 온라인 사업 본격 준비 단계</div>
+      <ul style="list-style:none;padding:0;margin:0;font-size:12.5px;color:#e2e8f0;line-height:1.7;">
+        <li>• <b>상품 확정</b>: 25포 1박스 · 온라인 <b>39,000원</b>(런칭 파격가) / 오프라인 49,000원 <span style="color:#94a3b8;">(기존 30포→25포 변경)</span></li>
+        <li>• <b>판매</b>: 온라인 0건(콜드스타트) → 최우선 = <b style="color:#fcd34d;">리뷰 30개</b>(평점 4.7+·포토 20+) → 넘으면 유입광고 스케일</li>
+        <li>• <b>물량</b>: 총 3,200박스(25포) 확정 · 2026-12-31 완납 확약 · 현 공장 주 100박스+ <span style="color:#f87171;">(체움 대량생산 가동이 공급 병목)</span></li>
+        <li>• <b>판매개시 전제</b>: ㈜비엘비(이천) 3PL 입고 → 자동발송 테스트 1건 → 구매형 체험단(협찬 표기 필수)</li>
+        <li>• <b>마케팅</b>: 예산 월 100만+ (초반 리뷰 확보 집중→임계 후 유입 스케일) · 자료 6종 완성(허브 저장)</li>
+        <li>• <b>고객센터</b>: 웹 AI 상담·네이버 톡톡 완료 / 전화 KT 인포메시징 가입만 남음</li>
+        <li>• <b>수출</b>: 에코넥트(미국 LA 70개 마켓) 진행 · 코트라 기업등록 완료(8/20 아이디·소속기업 연결)</li>
+        <li>• <b>컴플라이언스</b>: 일반 가공식품(건강기능식품 아님) — 효능 단정 금지 / 이화마을 콜라보 광고 서면동의 필요</li>
+        <li>• <b>확인 필요</b>: 과세구분(가공식품 과세 ↔ 면세사업자, 세무 확인) · 납품확약서 문구 "2,000박스" vs 실물량 3,200박스 정합성</li>
+      </ul>
+    </div>
+
     <p style="font-size:13px;color:#cbd5e1;margin-bottom:10px;">
       <strong>물리 매장</strong>: (주)삼창 식당 + 삼창영어조합법인 안성원곡지점 공존 / <strong>장어진액 브랜드 양기지문(養氣之門)</strong> 제조·공급 거점 신규 오픈 준비
     </p>
@@ -2190,6 +2232,8 @@ ul.checklist li.todo-edited label::after {
       <li><input type="checkbox" id="cy1"><label for="cy1">입지·수조·수질(지하수) 인프라 검토</label></li>
       <li><input type="checkbox" id="cy2"><label for="cy2">(주)반듯한 명의 인허가·등록</label></li>
       <li><input type="checkbox" id="cy3"><label for="cy3">생산자↔수도권 중상 매칭 물량 연계 (유통 라인 강화)</label></li>
+      <li><input type="checkbox" id="cy4"><label for="cy4"><strong>🏗️ 삼동443 지하 1단계(9/28 회장 보고)</strong> — 증축부 391㎡에 2×2m 수조 27조·체류 3일 통과형 = 월 55톤(전국 1,300톤의 4%). 설비 <strong>5,000만</strong>(수조·배관 1,500 / 여과·산소·펌프 1,500 / 전기 500 / 선별·계량·하차 800 / 바닥·배수·조명 400 / 예비 300, VAT 별도) — 기초·급배수·수전·정화조 연결은 건물(삼이) 측, 지하 보온으로 히트펌프 생략. 확장 64조 +5,000만 / 242조(월 496톤) +2.5억. ⚠ 증축부 허가용도 주차장 → 용도변경 선행. 직판(식당이 새벽·오후 수조 실물 보고 규격 단위 구매, 미수 0) 병행</label></li>
+      <li><input type="checkbox" id="cy5"><label for="cy5"><strong>👥 축양장 인력 4명</strong> — 축양·선별 2(매장 손질 겸무, 05~14시)·계량·정산·직판 1·배송·하차 1. 착공 승인 시 10월 초 발주 → 11월 중순 가동</label></li>
     </ul>
   </div>
 
@@ -2279,6 +2323,10 @@ ul.checklist li.todo-edited label::after {
       <li><input type="checkbox" id="yl11"><label for="yl11"><strong>🎨 브랜드 정의서 v1.0 완성(9/29)</strong> — 三昌 다짐(떳떳·만족·보탬) 뿌리 · 약속 3(직접 키운 자포니카만·<strong>장어이력표시제</strong>·소금 증명) · 3색(브라운·크림·오렌지, 노랑 제외) · 게시물 3기둥(믿음·나눔·이야기) · 숫자3 확정 4종(삼창데이 3·13·23일, 3번째 방문, 3대 가족, 3/3 三昌의 날). 7_브랜드_마케팅/삼창_브랜드정의서_v1.0. 다음: 현수막 10/1~3 접수·오늘의 장어 보드·플레이스 5점 문안</label></li>
       <li><input type="checkbox" id="yl12"><label for="yl12"><strong>🎨 브랜드 정의서 v2.0 (9/30, 마스터 문서 11절)</strong> — 3브랜드(삼창수산·장어광장·양기지문) · 외부원물 SOP("국내산 민물장어(외부 양만장)·오늘은 직영분 없음") · 양기지문 87.2% 단일화는 <strong>이화마을 성적서 확인 후</strong> · 가맹 원물 공급=삼창영어조합법인 · CS 스크립트 4종. 실행가이드라인 <strong>현장실무편 5p</strong>(공지문·인쇄 원안·파사드·삼창데이) 완성</label></li>
       <li><input type="checkbox" id="yl13"><label for="yl13"><strong>🖼️ 매장 톤·방식 결정(9/30)</strong> — 톤=<strong>브라운 화이트</strong>(크림 바탕 70%+, 브라운은 간판·프레임 포인트만, 넓으면 답답). 전면 인테리어 보류 → <strong>게시물·미디어 포인트 방식</strong>: ①저가 배너·현수막 전부 제거(0원) ②벽 1면 갤러리(다짐 현판+양만장 사진 2+나눔 보드, 30~50만) ③TV 1대 3분 루프(급이일지 화면 연동, 40~60만) ④3초존 소품(A3 보드·소금 단지·A5 카드, 10~15만) ⑤전구 3000K 교체(5~10만). 5개점 500만 이내. 시안: 공간시안_2026-09-30/(평택·오산 비포애프터). 다음: 매장별 체크리스트</label></li>
+      <li><input type="checkbox" id="yl14"><label for="yl14"><strong>✅ 10/1 결정</strong> — 메뉴판은 <strong>B안(1인 300g 19,900·상차림 포함)</strong>으로. <strong>300g = 손질 후 1인분 중량</strong>. 점심 뚝배기 <strong>제외</strong>. 최종 가격은 <strong>100g당 전국 최저가 확인 후 결정</strong></label></li>
+      <li><input type="checkbox" id="yl15"><label for="yl15"><strong>💰 전국 가격 조사(10/1, 손질 100g 환산·1kg=손질 650g)</strong> — 확인 최저 ≈<strong>6,000</strong>(1kg 39,000+상차림 3,000, 2026-08 후기) · 진만(율량동) 6,600 · 기찬 9,700 · 처음본명품(자포니카) 반판 300g 31,000=10,333 · 율량 현행 9,900. 우리 <strong>19,900=6,633</strong> / <strong>17,900=5,967(확인 최저보다 낮음)</strong>. 직송 20,000·수율 80% 기준 장어 원가율 19,900=38% / 17,900=42%(B안 하한) / 14,900=50%. 수율 65%면 46·52·62%. ⭐제안: <strong>17,900 정가</strong>(전국 최저 수준 표방). ⚠네이버 플레이스 추가 확인 후 "전국 최저" 문구 사용</label></li>
+      <li><input type="checkbox" id="yl16"><label for="yl16"><strong>🔎 인수인계 점검(10/1)</strong> — A(허브 05_매장_율량점, 9/17 rev.2 기준: 100g 9,900 유지·점심 1순위) vs B(회장님 보고 9/28: 300g 19,900 전면 인하) 충돌 → B 채택. ⚠B 손익 기준객수 일 45명·월 6,800만 ↔ 9월 실적 일 20.1명·3,610만 → 성공조건 "+70%(77명)"은 실제 <strong>약 3.8배</strong>(회장님 보고서 정정 필요) · 예산 권장 불일치(인수인계 최소안 1,720~3,040만 vs 엑셀 3안 B 표준 1.18억) · 손익 장어원가 20,000 vs 공통 30,000 규칙 충돌. 데크 구조진단·법규 <strong>미착수</strong>. 다음: 통합 인수인계 v3</label></li>
+      <li><input type="checkbox" id="yl17"><label for="yl17"><strong>🖨️ 메뉴판·게시물 시안 3종(10/1)</strong> — A3 차림표 · A3 1인분 300g 가격 게시물 · A3 「오늘 올라온 장어」 보드(출하일·호지·크기 손글씨). 달 노랑+숯색(장어광장 분리). 남은 것: 최종 가격 · 곁들임/주류 가격 · 쌀·김치 원산지</label></li>
     </ul>
     <h3>🧾 매장 운영통제 — 현금매출 관리 (9/8 확정)</h3>
     <ul class="checklist" data-key="cash-control">
@@ -2843,6 +2891,13 @@ ul.checklist li.todo-edited label::after {
       <li><input type="checkbox" id="jp1s"><label for="jp1s"><strong>🚨 계약 재협상(9/22·25)</strong> — 초안 "1억 예치+월 3,000"은 원합의(매출%)와 다름·실무 마이너스·배임 리스크. <strong>설 대표·본부장 경유 없이 김석희 회장 직접 소통</strong>. 원가 근거: 매입 27,000/100g 4,500/순살 800g → 원가율 75%(불가). 확정 방향: <strong>예치금·투자 없이 수수료 6:4~7:3 운영권</strong>, 하청 아닌 "공동 출자 프로젝트", 삼이 외식사업부·박종일 사외이사 명함. 삼이 내부: 회장 실무 미파악·'설' 전언 의존·3년째 바닥 하자 → 오픈 지연 위험</label></li>
       <li><input type="checkbox" id="jp1t"><label for="jp1t"><strong>🏗️ 오픈·인력·설비(9/25)</strong> — 가오픈 10월 말 → <strong>11월 중순 잠정</strong>(바닥·아스콘 지연). 120테이블→축소 검토, 호텔식 심플, D-30 상주팀. <strong>총괄 매니저 채용 추진</strong>(한·일식 15년, 75테이블 경력, 월 500·주6·숙소, 경력자 2명 동반, 10/1~ 출근). 수족관 40개 2,000만·부자재 포함 5,000만 미만, 서빙로봇 20대 3억 재검토, 테이블오더 필수. 메뉴: 장어덮밥 핵심(공급 17,000→판매 27,000), 반찬 최소·김치 셀프, 손질 기술자 채용. 총투자 90억·주차 350대·지하연결 27일 보고</label></li>
       <li><input type="checkbox" id="jp1u"><label for="jp1u"><strong>🐟 축양장 공사 견적(9/22)</strong> — 100평·사각수조 30~40개. 콘크리트 vs PP 수조 단가 차이 커 <strong>도면 송부 후 견적</strong>. 바닥 방수·트렌치·평탄화 ~2,000만, 유사규모 전체 ~1억. 지하수 100톤+. 시공업체 명함 확보·비교견적, 청해수산 수족관 실사</label></li>
+      <li><input type="checkbox" id="jp1v"><label for="jp1v"><strong>⚖️ 영광수협 유통위원회(9/21)</strong> — 출하가 <strong>16,000→19,000원</strong>(30마리 이상 대형 일괄, 소형 19/18/17천 차등) 9/21 작업분부터 적용. <strong>위원장 교체</strong>(기존 위원장 주민 거부 → 신임 추대, 이름 확인 필요). 3자 협의체·수입장어(평택 유입)·무허가 중도매인 근절은 차기 이월. 조합장 독대 성사 여부 불명. → 공급가 기준 17,000→<strong>19,000+마진 1,000=20,000</strong>으로 전 자료 갱신</label></li>
+      <li><input type="checkbox" id="jp1w"><label for="jp1w"><strong>📑 9/28 회장 보고 자료 완성</strong> — 큰글씨 4장(인력 18명·축양장 1단계 27조 <strong>5,000만</strong>·월 55톤·10/31) + 상세본 4장(총괄 요건: 100석+ 매장 총괄 3년·오픈 경험 필수·월 500+성과급 / 축양장 항목별 예산 / 단계별 물량·배분표 19,000 기준). 04_매장_광주400석/. 결정 요청 ①총괄 채용 ②27조 착공 ③공급가 20,000 ④예치금·고정지급 없음</label></li>
+      <li><input type="checkbox" id="jp1x"><label for="jp1x"><strong>☎️ 맹 회장 통화(9/20·9/28)</strong> — 9/20: "부회장(설)·외부 말 듣지 말고 김석희·맹·한 셋만. 1억에 3천 절대 안 됨, 예치금 얘기 나오면 거절". 9/28: 보고 자리에서 설이 "수족관 투자 못 한다" 발언 → 회장은 처음 들음, <strong>회장이 설 대표를 자르겠다</strong>고 함. 맹: 수익구조·배분·급여 매듭짓고 시작, 수족관은 절반씩 양보(3~4천). <strong>사업계획서(수익구조·분배·급여·자금 2.4억) 문서로 주면 본인이 회장과 담판</strong>. 신규: 충무로 대한극장 앞 진양상가 2층 1,200평 "최대 장어집"(인테리어 30억 맹·김 측, 운영 삼창) 9/30 14시 협의 · 천안 양만장 부지 재방문 요청. 전사: 07_자료_원본/통화전사_맹회장_*.txt</label></li>
+      <li><input type="checkbox" id="jp1y"><label for="jp1y"><strong>🔀 9/29 내부 결론</strong> — "삼이 프로젝트 회의적 → <strong>자체 삼창 프랜차이즈 우선</strong>" (가맹정보공개서 등록 완료 → 메타 광고 모집, 본사 땅 매입·저렴 월세 모델, 태안 야장형). 자동 구이 로봇(그릴렉스 4,000만+/렌탈 69만) 실물 테스트 → 세로 굽기 불가·익힘 미달로 <strong>보류</strong>, 운영은 초벌+셀프 마무리. ⚠ 맹 회장 담판 문서(투자 0·수수료 운영권)는 잃을 게 없으니 병행 송부 권고</label></li>
+      <li><input type="checkbox" id="jp1z"><label for="jp1z"><strong>🐟 2미 재고 28톤 대책(9/18, 회장 보고)</strong> — 2미 사료비 실측 월 1,600만. ①추석 전 유지급이·선예약 ②추석 후 2주 도매 10~15톤(위판 5톤 이하 분할) ③10~11월 매장 "한 마리 세트 19,900/24,900"+삼이+B2B 정액. 하한가 15,000. 호지 9개 비워 2027년산 치어 입식(2027 하반기 물량 급감·2028 회복 대비). 03_육질_원가/</label></li>
+      <li><input type="checkbox" id="jp2a"><label for="jp2a"><strong>📣 단톡방(332명) 의견 수렴 준비</strong> — 의견 요청 카드(1080×2232)·유통구조 도식·3분 설문 페이지(역할별 분기 36문항, Netlify 폼: 손해 지점·거래처 바꿀 조건·유료 서비스·픽업 할인폭·현장 도매 의향) 완성, <strong>게시 대기</strong>(방장 사전 양해 후 평일 15~16시). 포지션="산지·마진·날짜 밝히는 중상". 단톡 9/16~20 신호: 도매가 "다음주 인상" vs 식당 "전멸·대접 메뉴에서 밀림" 가위 구간. 01_삼이그룹_유통사업/</label></li>
+      <li><input type="checkbox" id="jp2b"><label for="jp2b"><strong>🧮 장어원가표(10/1)</strong> — 출하가 19,000~30,000별 손질육 100g 원가(÷8 또는 ÷6)·4,200원 판매 마진율·저가 BEP(고가 15명 vs 저가 80명/일). 100g 4,200원은 출하가 22,000·수율 80%에서만 성립. 메모리 명령어 "장어원가표" · 03_육질_원가/장어_판매마진표.pdf</label></li>
       <li><input type="checkbox" id="jp1e"><label for="jp1e"><strong>📊 시장 근거(9/5)</strong> — 국내 장어 유통 연 15,736톤·월 1,300톤, kg 30,000 기준 ≈ <strong>4,000억 시장·주요 참여자 10명 이내</strong>(진입·장악 여지 큼). 생산지 장흥수협 12,000톤·고창 2,500·영광 500 / 양만장 400개 중 100톤+ 100개</label></li>
       <li><input type="checkbox" id="jp1f"><label for="jp1f"><strong>⚠️ 광주 유통허브 딜 — 회피한 조건 기록</strong>: 원안=매출하한 월 5억(미달 시 차액보전)·보증금 1억·수수료 10%(협의 8%). 이 리스크 때문에 "단순 납품+도매판매"로 선회. 광주 현장 일매출 1억은 식당 단독 불가(50테이블·3회전=1,500~2,000만)→도매+포장+마트+식당 합산 논리</label></li>
       <li><input type="checkbox" id="jp1g"><label for="jp1g"><strong>광주(경기) 운영 준비</strong> — ①감탄사장어 책임자 운영책임자 영입(동업자 정신)·수족관 설계부터 참여 ②서현수산 소싱(주 1톤·월 5톤) ③지하 축양장 설계(도면→차량하차·선별기·수조·오수·냉동 동선) ④수온 18~20도(지하수)</label></li>
