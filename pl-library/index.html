@@ -316,16 +316,30 @@ function renderJohap(m){
     '<tr class="tot"><td>영업이익</td><td>+'+j.oi.toFixed(1)+'</td></tr></tbody></table>'+
     '<div class="note">내부거래(→매장) '+j.internal.toFixed(1)+' ('+it.toFixed(0)+'%) · 외부거래(서연수산 등) '+j.external.toFixed(1)+' ('+(100-it).toFixed(0)+'%). 외부 도매처 확대 시 그룹 외형 매출 증가.</div></div>';
 }
+function sgn(v){ return (v>=0?'+':'')+v.toFixed(1); }
+function renderOnline(m){
+  var o=D[m].online; if(!o) return '';
+  var op=(o.oi>=0?'pos':'neg'); var rows='';
+  (o.items||[]).forEach(function(it){ rows+='<tr><td>'+it[0]+'</td><td>'+it[1].toFixed(2)+'</td></tr>'; });
+  return '<div class="card"><h2>안성지점(온라인 매장) 손익 요약 — 양기지문</h2><div class="cs">'+m+' · 삼창영어조합법인 안성지점 · 단위: 백만원</div>'+
+    '<div class="kpis">'+kpi('온라인 매출',o.rev.toFixed(2),'스마트스토어 정산')+kpi('매출총이익',(o.rev-o.cogs).toFixed(2),((o.rev-o.cogs)/o.rev*100).toFixed(0)+'%')+kpi('영업이익',sgn(o.oi),o.rate)+'</div>'+
+    '<table><thead><tr><th>항목</th><th>금액</th></tr></thead><tbody>'+
+    '<tr><td>매출 (스마트스토어 정산 입금)</td><td>'+o.rev.toFixed(2)+'</td></tr>'+
+    '<tr><td>매출원가 (약 '+o.boxes+'박스 × 15,000)</td><td>'+o.cogs.toFixed(2)+'</td></tr>'+rows+
+    '<tr class="tot"><td>영업이익</td><td class="'+op+'">'+sgn(o.oi)+'</td></tr></tbody></table>'+
+    '<div class="note">'+(o.note||'')+'</div></div>';
+}
 function renderTonghap(m){
   var t=D[m].tonghap;
   if(!t) return empty(m+' 통합손익 데이터 미확정');
   return '<div class="card"><h2>통합 손익계산서 요약 (연결)</h2><div class="cs">'+m+' · 내부거래 제거 · 단위: 백만원</div>'+
-    '<div class="big"><div><div class="bl">그룹 통합 영업이익 (외부매출 '+t.ext.toFixed(1)+'백만)</div></div><div class="bv">+'+t.con.toFixed(1)+' · '+t.rate+'</div></div>'+
+    '<div class="big"><div><div class="bl">그룹 통합 영업이익 (외부매출 '+t.ext.toFixed(1)+'백만)</div></div><div class="bv">'+sgn(t.con)+' · '+t.rate+'</div></div>'+
     '<table><thead><tr><th>단계</th><th>영업이익</th></tr></thead><tbody>'+
     '<tr><td>양만(생산)</td><td class="neg">'+t.ym.toFixed(1)+'</td></tr>'+
     '<tr><td>조합(유통)</td><td class="pos">+'+t.jo.toFixed(1)+'</td></tr>'+
-    '<tr><td>매장(소매)</td><td class="pos">+'+t.ma.toFixed(1)+'</td></tr>'+
-    '<tr class="tot"><td>통합(연결)</td><td>+'+t.con.toFixed(1)+'</td></tr></tbody></table>'+
+    '<tr><td>매장(소매)</td><td class="'+(t.ma>=0?'pos':'neg')+'">'+sgn(t.ma)+'</td></tr>'+
+    (t.on!=null?'<tr><td>안성지점(온라인·양기지문)</td><td class="'+(t.on>=0?'pos':'neg')+'">'+sgn(t.on)+'</td></tr>':'')+
+    '<tr class="tot"><td>통합(연결)</td><td class="'+(t.con>=0?'pos':'neg')+'">'+sgn(t.con)+'</td></tr></tbody></table>'+
     '<div class="note">양만 단독 적자는 유통·소매에서 회수. 내부 이전가격은 배분일 뿐 통합손익엔 무영향(제거).</div></div>';
 }
 
@@ -337,11 +351,14 @@ function renderSeg(m){
     h+='<tr><td>양만장</td><td>'+y.rev.toFixed(1)+'</td><td>'+yc.toFixed(1)+'</td><td class="'+(yg>=0?'pos':'neg')+'">'+yg.toFixed(1)+'</td><td>0.0</td><td class="'+yp+'">'+y.oi.toFixed(1)+'</td><td class="'+yp+'">'+y.rate+'</td></tr>'; }
   if(j){ var jp=(j.oi>=0?'pos':'neg');
     h+='<tr><td>조합법인</td><td>'+j.rev.toFixed(1)+'</td><td>'+j.cogs.toFixed(1)+'</td><td class="'+(j.margin>=0?'pos':'neg')+'">'+j.margin.toFixed(1)+'</td><td>'+j.sga.toFixed(1)+'</td><td class="'+jp+'">'+j.oi.toFixed(1)+'</td><td class="'+jp+'">'+j.rate+'</td></tr>'; }
-  if(y&&!y.partial&&y.rev!=null&&j){ var so=y.oi+j.oi;
-    h+='<tr class="tot"><td>합계</td><td>'+(y.rev+j.rev).toFixed(1)+'</td><td>'+((y.cost||0)+j.cogs).toFixed(1)+'</td><td>-</td><td>'+j.sga.toFixed(1)+'</td><td class="'+(so>=0?'pos':'neg')+'">'+so.toFixed(1)+'</td><td>-</td></tr>'; }
+  var o=D[m].online;
+  if(o){ var opc=(o.oi>=0?'pos':'neg');
+    h+='<tr><td>안성지점(온라인)</td><td>'+o.rev.toFixed(1)+'</td><td>'+o.cogs.toFixed(1)+'</td><td class="pos">'+(o.rev-o.cogs).toFixed(1)+'</td><td>'+(o.cost-o.cogs).toFixed(1)+'</td><td class="'+opc+'">'+o.oi.toFixed(1)+'</td><td class="'+opc+'">'+o.rate+'</td></tr>'; }
+  if(y&&!y.partial&&y.rev!=null&&j){ var so=y.oi+j.oi+(o?o.oi:0), orv=(o?o.rev:0), ocg=(o?o.cogs:0), osg=(o?o.cost-o.cogs:0);
+    h+='<tr class="tot"><td>합계</td><td>'+(y.rev+j.rev+orv).toFixed(1)+'</td><td>'+((y.cost||0)+j.cogs+ocg).toFixed(1)+'</td><td>-</td><td>'+(j.sga+osg).toFixed(1)+'</td><td class="'+(so>=0?'pos':'neg')+'">'+so.toFixed(1)+'</td><td>-</td></tr>'; }
   h+='</tbody></table>';
   h+='<div class="note">양만장 매출원가=사료·전기·인건 등 생산원가(판관비 없음). 조합법인 매출원가=양만 매입가(장어 물량×20,000), 매출=매장 공급가(×30,000).</div></div>';
-  h+= (y?renderYangman(m):'') + (j?renderJohap(m):(D[m].store?'<div class="card"><div class="empty">이 달 조합법인 손익은 미확정입니다.</div></div>':''));
+  h+= (y?renderYangman(m):'') + (j?renderJohap(m):(D[m].store?'<div class="card"><div class="empty">이 달 조합법인 손익은 미확정입니다.</div></div>':'')) + renderOnline(m);
   return h;
 }
 
