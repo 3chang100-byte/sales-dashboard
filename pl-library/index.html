@@ -59,6 +59,7 @@ svg{display:block;width:100%;height:auto}
     <div class="tabs" id="tabs">
       <button class="tab on" data-t="store">&#127974; 매장 (5지점)</button>
       <button class="tab" data-t="seg">&#128031; 양만장 · 조합법인</button>
+      <button class="tab" data-t="ratio">&#128200; 매입/매출 비율 추이</button>
     </div>
   </div>
   <div id="content"></div>
@@ -331,9 +332,61 @@ function renderSeg(m){
   return h;
 }
 
+// ===== 매입/매출 비율 추이 (2026-10-01 추가) =====
+var RATIO_DEFS=[
+  {id:'eel', title:'① 장어 매입 ÷ 장어 매출', num:'eb', den:'es', nl:'장어 매입', dl:'장어 매출', desc:'장어 원가(입고 kg×30,000 장어매출비중 배분) ÷ POS 장어 매출. 2·3·6월은 원장 미확보.'},
+  {id:'food', title:'② 농수산물·식자재 매입 ÷ 상차림·식사류 매출', num:'fb', den:'fs', nl:'농수산·식자재 매입', dl:'식사류 매출', desc:'가락시장·반듯한·식자재(직접+공용배분) ÷ 장어·주류·음료를 뺀 나머지 매출(국수·탕·찌개·공기밥 등). 상차림은 장어 가격에 포함돼 식사류 매출만 분모 — 비율이 100%를 넘는 것이 정상. POS 메뉴별 집계는 5월부터.'},
+  {id:'alc', title:'③ 주류·음료 매입 ÷ 주류·음료 매출', num:'ab', den:'as', nl:'주류·음료 매입', dl:'주류·음료 매출', desc:'주류+음료 매입(생수 포함) ÷ POS 주류·음료 매출. 정상 범위 50~80%. POS 메뉴별 집계는 5월부터.'},
+  {id:'util', title:'④ 수도광열비 ÷ 총매출', num:'ut', den:'s', nl:'전기+가스+수도', dl:'총매출', desc:'이체월 기준(현금주의) — 여름 전기료는 다음 달에 반영됨.'},
+  {id:'opx', title:'⑤ 운영비 ÷ 총매출', num:'ox', den:'s', nl:'운영비', dl:'총매출', desc:'운영비 = 소모품·마케팅·차량·통신·보험·카드수수료·복리후생 등(공용분 매출비중 배분). 9개월 전부 확보.'}
+];
+var RATIO_COLORS={'평택':'#60a5fa','오산':'#a78bfa','안성':'#34d399','율량':'#fbbf24','복대':'#f87171','합계':'#e2e8f0'};
+function ratioVal(m,st,def){ var r=D[m].ratio; if(!r||!r[st]) return null; var a=r[st][def.num], b=r[st][def.den]; if(a==null||b==null||!b) return null; return a/b*100; }
+function svgLines(months,series,opt){
+  opt=opt||{}; var W=opt.w||620,H=opt.h||240,pl=44,pr=14,pt=16,pb=30;
+  var iw=W-pl-pr, ih=H-pt-pb, n=months.length;
+  var all=[]; series.forEach(function(s){ s.data.forEach(function(v){ if(v!=null) all.push(v); }); });
+  if(!all.length) return '<div class="empty">자료 없음</div>';
+  var mx=Math.max.apply(null,all), mn=0; mx=Math.ceil(mx/10)*10||10; if(mx<all.reduce(function(a,b){return Math.max(a,b);},0)) mx+=10;
+  var rng=mx-mn||1, s='';
+  for(var g=0;g<=4;g++){ var v=mx-(mx-mn)*g/4, y=pt+ih*g/4; s+='<line x1='+pl+' y1='+y+' x2='+(W-pr)+' y2='+y+' stroke="#1c2941"/>'; s+='<text x='+(pl-6)+' y='+(y+3)+' fill="#5b6a80" font-size="9" text-anchor="end">'+Math.round(v)+'%</text>'; }
+  for(var i=0;i<n;i++){ s+='<text x='+(pl+iw*(i+0.5)/n)+' y='+(H-10)+' fill="#8595a8" font-size="10" text-anchor="middle">'+months[i]+'</text>'; }
+  series.forEach(function(sr){
+    var d='', pen=false, pts='';
+    for(var i=0;i<n;i++){ var v=sr.data[i]; if(v==null){pen=false;continue;} var x=pl+iw*(i+0.5)/n, y=pt+ih*(1-(v-mn)/rng); d+=(pen?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)+' '; pen=true;
+      pts+='<circle cx='+x.toFixed(1)+' cy='+y.toFixed(1)+' r='+(sr.bold?3.2:2.4)+' fill="'+sr.color+'"><title>'+sr.name+' '+months[i]+': '+v.toFixed(1)+'%</title></circle>';
+      if(sr.bold) pts+='<text x='+x.toFixed(1)+' y='+(y-7).toFixed(1)+' fill="'+sr.color+'" font-size="9" text-anchor="middle">'+v.toFixed(0)+'%</text>'; }
+    s+='<path d="'+d+'" fill="none" stroke="'+sr.color+'" stroke-width="'+(sr.bold?2.6:1.6)+'"'+(sr.bold?'':' stroke-opacity="0.9"')+'/>'+pts;
+  });
+  return '<svg viewBox="0 0 '+W+' '+H+'">'+s+'</svg>';
+}
+function ovRatio(){
+  var mons=MONS.filter(function(m){return D[m].ratio;}), ml=mons.map(function(m){return m.slice(5)+'월';});
+  if(!mons.length) return empty('비율 추이 자료가 아직 없습니다.');
+  var SN=['평택','오산','안성','율량','복대'];
+  var h='<div class="card"><h2>&#128200; 매입/매출 비율 추이 — 읽는 법</h2><div class="cs">각 항목은 <b>전지점 합산</b>(왼쪽: 막대=매입액 백만, 선=비율%)과 <b>지점별 비율</b>(오른쪽: 선그래프)로 표시. 점에 마우스를 올리면 수치. 매출은 POS 실측(sales_history), 매입은 월별 손익 원장. 빈 구간은 해당 월 원장 미확보.</div></div>';
+  RATIO_DEFS.forEach(function(def){
+    var totR=mons.map(function(m){return ratioVal(m,'합계',def);});
+    var totB=mons.map(function(m){var r=D[m].ratio['합계']; return r&&r[def.num]!=null?r[def.num]:0;});
+    var series=SN.map(function(st){return {name:st,color:RATIO_COLORS[st],data:mons.map(function(m){return ratioVal(m,st,def);})};});
+    series.push({name:'합계',color:RATIO_COLORS['합계'],bold:true,data:totR});
+    var last=mons[mons.length-1];
+    // 최신월 표
+    var tb='<table style="margin-top:8px"><thead><tr><th>지점</th>'+ml.map(function(x){return '<th>'+x+'</th>';}).join('')+'</tr></thead><tbody>';
+    SN.concat(['합계']).forEach(function(st){ tb+='<tr'+(st==='합계'?' class="tot"':'')+'><td>'+st+'</td>'+mons.map(function(m){var v=ratioVal(m,st,def); return '<td>'+(v==null?'-':v.toFixed(0)+'%')+'</td>';}).join('')+'</tr>'; });
+    tb+='</tbody></table>';
+    h+='<div class="card"><h2>'+def.title+'</h2><div class="cs">'+def.desc+'</div><div class="grid2">'+
+       '<div><div class="cs" style="margin:4px 0">전지점 합산 · 막대='+def.nl+'(백만) · 선=비율</div>'+svgBarLine(ml,totB,totR.map(function(v){return v==null?0:v;}),{lsuf:'%',ldec:0})+'</div>'+
+       '<div><div class="cs" style="margin:4px 0">지점별 비율(%) · 굵은 선=합계</div>'+svgLines(ml,series)+
+       '<div class="legend">'+series.map(function(s){return '<span><i style="background:'+s.color+'"></i>'+s.name+'</span>';}).join('')+'</div></div>'+
+       '</div>'+tb+'</div>';
+  });
+  return h;
+}
+
 var cur, tab='store';
 function render(){
-  var h = tab==='store' ? (ovStore()+renderStore(cur)) : (ovSeg()+renderSeg(cur));
+  var h = tab==='store' ? (ovStore()+renderStore(cur)) : (tab==='ratio' ? ovRatio() : (ovSeg()+renderSeg(cur)));
   document.getElementById('content').innerHTML=h; }
 
 function boot(){
